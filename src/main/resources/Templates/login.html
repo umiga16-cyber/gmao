@@ -1,0 +1,40 @@
+<!-- src/main/resources/templates/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Login Industrial</title>
+    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1><i class="fas fa-industry"></i> GMAO</h1>
+                <p>Advanced Industrial Management</p>
+            </div>          
+            <form method="post" action="/login">
+                <div class="form-group">
+                    <label><i class="fas fa-user me-2"></i> Email</label>
+                    <input type="email" name="email" required 
+                           placeholder="user@gmao.com" autocomplete="email">
+                </div>               
+                <div class="form-group">
+                    <label><i class="fas fa-lock me-2"></i> Password</label>
+                    <input type="password" name="password" required 
+                           placeholder="password">
+                </div>              
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    ACCESS THE SYSTEM
+                </button>
+                <div th:if="${param.error}" class="alert alert-danger">
+                    <p style="color: red;">Incorrect username or password</p>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

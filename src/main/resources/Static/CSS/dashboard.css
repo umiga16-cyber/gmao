@@ -1,0 +1,94 @@
+/* src/main/resources/static/css/dashboard.css */
+:root {
+    --industrial-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    --metal-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --metal-secondary: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    --accent-gold: #f4b400;
+    --text-light: #e8e8e8;
+    --text-muted: #a0a0a0;
+}
+
+body {
+    background: var(--industrial-bg);
+    color: var(--text-light);
+    font-family: 'Roboto', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Sidebar Industrial */
+.sidebar {
+    background: var(--metal-secondary);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+}
+
+.nav-link {
+    color: var(--text-light) !important;
+    border-radius: 12px;
+    margin: 0.25rem 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.nav-link:hover::before {
+    left: 100%;
+}
+
+.nav-link:hover, .nav-link.active {
+    background: rgba(255,255,255,0.15);
+    transform: translateX(8px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Cards metálicas */
+.stat-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--metal-primary);
+}
+
+.stat-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    border-color: rgba(255,255,255,0.2);
+}
+
+.stat-icon {
+    background: var(--metal-primary);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Navbar superior */
+.navbar-top {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 0 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
