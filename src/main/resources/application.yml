@@ -1,13 +1,13 @@
 spring:
   application:
-    name: gmaro
+    name: gmao
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
+    url: jdbc:mysql://localhost:3306/gmao
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: ana0000YNS
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: create-drop
     show-sql: true
