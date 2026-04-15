@@ -53,6 +53,9 @@ public class Preventif {
 
     @Column(name = "statut", length = 30)
     private String statut;
+    
+    @Column(name = "actif")
+    private Boolean actif = Boolean.TRUE;
 
     @JsonIgnore
     @OneToMany(mappedBy = "preventif", fetch = FetchType.LAZY)
@@ -130,13 +133,8 @@ public class Preventif {
 		this.interventions = interventions;
 	}
 
-	public Preventif() {
-		super();
-		 
-	}
-
 	public Preventif(Equipement equipement, Integer frequence, FrequencyType typeFrequence, LocalDate prochaineDate,
-			String operations, Integer horizon, String statut, Set<Intervention> interventions) {
+			String operations, Integer horizon, String statut, Boolean actif, Set<Intervention> interventions) {
 		super();
 		this.equipement = equipement;
 		this.frequence = frequence;
@@ -145,8 +143,24 @@ public class Preventif {
 		this.operations = operations;
 		this.horizon = horizon;
 		this.statut = statut;
+		this.actif = actif;
 		this.interventions = interventions;
 	}
+
+	public Boolean getActif() {
+		return actif;
+	}
+
+	public void setActif(Boolean actif) {
+		this.actif = actif;
+	}
+
+	public Preventif() {
+		super();
+		 
+	}
+
+	 
     
     
 }
