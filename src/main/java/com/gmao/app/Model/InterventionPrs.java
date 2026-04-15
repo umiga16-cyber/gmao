@@ -26,4 +26,30 @@ public class InterventionPrs {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "prs_id", nullable = false)
     private Prs prs;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Intervention getIntervention() {
+		return intervention;
+	}
+
+	public void setIntervention(Intervention intervention) {
+		this.intervention = intervention;
+	}
+
+	public Prs getPrs() {
+		return prs;
+	}
+
+	public void setPrs(Prs prs) {
+		this.prs = prs;
+	}
+    
+    
 }
