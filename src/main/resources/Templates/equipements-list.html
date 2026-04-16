@@ -1,272 +1,394 @@
+<!-- src/main/resources/templates/equipements-list.html -->
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Equipos</title>
+    <title>GMAO - Lista de Equipos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* (mantén tus estilos, no los cambio) */
-        :root { --primary: #667eea; --secondary: #764ba2; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6; }
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; }
-        .sidebar { background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); height: 100vh; position: fixed; width: 260px; left: 0; top: 0; z-index: 1000; transition: all 0.3s ease; }
-        .sidebar.collapsed { width: 70px; }
-        .main-content { margin-left: 260px; transition: all 0.3s ease; padding: 20px; }
-        .main-content.expanded { margin-left: 70px; }
-        .navbar-top { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 0 0 20px 20px; }
-        .card-custom { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease; }
-        .card-custom:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-        .nav-link { color: rgba(255,255,255,0.9) !important; padding: 12px 20px; border-radius: 10px; margin: 5px 10px; transition: all 0.3s ease; }
-        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.2); color: white !important; transform: translateX(5px); }
-        table { background: white; border-radius: 15px; overflow: hidden; }
-        thead { background: var(--primary); color: white; }
-        @media (max-width: 768px) { .sidebar { width: 70px; } .main-content { margin-left: 70px; } }
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --critical: #dc2626;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #10b981;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            height: 100vh;
+            position: fixed;
+            width: 260px;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .main-content {
+            margin-left: 260px;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+        .navbar-top {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white !important;
+            transform: translateX(5px);
+        }
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 40px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 1px 99px;
+            font-weight: 600;
+        }
+        .table tbody td {
+            padding: 30px 10px;
+            vertical-align: middle;
+            border-color: rgba(0,0,0,0.05);
+        }
+        .status-badge {
+            padding: 4% 4px;
+            border-radius: 2px;
+            font-size: 0.7em;
+            font-weight: 100;
+        }
+        .status-actif { background: var(--success); color: white; }
+        .status-maintenance { background: var(--warning); color: white; }
+        .status-hs { background: var(--danger); color: white; }
+        .criticality-badge {
+            padding: 4px 10px;
+            border-radius: 2px;
+            font-size: 0.75em;
+            font-weight: 100;
+        }
+        .criticality-critica { background: var(--critical); color: white; }
+        .criticality-haute { background: var(--high); color: white; }
+        .criticality-moyenne { background: var(--medium); color: white; }
+        .criticality-faible { background: var(--low); color: white; }
+        .btn-action {
+            padding: 8px 12px;
+            border-radius: 2px;
+            font-size: 0.85em;
+            margin: 0 2px;
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .main-content { margin-left: 70px; }
+            .table-responsive { font-size: 2em; }
+        }
     </style>
 </head>
 <body>
-
-<!-- Sidebar (igual) -->
-<div class="sidebar" id="sidebar">
-    <div class="p-4 text-white">
-        <h4 class="mb-4"><i class="fas fa-industry me-2"></i><span id="logo-text">GMAO</span></h4>
-        <hr class="text-white opacity-25">
-        <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link active" href="/equipements-list"><i class="fas fa-tools me-2"></i>Equipos</a></li>
-            <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Intervenciones</a></li>
-            <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Usuarios</a></li>
-            <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
-            <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Preventivo</a></li>
-        </ul>
-    </div>
-</div>
-
-<!-- Main Content -->
-<div class="main-content" id="mainContent">
-    <!-- Top Navbar -->
-    <nav class="navbar navbar-top p-3 mb-4">
-        <div class="container-fluid">
-            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars fa-2x"></i></button>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3"><i class="fas fa-user-circle text-primary"></i> Admin</span>
-                <a href="/logout" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Salir</a>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="p-4 text-white">
+            <h4 class="mb-4">
+                <i class="fas fa-industry me-2"></i>
+                <span id="logo-text">GMAO</span>
+            </h4>
+            <hr class="text-white opacity-25">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/equipements-list">
+                        <i class="fas fa-tools me-2"></i>Equipos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/interventions">
+                        <i class="fas fa-wrench me-2"></i>Intervenciones
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users">
+                        <i class="fas fa-users me-2"></i>Usuarios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/stock">
+                        <i class="fas fa-boxes me-2"></i>Stock PRs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/preventif">
+                        <i class="fas fa-calendar-check me-2"></i>Preventivo
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
-
-    <!-- Mensajes flash -->
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle me-2"></i> <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i> <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Listado de Equipos -->
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2><i class="fas fa-tools text-primary me-2"></i>Gestión de Equipos</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-                    <i class="fas fa-plus me-2"></i>Nuevo Equipo
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-top p-3 mb-4">
+            <div class="container-fluid">
+                <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
+                    <i class="fas fa-bars fa-2x"></i>
+                </button>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-circle text-primary"></i>
+                        Admin
+                    </span>
+                    <a href="/logout" class="btn btn-outline-danger">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold text-dark mb-1">
+                    <i class="fas fa-tools text-primary me-2"></i>
+                    Gestión de Equipos
+                </h1>
+                <p class="text-muted mb-0">Visualice y gestione todos sus equipos</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/equipement/new" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Nuevo Equipo
+                </a>
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fas fa-filter me-1"></i>Filtros
                 </button>
             </div>
-            <div class="table-responsive card-custom p-3">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Descripción</th>
-                            <th>Tipo</th>
-                            <th>Estado</th>
-                            <th>Localización</th>
-                            <th>Activo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 🔁 Variable del bucle: 'equip' (puede ser cualquier nombre, pero debe ser consistente) -->
-                        <tr th:each="equip : ${equipements}">
-                            <td th:text="${equip.code}">Código</td>
-                            <td th:text="${equip.description}">Descripción</td>   <!-- ✅ description, no nom -->
-                            <td><span class="badge bg-info" th:text="${equip.type}">Tipo</span></td>
-                            <td>
-                                <span class="badge" th:class="${equip.statut == 'ACTIVO' ? 'bg-success' : (equip.statut == 'MANTENIMIENTO' ? 'bg-warning' : 'bg-danger')}"
-                                      th:text="${equip.statut}">Estado</span>
-                            </td>
-                            <td th:text="${equip.localisation != null ? equip.localisation : '--'}">Localización</td>
-                            <td>
-                                <i th:if="${equip.actif}" class="fas fa-check text-success"></i>
-                                <i th:unless="${equip.actif}" class="fas fa-times text-danger"></i>
-                            </td>
-                            <td>
-                                <!-- Botón editar: usa description en lugar de nom -->
-                                <button class="btn btn-outline-primary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editModal"
-                                        th:data-id="${equip.id}"
-                                        th:data-code="${equip.code}"
-                                        th:data-description="${equip.description}"
-                                        th:data-type="${equip.type}"
-                                        th:data-statut="${equip.statut}"
-                                        th:data-localisation="${equip.localisation}"
-                                        onclick="fillEditModal(this)">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <!-- Formulario de eliminación con CSRF -->
-                                <form action="/equipements-list/delete" method="post" style="display: inline-block;">
-                                    <input type="hidden" name="_method" value="DELETE" />
-                                    <input type="hidden" name="id" th:value="${equip.id}" />
-                                
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Eliminar este equipo?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        <tr th:if="${equipements.isEmpty()}">
-                            <td colspan="7" class="text-center text-muted">No hay equipos registrados</td>
-                        </tr>
-                    </tbody>
-                </table>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary text-white">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3 class="text-primary mb-1" th:text="${totalEquipments}">47</h3>
+                    <p class="text-muted mb-1">Total Equipos</p>
+                    <small class="text-success fw-bold">+2 esta semana</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon bg-success text-white">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h3 class="text-success mb-1" th:text="${equipmentsActifs}">35</h3>
+                    <p class="text-muted mb-1">En Servicio</p>
+                    <small class="text-success fw-bold">+1 hoy</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning text-white">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                    <h3 class="text-warning mb-1" th:text="${equipmentsMaintenance}">8</h3>
+                    <p class="text-muted mb-1">En Mantenimiento</p>
+                    <small class="text-warning fw-bold">2 pendientes</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon bg-danger text-white">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="text-danger mb-1" th:text="${equipmentsCritiques}">4</h3>
+                    <p class="text-muted mb-1">Críticos</p>
+                    <small class="text-danger fw-bold">Requieren atención</small>
+                </div>
             </div>
         </div>
+
+        <!-- Equipment Table -->
+        <div class="table-container">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Tipo</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>N°Serie</th>
+                    <th>Localización</th>
+                    <th>Estado</th>
+                    <th>Activo</th>
+                    <th>Criticidad</th>
+                    <th>F.Instalación</th>
+                    <th>F.Servicio</th>
+                    <th>Comentario</th>
+                    <th>PadreID</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody th:if="${equipments}">
+                <tr th:each="equipment : ${equipments}">
+                    <td>
+                        <strong th:text="${equipment.id}">1</strong>
+                    </td>
+                    <td>
+                        <strong th:text="${equipment.code}">EQ-001</strong>
+                    </td>
+                    <td th:text="${equipment.description}">Motor principal de producción</td>
+                    <td>
+                        <span class="badge bg-secondary" th:text="${equipment.type}">MOTOR</span>
+                    </td>
+                    <td th:text="${equipment.marque}">Siemens</td>
+                    <td th:text="${equipment.modele}">S120</td>
+                    <td th:text="${equipment.numeroSerie}">SN123456789</td>
+                    <td>
+                        <span class="badge bg-info text-dark" th:text="${equipment.localisation}">Planta 1 - Línea A</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-actif" 
+                              th:classappend="${equipment.statut == 'ACTIF' ? 'status-actif' : 
+                                              equipment.statut == 'MAINTENANCE' ? 'status-maintenance' : 'status-hs'}"
+                              th:text="${equipment.statut}">ACTIF</span>
+                    </td>
+                    <td>
+                        <span class="badge" 
+                              th:classappend="${equipment.actif} ? 'bg-success' : 'bg-danger'"
+                              th:text="${equipment.actif} ? 'SÍ' : 'NO'">SÍ</span>
+                    </td>
+                    <td>
+                        <span class="criticality-badge criticality-${equipment.criticite?.toLowerCase()}" 
+                              th:text="${equipment.criticite}">CRITICA</span>
+                    </td>
+                    <td>
+                        <small class="text-muted" 
+                               th:text="${equipment.dateInstallation != null} ? 
+                                        ${#temporals.format(equipment.dateInstallation)} : 'N/A'">
+                            2024-01-10
+                        </small>
+                    </td>
+                    <td>
+                        <small class="text-muted" 
+                               th:text="${equipment.dateMiseEnService != null} ? 
+                                        ${#temporals.format(equipment.dateMiseEnService)} : 'N/A'">
+                            2024-01-15
+                        </small>
+                    </td>
+                    <td>
+                        <span class="text-truncate d-inline-block" style="max-width: 150px;" 
+                              th:utext="${#strings.abbreviate(equipment.commentaire ?: '', 80)}"
+                              title="Ver comentario completo">
+                            Revisión programada mensualmente
+                        </span>
+                    </td>
+                    <td th:text="${equipment.parentId != null} ? ${equipment.parentId} : '—'">—</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a th:href="@{/equipement/{id}(id=${equipment.id})}" 
+                               class="btn btn-outline-primary btn-action" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a th:href="@{/equipement/{id}/edit(id=${equipment.id})}" 
+                               class="btn btn-outline-warning btn-action" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button th:onclick="'deleteEquipement(' + ${equipment.id} + ')'" 
+                                    class="btn btn-outline-danger btn-action" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+            <tbody th:unless="${equipments}">
+                <tr>
+                    <td colspan="16" class="text-center py-5">
+                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay equipos registrados</h5>
+                        <a href="/equipement/new" class="btn btn-primary">Agregar Primer Equipo</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
-
-<!-- Modal CREAR -->
-<div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content card-custom">
-            <form action="/equipements-list/create" method="post">
-                <!-- CSRF -->
-               
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Nuevo Equipo</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Código</label>
-                        <input type="text" class="form-control" name="code" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción</label>
-                        <input type="text" class="form-control" name="description" required>  <!-- ✅ name="description" -->
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" name="type" required>
-                            <option value="Motor">Motor</option>
-                            <option value="Bomba">Bomba</option>
-                            <option value="Válvula">Válvula</option>
-                            <option value="Sensor">Sensor</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Estado</label>
-                        <select class="form-select" name="statut" required>
-                            <option value="ACTIVO">ACTIVO</option>
-                            <option value="INACTIVO">INACTIVO</option>
-                            <option value="MANTENIMIENTO">MANTENIMIENTO</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Localización (opcional)</label>
-                        <input type="text" class="form-control" name="localisation">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Agregar</button>
-                </div>
-            </form>
-        </div>
     </div>
-</div>
 
-<!-- Modal EDITAR -->
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content card-custom">
-            <form id="editForm" method="post">
-                <input type="hidden" name="_method" value="PUT" />
-              
-                <input type="hidden" name="id" id="editId" />
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Equipo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Código</label>
-                        <input type="text" class="form-control" id="editCode" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción</label>
-                        <input type="text" class="form-control" name="description" id="editDescription" required>  <!-- ✅ name="description" -->
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" name="type" id="editType" required>
-                            <option value="Motor">Motor</option>
-                            <option value="Bomba">Bomba</option>
-                            <option value="Válvula">Válvula</option>
-                            <option value="Sensor">Sensor</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Estado</label>
-                        <select class="form-select" name="statut" id="editStatut" required>
-                            <option value="ACTIVO">ACTIVO</option>
-                            <option value="INACTIVO">INACTIVO</option>
-                            <option value="MANTENIMIENTO">MANTENIMIENTO</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Localización</label>
-                        <input type="text" class="form-control" name="localisation" id="editLocalisation">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning"><i class="fas fa-save me-2"></i>Actualizar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('mainContent').classList.toggle('expanded');
+            document.getElementById('logo-text').style.display = 
+                document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('collapsed');
-        document.getElementById('mainContent').classList.toggle('expanded');
-        let logoText = document.getElementById('logo-text');
-        if (logoText) logoText.style.display = document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
-    }
-
-    function fillEditModal(btn) {
-        // Obtener datos de los atributos data-* (ahora description, no nom)
-        let id = btn.getAttribute('data-id');
-        let code = btn.getAttribute('data-code');
-        let description = btn.getAttribute('data-description');
-        let type = btn.getAttribute('data-type');
-        let statut = btn.getAttribute('data-statut');
-        let localisation = btn.getAttribute('data-localisation') || '';
-
-        document.getElementById('editId').value = id;
-        document.getElementById('editCode').value = code;
-        document.getElementById('editDescription').value = description;
-        document.getElementById('editType').value = type;
-        document.getElementById('editStatut').value = statut;
-        document.getElementById('editLocalisation').value = localisation;
-
-        let form = document.getElementById('editForm');
-        form.action = '/equipements-list/' + id + '/edit';
-    }
-</script>
+        // Auto-hide sidebar on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.add('collapsed');
+            document.getElementById('mainContent').classList.add('expanded');
+        }
+    </script>
 </body>
 </html>
