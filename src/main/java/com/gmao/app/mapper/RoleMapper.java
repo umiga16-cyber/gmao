@@ -17,7 +17,7 @@ public class RoleMapper {
 
     public RoleResponse mapToResponse(Role role) {
         RoleResponse response = new RoleResponse();
-        response.setId(role.getRoleId());
+        response.setId(role.getId());
         response.setNom(role.getNom());
         return response;
     }

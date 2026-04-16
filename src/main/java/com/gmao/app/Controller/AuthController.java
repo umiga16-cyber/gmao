@@ -15,4 +15,5 @@ public class AuthController {
     public String dashboard() {
         return "dashboard";
     }
+
 }

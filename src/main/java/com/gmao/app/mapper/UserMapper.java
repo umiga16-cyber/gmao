@@ -12,7 +12,7 @@ public class  UserMapper {
         UserResponse response = new  UserResponse();
         response.setId(user.getId());
         response.setNom(user.getNom());
-        response.setRoleId(user.getRole() != null ? user.getRole().getRoleId() : null);
+        response.setRoleId(user.getRole() != null ? user.getRole().getId() : null);
         response.setRoleNom(user.getRole() != null ? user.getRole().getNom() : null);
         response.setEmail(user.getEmail());
         response.setStatut(user.getStatut());
