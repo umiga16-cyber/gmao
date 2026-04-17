@@ -16,7 +16,7 @@ import com.gmao.app.dto.EquipementTreeResponse;
 import com.gmao.app.dto.EquipementUpdateRequest;
 
 @RestController
-@RequestMapping("/api/equipement")
+@RequestMapping("/api/equipements")
 public class EquipementController {
 
     private final EquipementService equipementService;

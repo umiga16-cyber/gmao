@@ -1,6 +1,5 @@
-<!-- src/main/resources/templates/equipements-list.html -->
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,10 +15,6 @@
             --danger: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
-            --critical: #dc2626;
-            --high: #f97316;
-            --medium: #f59e0b;
-            --low: #10b981;
         }
         body {
             font-family: 'Poppins', sans-serif;
@@ -36,17 +31,13 @@
             z-index: 1000;
             transition: all 0.3s ease;
         }
-        .sidebar.collapsed {
-            width: 70px;
-        }
+        .sidebar.collapsed { width: 70px; }
         .main-content {
             margin-left: 260px;
             transition: all 0.3s ease;
             padding: 20px;
         }
-        .main-content.expanded {
-            margin-left: 70px;
-        }
+        .main-content.expanded { margin-left: 70px; }
         .navbar-top {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -55,24 +46,19 @@
         .stat-card {
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
             border: none;
             height: 100%;
         }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
         .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 15px;
         }
         .nav-link {
@@ -87,236 +73,651 @@
             color: white !important;
             transform: translateX(5px);
         }
-        .table-container {
+        .table-container, .card-box {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 40px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
             overflow: hidden;
         }
         .table thead th {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
-            padding: 1px 30px;
+            padding: 14px 10px;
             font-weight: 600;
+            white-space: nowrap;
         }
         .table tbody td {
-            padding: 20px 10px;
+            padding: 14px 10px;
             vertical-align: middle;
             border-color: rgba(0,0,0,0.05);
         }
-        .status-badge {
-            padding: 4% 4px;
-            border-radius: 2px;
-            font-size: 0.7em;
-            font-weight: 100;
+        .status-badge, .active-badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-block;
         }
-        .status-actif { background: var(--success); color: white; }
-        .status-maintenance { background: var(--warning); color: white; }
-        .status-hs { background: var(--danger); color: white; }
-        .criticality-badge {
-            padding: 4px 10px;
-            border-radius: 2px;
-            font-size: 0.75em;
-            font-weight: 100;
-        }
-        .criticality-critica { background: var(--critical); color: white; }
-        .criticality-haute { background: var(--high); color: white; }
-        .criticality-moyenne { background: var(--medium); color: white; }
-        .criticality-faible { background: var(--low); color: white; }
+        .status-actif { background: #dcfce7; color: #166534; }
+        .status-maintenance { background: #fef3c7; color: #92400e; }
+        .status-hs, .status-inactive { background: #fee2e2; color: #991b1b; }
+        .active-yes { background: #dcfce7; color: #166534; }
+        .active-no { background: #fee2e2; color: #991b1b; }
         .btn-action {
-            padding: 8px 12px;
-            border-radius: 2px;
-            font-size: 0.85em;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             margin: 0 2px;
+        }
+        .form-label { font-weight: 600; }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #6b7280;
         }
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; }
-            .table-responsive { font-size: 2em; }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="p-4 text-white">
-            <h4 class="mb-4">
-                <i class="fas fa-industry me-2"></i>
-                <span id="logo-text">GMAO</span>
-            </h4>
-            <hr class="text-white opacity-25">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/equipements-list">
-                        <i class="fas fa-tools me-2"></i>Équipements
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/interventions">
-                        <i class="fas fa-wrench me-2"></i>Interventions
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/users">
-                        <i class="fas fa-users me-2"></i>Utilisateurs
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/stock">
-                        <i class="fas fa-boxes me-2"></i>Stock PRs
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/preventif">
-                        <i class="fas fa-calendar-check me-2"></i>Préventif
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-        <!-- Top Navbar -->
-        <nav class="navbar navbar-top p-3 mb-4">
-            <div class="container-fluid">
-                <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
-                    <i class="fas fa-bars fa-2x"></i>
-                </button>
-                <div class="navbar-nav ms-auto">
-                    <span class="navbar-text me-3">
-                        <i class="fas fa-user-circle text-primary"></i>
-                       <span th:text="${userName}">Admin</span>
-                    </span>
-                    <a href="/logout" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Déconnexion
-                    </a>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="fw-bold text-dark mb-1">
-                    <i class="fas fa-tools text-primary me-2"></i>
-                    Gestion des Équipements
-                </h1>
-                <p class="text-muted mb-0">Visualisez et gérez tous vos équipements</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="/equipement/new" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>Nouveau Équipement
-                </a>
-                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
-                    <i class="fas fa-filter me-1"></i>Filtres
-                </button>
-            </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-success text-white">
-                        <i class="fas fa-play-circle"></i>
-                    </div>
-                    <h3 class="text-success mb-1" th:text="${equipmentsActifs}">35</h3>
-                    <p class="text-muted mb-1">En Service</p>
-                    <small class="text-success fw-bold">+1 aujourd'hui</small>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning text-white">
-                        <i class="fas fa-wrench"></i>
-                    </div>
-                    <h3 class="text-warning mb-1" th:text="${equipmentsMaintenance}">8</h3>
-                    <p class="text-muted mb-1">En Maintenance</p>
-                    <small class="text-warning fw-bold">2 en attente</small>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-danger text-white">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <h3 class="text-danger mb-1" th:text="${equipmentsCritiques}">4</h3>
-                    <p class="text-muted mb-1">Critiques</p>
-                    <small class="text-danger fw-bold">Requièrent attention</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Equipment Table -->
-        <div class="table-container">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Description</th>
-                    <th>Type</th>
-                    <th>ParentID</th>
-                    <th>Statut</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody th:if="${equipments}">
-                <tr th:each="equipment : ${equipments}">   
-                    <td th:text="${equipment.parentId != null} ? ${equipment.parentId} : '—'">—</td>
-                    <td>
-                        <div class="btn-group" role="group">
-                            <a th:href="@{/equipement/{id}(id=${equipment.id})}" 
-                               class="btn btn-outline-primary btn-action" title="Ver Detalle">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a th:href="@{/equipement/{id}/edit(id=${equipment.id})}" 
-                               class="btn btn-outline-warning btn-action" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button th:onclick="'deleteEquipement(' + ${equipment.id} + ')'" 
-                                    class="btn btn-outline-danger btn-action" title="Eliminar">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-            <tbody th:unless="${equipments}">
-                <tr>
-                    <td colspan="16" class="text-center py-5">
-                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Il n'y a pas d'équipements enregistrés</h5>
-                        <a href="/equipement/new" class="btn btn-primary">Ajouter le premier équipement</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+<div class="sidebar" id="sidebar">
+    <div class="p-4 text-white">
+        <h4 class="mb-4">
+            <i class="fas fa-industry me-2"></i>
+            <span id="logo-text">GMAO</span>
+        </h4>
+        <hr class="text-white opacity-25">
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link active" href="equipements-list.html"><i class="fas fa-tools me-2"></i>Équipements</a></li>
+            <li class="nav-item"><a class="nav-link" href="interventions-list.html"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
+            <li class="nav-item"><a class="nav-link" href="users-list.html"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="stock-list.html"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
+            <li class="nav-item"><a class="nav-link" href="preventifs-list.html"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
+        </ul>
     </div>
 </div>
+
+<div class="main-content" id="mainContent">
+    <nav class="navbar navbar-top p-3 mb-4">
+        <div class="container-fluid">
+            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
+                <i class="fas fa-bars fa-2x"></i>
+            </button>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user-circle text-primary"></i> Admin
+                </span>
+                <a href="/logout" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold text-dark mb-1">
+                <i class="fas fa-tools text-primary me-2"></i> Gestion des Équipements
+            </h1>
+            <p class="text-muted mb-0">Visualisez et gérez tous vos équipements</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus me-1"></i> Nouvel équipement
+            </button>
+            <button class="btn btn-outline-secondary" onclick="loadEquipments()">
+                <i class="fas fa-rotate me-1"></i> Refresh
+            </button>
+            <button class="btn btn-outline-info" onclick="loadRoots()">
+                <i class="fas fa-sitemap me-1"></i> Racines
+            </button>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('mainContent').classList.toggle('expanded');
-            document.getElementById('logo-text').style.display = 
-                document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white"><i class="fas fa-tools"></i></div>
+                <h3 class="text-primary mb-1" id="totalEquipments">0</h3>
+                <p class="text-muted mb-0">Total équipements</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-success text-white"><i class="fas fa-play-circle"></i></div>
+                <h3 class="text-success mb-1" id="equipmentsActifs">0</h3>
+                <p class="text-muted mb-0">En service</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning text-white"><i class="fas fa-wrench"></i></div>
+                <h3 class="text-warning mb-1" id="equipmentsMaintenance">0</h3>
+                <p class="text-muted mb-0">En maintenance</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger text-white"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 class="text-danger mb-1" id="equipmentsInactive">0</h3>
+                <p class="text-muted mb-0">Inactifs</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-box p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Recherche</label>
+                <input type="text" id="searchKeyword" class="form-control" placeholder="Code, description...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="ACTIF">ACTIF</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                    <option value="HS">HS</option>
+                    <option value="ARCHIVED">ARCHIVED</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <input type="text" id="typeFilter" class="form-control" placeholder="MOTOR, POMPE...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
+                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Localisation</th>
+                    <th>Statut</th>
+                    <th>Actif</th>
+                    <th>Parent ID</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="equipementsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Détail de l'équipement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailBody"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="equipementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content" id="equipementForm">
+            <div class="modal-header">
+                <h5 class="modal-title" id="equipementModalTitle">Nouvel équipement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="equipementId">
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Code</label>
+                        <input type="text" id="code" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Description</label>
+                        <input type="text" id="description" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <input type="text" id="type" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Marque</label>
+                        <input type="text" id="marque" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Modèle</label>
+                        <input type="text" id="modele" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Numéro de série</label>
+                        <input type="text" id="numeroSerie" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Localisation</label>
+                        <input type="text" id="localisation" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Statut</label>
+                        <select id="statut" class="form-select">
+                            <option value="">Sélectionner</option>
+                            <option value="ACTIF">ACTIF</option>
+                            <option value="MAINTENANCE">MAINTENANCE</option>
+                            <option value="HS">HS</option>
+                            <option value="ARCHIVED">ARCHIVED</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Actif</label>
+                        <select id="actif" class="form-select">
+                            <option value="true">Oui</option>
+                            <option value="false">Non</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Criticité</label>
+                        <input type="text" id="criticite" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date installation</label>
+                        <input type="date" id="dateInstallation" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date mise en service</label>
+                        <input type="date" id="dateMiseEnService" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Parent ID</label>
+                        <input type="number" id="parentId" class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Commentaire</label>
+                        <textarea id="commentaire" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger mt-3 d-none" id="formError"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_URL = '/api/equipements';
+
+    const detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+    const equipementModal = new bootstrap.Modal(document.getElementById('equipementModal'));
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await refreshPage();
+
+        document.getElementById('equipementForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveEquipement();
+        });
+    });
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+        document.getElementById('mainContent').classList.toggle('expanded');
+        document.getElementById('logo-text').style.display =
+            document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
+    }
+
+    async function refreshPage() {
+        try {
+            await loadStats();
+            await loadEquipments();
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors du chargement des équipements: " + err.message);
+        }
+    }
+
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        const rawText = await response.text();
+
+        if (!response.ok) {
+            let message = rawText;
+            try {
+                const err = JSON.parse(rawText);
+                message = err.message || err.error || rawText;
+            } catch (_) {}
+            throw new Error(message);
         }
 
-        // Auto-hide sidebar on mobile
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.add('collapsed');
-            document.getElementById('mainContent').classList.add('expanded');
+        if (!rawText) return null;
+
+        if (contentType.includes('application/json')) {
+            return JSON.parse(rawText);
         }
-    </script>
+
+        return rawText;
+    }
+
+    async function loadStats() {
+        const data = await fetchJson(API_URL);
+        const equipments = Array.isArray(data) ? data : [];
+
+        document.getElementById('totalEquipments').textContent = equipments.length;
+        document.getElementById('equipmentsActifs').textContent =
+            equipments.filter(e => (e.statut || '').toUpperCase() === 'ACTIF').length;
+        document.getElementById('equipmentsMaintenance').textContent =
+            equipments.filter(e => (e.statut || '').toUpperCase() === 'MAINTENANCE').length;
+        document.getElementById('equipmentsInactive').textContent =
+            equipments.filter(e => e.actif === false || (e.statut || '').toUpperCase() === 'ARCHIVED').length;
+    }
+
+    async function loadEquipments() {
+        const data = await fetchJson(API_URL);
+        renderTable(data);
+    }
+
+    async function loadRoots() {
+        const data = await fetchJson(`${API_URL}/roots`);
+        renderTable(data);
+    }
+
+    async function applyFilters() {
+        const keyword = document.getElementById('searchKeyword').value.trim();
+        const status = document.getElementById('statusFilter').value.trim();
+        const type = document.getElementById('typeFilter').value.trim();
+
+        let data;
+        if (keyword) {
+            data = await fetchJson(`${API_URL}/search?keyword=${encodeURIComponent(keyword)}`);
+        } else if (status) {
+            data = await fetchJson(`${API_URL}/statut/${encodeURIComponent(status)}`);
+        } else if (type) {
+            data = await fetchJson(`${API_URL}/type/${encodeURIComponent(type)}`);
+        } else {
+            data = await fetchJson(API_URL);
+        }
+
+        renderTable(data);
+    }
+
+    function resetFilters() {
+        document.getElementById('searchKeyword').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('typeFilter').value = '';
+        loadEquipments();
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('equipementsTableBody');
+
+        if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <i class="fas fa-tools fa-3x mb-3"></i>
+                        <h5>Aucun équipement enregistré</h5>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = data.map(e => `
+            <tr>
+                <td><strong>${e.id ?? ''}</strong></td>
+                <td><strong>${escapeHtml(e.code)}</strong></td>
+                <td>${escapeHtml(e.description)}</td>
+                <td><span class="badge bg-secondary">${escapeHtml(e.type)}</span></td>
+                <td>${escapeHtml(e.localisation)}</td>
+                <td>${renderStatusBadge(e.statut)}</td>
+                <td>${renderActiveBadge(e.actif)}</td>
+                <td>${e.parentId ?? '—'}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary btn-action" onclick="showDetail(${e.id})" title="Détail">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-warning btn-action" onclick="openEditModal(${e.id})" title="Éditer">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-action" onclick="changeStatusPrompt(${e.id})" title="Statut">
+                            <i class="fas fa-repeat"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-action" onclick="archiveEquipement(${e.id})" title="Archiver">
+                            <i class="fas fa-box-archive"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-action" onclick="deleteEquipement(${e.id})" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderStatusBadge(status) {
+        const value = (status || '').toUpperCase();
+        let cls = 'status-actif';
+        if (value === 'MAINTENANCE') cls = 'status-maintenance';
+        if (value === 'HS' || value === 'ARCHIVED' || value === 'INACTIVE') cls = 'status-hs';
+        return `<span class="status-badge ${cls}">${escapeHtml(status || '')}</span>`;
+    }
+
+    function renderActiveBadge(actif) {
+        return actif
+            ? `<span class="active-badge active-yes">OUI</span>`
+            : `<span class="active-badge active-no">NON</span>`;
+    }
+
+    async function showDetail(id) {
+        try {
+            const e = await fetchJson(`${API_URL}/${id}/detail`);
+            document.getElementById('detailBody').innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-6"><strong>ID:</strong> ${e.id ?? ''}</div>
+                    <div class="col-md-6"><strong>Code:</strong> ${escapeHtml(e.code)}</div>
+                    <div class="col-md-6"><strong>Description:</strong> ${escapeHtml(e.description)}</div>
+                    <div class="col-md-6"><strong>Type:</strong> ${escapeHtml(e.type)}</div>
+                    <div class="col-md-6"><strong>Marque:</strong> ${escapeHtml(e.marque)}</div>
+                    <div class="col-md-6"><strong>Modèle:</strong> ${escapeHtml(e.modele)}</div>
+                    <div class="col-md-6"><strong>Numéro de série:</strong> ${escapeHtml(e.numeroSerie)}</div>
+                    <div class="col-md-6"><strong>Localisation:</strong> ${escapeHtml(e.localisation)}</div>
+                    <div class="col-md-6"><strong>Statut:</strong> ${escapeHtml(e.statut)}</div>
+                    <div class="col-md-6"><strong>Actif:</strong> ${e.actif ? 'OUI' : 'NON'}</div>
+                    <div class="col-md-6"><strong>Criticité:</strong> ${escapeHtml(e.criticite)}</div>
+                    <div class="col-md-6"><strong>Parent ID:</strong> ${e.parentId ?? '—'}</div>
+                    <div class="col-md-6"><strong>Date installation:</strong> ${formatDate(e.dateInstallation)}</div>
+                    <div class="col-md-6"><strong>Date mise en service:</strong> ${formatDate(e.dateMiseEnService)}</div>
+                    <div class="col-12"><strong>Commentaire:</strong><br>${escapeHtml(e.commentaire)}</div>
+                </div>
+            `;
+            detailModal.show();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function openCreateModal() {
+        document.getElementById('equipementModalTitle').textContent = 'Nouvel équipement';
+        document.getElementById('equipementForm').reset();
+        document.getElementById('equipementId').value = '';
+        document.getElementById('formError').classList.add('d-none');
+        equipementModal.show();
+    }
+
+    async function openEditModal(id) {
+        try {
+            const e = await fetchJson(`${API_URL}/${id}/detail`);
+            document.getElementById('equipementModalTitle').textContent = 'Éditer équipement';
+            document.getElementById('equipementId').value = e.id ?? '';
+            document.getElementById('code').value = e.code ?? '';
+            document.getElementById('description').value = e.description ?? '';
+            document.getElementById('type').value = e.type ?? '';
+            document.getElementById('marque').value = e.marque ?? '';
+            document.getElementById('modele').value = e.modele ?? '';
+            document.getElementById('numeroSerie').value = e.numeroSerie ?? '';
+            document.getElementById('localisation').value = e.localisation ?? '';
+            document.getElementById('statut').value = e.statut ?? '';
+            document.getElementById('actif').value = String(e.actif ?? true);
+            document.getElementById('criticite').value = e.criticite ?? '';
+            document.getElementById('dateInstallation').value = e.dateInstallation ?? '';
+            document.getElementById('dateMiseEnService').value = e.dateMiseEnService ?? '';
+            document.getElementById('commentaire').value = e.commentaire ?? '';
+            document.getElementById('parentId').value = e.parentId ?? '';
+            document.getElementById('formError').classList.add('d-none');
+            equipementModal.show();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function saveEquipement() {
+        const id = document.getElementById('equipementId').value;
+        const isUpdate = !!id;
+
+        const payload = isUpdate ? {
+            description: getValue('description'),
+            type: getValue('type'),
+            marque: getValue('marque'),
+            modele: getValue('modele'),
+            numeroSerie: getValue('numeroSerie'),
+            localisation: getValue('localisation'),
+            statut: getValue('statut'),
+            dateInstallation: getValue('dateInstallation') || null,
+            dateMiseEnService: getValue('dateMiseEnService') || null,
+            criticite: getValue('criticite'),
+            commentaire: getValue('commentaire'),
+            actif: document.getElementById('actif').value === 'true',
+            parentId: getNumberValue('parentId')
+        } : {
+            code: getValue('code'),
+            description: getValue('description'),
+            type: getValue('type'),
+            marque: getValue('marque'),
+            modele: getValue('modele'),
+            numeroSerie: getValue('numeroSerie'),
+            localisation: getValue('localisation'),
+            statut: getValue('statut'),
+            dateInstallation: getValue('dateInstallation') || null,
+            dateMiseEnService: getValue('dateMiseEnService') || null,
+            criticite: getValue('criticite'),
+            commentaire: getValue('commentaire'),
+            parentId: getNumberValue('parentId')
+        };
+
+        try {
+            if (!isUpdate && payload.code) {
+                const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
+                if (exists) {
+                    throw new Error('Le code existe déjà.');
+                }
+            }
+
+            const url = isUpdate ? `${API_URL}/${id}` : API_URL;
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            await fetchJson(url, {
+                method,
+                body: JSON.stringify(payload)
+            });
+
+            equipementModal.hide();
+            await refreshPage();
+        } catch (err) {
+            const box = document.getElementById('formError');
+            box.textContent = err.message;
+            box.classList.remove('d-none');
+        }
+    }
+
+    async function deleteEquipement(id) {
+        try {
+            const canDelete = await fetchJson(`${API_URL}/${id}/can-delete`);
+            if (!canDelete) {
+                alert("Cet équipement ne peut pas être supprimé car il possède des enfants, des interventions ou des préventifs.");
+                return;
+            }
+
+            if (!confirm('Confirmez-vous la suppression de cet équipement ?')) return;
+
+            await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
+            await refreshPage();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function archiveEquipement(id) {
+        try {
+            await fetchJson(`${API_URL}/${id}/archive`, { method: 'PATCH' });
+            await refreshPage();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function changeStatusPrompt(id) {
+        const newStatus = prompt('Nouveau statut : ACTIF / MAINTENANCE / HS / ARCHIVED');
+        if (!newStatus) return;
+
+        try {
+            await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, {
+                method: 'PATCH'
+            });
+            await refreshPage();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function getValue(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    function getNumberValue(id) {
+        const value = document.getElementById(id).value.trim();
+        return value ? Number(value) : null;
+    }
+
+    function formatDate(value) {
+        if (!value) return 'N/A';
+        return value;
+    }
+
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.add('collapsed');
+        document.getElementById('mainContent').classList.add('expanded');
+    }
+</script>
 </body>
 </html>
