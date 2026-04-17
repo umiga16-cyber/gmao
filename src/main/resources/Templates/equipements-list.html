@@ -1,10 +1,10 @@
 <!-- src/main/resources/templates/equipements-list.html -->
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Lista de Equipos</title>
+    <title>GMAO - Équipements</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -97,11 +97,11 @@
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
-            padding: 1px 99px;
+            padding: 1px 30px;
             font-weight: 600;
         }
         .table tbody td {
-            padding: 30px 10px;
+            padding: 20px 10px;
             vertical-align: middle;
             border-color: rgba(0,0,0,0.05);
         }
@@ -149,22 +149,22 @@
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" href="/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="/equipements-list">
-                        <i class="fas fa-tools me-2"></i>Equipos
+                        <i class="fas fa-tools me-2"></i>Équipements
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/interventions">
-                        <i class="fas fa-wrench me-2"></i>Intervenciones
+                        <i class="fas fa-wrench me-2"></i>Interventions
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/users">
-                        <i class="fas fa-users me-2"></i>Usuarios
+                        <i class="fas fa-users me-2"></i>Utilisateurs
                     </a>
                 </li>
                 <li class="nav-item">
@@ -174,7 +174,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/preventif">
-                        <i class="fas fa-calendar-check me-2"></i>Preventivo
+                        <i class="fas fa-calendar-check me-2"></i>Préventif
                     </a>
                 </li>
             </ul>
@@ -195,7 +195,7 @@
                         Admin
                     </span>
                     <a href="/logout" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Salir
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
                     </a>
                 </div>
             </div>
@@ -206,16 +206,16 @@
             <div>
                 <h1 class="fw-bold text-dark mb-1">
                     <i class="fas fa-tools text-primary me-2"></i>
-                    Gestión de Equipos
+                    Gestion des Équipements
                 </h1>
-                <p class="text-muted mb-0">Visualice y gestione todos sus equipos</p>
+                <p class="text-muted mb-0">Visualisez et gérez tous vos équipements</p>
             </div>
             <div class="d-flex gap-2">
                 <a href="/equipement/new" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>Nuevo Equipo
+                    <i class="fas fa-plus me-1"></i>Nouveau Équipement
                 </a>
                 <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
-                    <i class="fas fa-filter me-1"></i>Filtros
+                    <i class="fas fa-filter me-1"></i>Filtres
                 </button>
             </div>
         </div>
@@ -224,22 +224,12 @@
         <div class="row g-4 mb-5">
             <div class="col-xl-3 col-md-6">
                 <div class="stat-card">
-                    <div class="stat-icon bg-primary text-white">
-                        <i class="fas fa-tools"></i>
-                    </div>
-                    <h3 class="text-primary mb-1" th:text="${totalEquipments}">47</h3>
-                    <p class="text-muted mb-1">Total Equipos</p>
-                    <small class="text-success fw-bold">+2 esta semana</small>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
                     <div class="stat-icon bg-success text-white">
                         <i class="fas fa-play-circle"></i>
                     </div>
                     <h3 class="text-success mb-1" th:text="${equipmentsActifs}">35</h3>
-                    <p class="text-muted mb-1">En Servicio</p>
-                    <small class="text-success fw-bold">+1 hoy</small>
+                    <p class="text-muted mb-1">En Service</p>
+                    <small class="text-success fw-bold">+1 aujourd'hui</small>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -248,8 +238,8 @@
                         <i class="fas fa-wrench"></i>
                     </div>
                     <h3 class="text-warning mb-1" th:text="${equipmentsMaintenance}">8</h3>
-                    <p class="text-muted mb-1">En Mantenimiento</p>
-                    <small class="text-warning fw-bold">2 pendientes</small>
+                    <p class="text-muted mb-1">En Maintenance</p>
+                    <small class="text-warning fw-bold">2 en attente</small>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -258,8 +248,8 @@
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <h3 class="text-danger mb-1" th:text="${equipmentsCritiques}">4</h3>
-                    <p class="text-muted mb-1">Críticos</p>
-                    <small class="text-danger fw-bold">Requieren atención</small>
+                    <p class="text-muted mb-1">Critiques</p>
+                    <small class="text-danger fw-bold">Requièrent attention</small>
                 </div>
             </div>
         </div>
@@ -271,77 +261,15 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Código</th>
-                    <th>Descripción</th>
-                    <th>Tipo</th>
-                    <th>Marca</th>
-                    <th>Modelo</th>
-                    <th>N°Serie</th>
-                    <th>Localización</th>
-                    <th>Estado</th>
-                    <th>Activo</th>
-                    <th>Criticidad</th>
-                    <th>F.Instalación</th>
-                    <th>F.Servicio</th>
-                    <th>Comentario</th>
-                    <th>PadreID</th>
-                    <th>Acciones</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>ParentID</th>
+                    <th>Statut</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody th:if="${equipments}">
-                <tr th:each="equipment : ${equipments}">
-                    <td>
-                        <strong th:text="${equipment.id}">1</strong>
-                    </td>
-                    <td>
-                        <strong th:text="${equipment.code}">EQ-001</strong>
-                    </td>
-                    <td th:text="${equipment.description}">Motor principal de producción</td>
-                    <td>
-                        <span class="badge bg-secondary" th:text="${equipment.type}">MOTOR</span>
-                    </td>
-                    <td th:text="${equipment.marque}">Siemens</td>
-                    <td th:text="${equipment.modele}">S120</td>
-                    <td th:text="${equipment.numeroSerie}">SN123456789</td>
-                    <td>
-                        <span class="badge bg-info text-dark" th:text="${equipment.localisation}">Planta 1 - Línea A</span>
-                    </td>
-                    <td>
-                        <span class="status-badge status-actif" 
-                              th:classappend="${equipment.statut == 'ACTIF' ? 'status-actif' : 
-                                              equipment.statut == 'MAINTENANCE' ? 'status-maintenance' : 'status-hs'}"
-                              th:text="${equipment.statut}">ACTIF</span>
-                    </td>
-                    <td>
-                        <span class="badge" 
-                              th:classappend="${equipment.actif} ? 'bg-success' : 'bg-danger'"
-                              th:text="${equipment.actif} ? 'SÍ' : 'NO'">SÍ</span>
-                    </td>
-                    <td>
-                        <span class="criticality-badge criticality-${equipment.criticite?.toLowerCase()}" 
-                              th:text="${equipment.criticite}">CRITICA</span>
-                    </td>
-                    <td>
-                        <small class="text-muted" 
-                               th:text="${equipment.dateInstallation != null} ? 
-                                        ${#temporals.format(equipment.dateInstallation)} : 'N/A'">
-                            2024-01-10
-                        </small>
-                    </td>
-                    <td>
-                        <small class="text-muted" 
-                               th:text="${equipment.dateMiseEnService != null} ? 
-                                        ${#temporals.format(equipment.dateMiseEnService)} : 'N/A'">
-                            2024-01-15
-                        </small>
-                    </td>
-                    <td>
-                        <span class="text-truncate d-inline-block" style="max-width: 150px;" 
-                              th:utext="${#strings.abbreviate(equipment.commentaire ?: '', 80)}"
-                              title="Ver comentario completo">
-                            Revisión programada mensualmente
-                        </span>
-                    </td>
+                <tr th:each="equipment : ${equipments}">   
                     <td th:text="${equipment.parentId != null} ? ${equipment.parentId} : '—'">—</td>
                     <td>
                         <div class="btn-group" role="group">
@@ -365,8 +293,8 @@
                 <tr>
                     <td colspan="16" class="text-center py-5">
                         <i class="fas fa-tools fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No hay equipos registrados</h5>
-                        <a href="/equipement/new" class="btn btn-primary">Agregar Primer Equipo</a>
+                        <h5 class="text-muted">Il n'y a pas d'équipements enregistrés</h5>
+                        <a href="/equipement/new" class="btn btn-primary">Ajouter le premier équipement</a>
                     </td>
                 </tr>
             </tbody>

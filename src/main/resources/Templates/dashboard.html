@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Dashboard Principal</title>
+    <title>GMAO - Tableau de bord principal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -98,26 +98,26 @@
                 <span id="logo-text">GMAO</span>
             </h4>
             <hr class="text-white opacity-25">
-            <!-- Sidebar links directos -->
+            <!-- Liens directs de la barre latérale -->
 <ul class="nav flex-column">
     <li class="nav-item">
         <a class="nav-link active" href="/dashboard">
-            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/equipements-list">
-            <i class="fas fa-tools me-2"></i>Equipos
+            <i class="fas fa-tools me-2"></i>Équipements
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/interventions">
-            <i class="fas fa-wrench me-2"></i>Intervenciones
+            <i class="fas fa-wrench me-2"></i>Interventions
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/users">
-            <i class="fas fa-users me-2"></i>Usuarios
+            <i class="fas fa-users me-2"></i>Utilisateurs
         </a>
     </li>
     <li class="nav-item">
@@ -127,7 +127,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/preventif">
-            <i class="fas fa-calendar-check me-2"></i>Preventivo
+            <i class="fas fa-calendar-check me-2"></i>Préventif
         </a>
     </li>
 </ul>
@@ -145,10 +145,10 @@
                 <div class="navbar-nav ms-auto">
                     <span class="navbar-text me-3">
                         <i class="fas fa-user-circle text-primary"></i>
-                        Admin
+                        <span th:text="${userName}">Admin</span>
                     </span>
                     <a href="/logout" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Salir
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
                     </a>
                 </div>
             </div>
@@ -162,8 +162,8 @@
                         <i class="fas fa-tools"></i>
                     </div>
                     <h3 class="text-primary mb-1">47</h3>
-                    <p class="text-muted mb-0">Equipos Activos</p>
-                    <small class="text-success fw-bold">+2 esta semana</small>
+                    <p class="text-muted mb-0">Équipements Actifs</p>
+                    <small class="text-success fw-bold">+2 cette semaine</small>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -172,8 +172,8 @@
                         <i class="fas fa-wrench"></i>
                     </div>
                     <h3 class="text-success mb-1">12</h3>
-                    <p class="text-muted mb-0">Intervenciones</p>
-                    <small class="text-danger fw-bold">-3 pendientes</small>
+                    <p class="text-muted mb-0">Interventions</p>
+                    <small class="text-danger fw-bold">-3 en attente</small>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -182,8 +182,8 @@
                         <i class="fas fa-boxes"></i>
                     </div>
                     <h3 class="text-warning mb-1">156</h3>
-                    <p class="text-muted mb-0">Repuestos Stock</p>
-                    <small class="text-success fw-bold">+15 unidades</small>
+                    <p class="text-muted mb-0">Stock de pièces</p>
+                    <small class="text-success fw-bold">+15 unités</small>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -192,20 +192,20 @@
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <h3 class="text-info mb-1">8</h3>
-                    <p class="text-muted mb-0">Preventivos</p>
-                    <small class="text-warning fw-bold">5 próximos 7 días</small>
+                    <p class="text-muted mb-0">Préventifs</p>
+                    <small class="text-warning fw-bold">5 prochains 7 jours</small>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Activité Récente -->
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="card stat-card">
                     <div class="card-header bg-transparent border-0 pb-0">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-chart-line text-primary me-2"></i>
-                            Actividad Reciente
+                            Activité Récente
                         </h5>
                     </div>
                     <div class="card-body">
@@ -218,15 +218,15 @@
                                         </div>
                                     </div>
                                     <div class="col">
-                                        <h6 class="mb-1">Mantenimiento Motor Principal</h6>
-                                        <small class="text-muted">Equipo #EQ001 • Finalizado</small>
+                                        <h6 class="mb-1">Maintenance Moteur Principal</h6>
+                                        <small class="text-muted">Équipement #EQ001 • Terminé</small>
                                     </div>
                                     <div class="col-auto">
-                                        <span class="badge bg-success">Hoy</span>
+                                        <span class="badge bg-success">Aujourd'hui</span>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Más items... -->
+                            <!-- Plus d'éléments... -->
                         </div>
                     </div>
                 </div>
@@ -236,16 +236,16 @@
                     <div class="card-header bg-transparent border-0 pb-0">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-calendar text-warning me-2"></i>
-                            Próximos Preventivos
+                            Prochains Préventifs
                         </h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-unstyled">
                             <li class="mb-3 p-2 rounded bg-light">
                                 <small class="text-muted d-block mb-1">EQ005 - Bomba</small>
-                                <span class="badge bg-warning">Mañana</span>
+                                <span class="badge bg-warning">Demain</span>
                             </li>
-                            <!-- Más items... -->
+                            <!-- Plus d'éléments... -->
                         </ul>
                     </div>
                 </div>
