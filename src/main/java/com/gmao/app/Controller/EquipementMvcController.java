@@ -1,31 +1,46 @@
 package com.gmao.app.Controller;
 
+import java.util.Collections;
 import java.util.List;
 
-import jakarta.validation.Valid;
-
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.gmao.app.Model.User;
 import com.gmao.app.Service.EquipementService;
+import com.gmao.app.Service.UserServiceNom;
 import com.gmao.app.dto.EquipementCreateRequest;
 import com.gmao.app.dto.EquipementDetailResponse;
 import com.gmao.app.dto.EquipementResponse;
 import com.gmao.app.dto.EquipementTreeResponse;
 import com.gmao.app.dto.EquipementUpdateRequest;
-import java.util.Collections;
+
+import jakarta.validation.Valid;
+
 
 @Controller
 @RequestMapping("/equipements-list")   // Cambié de /api/equipement a /equipement para vistas web
 public class EquipementMvcController {
 
     private final EquipementService equipementService;
+    private final UserServiceNom userServiceNom;
 
-    public EquipementMvcController(EquipementService equipementService) {
+    public EquipementMvcController(EquipementService equipementService, UserServiceNom userServiceNom) {
         this.equipementService = equipementService;
+        this.userServiceNom = userServiceNom;
     }
 
     // ---------- Vistas principales ----------
@@ -34,6 +49,10 @@ public class EquipementMvcController {
         List<EquipementResponse> equipements = equipementService.getAll();
        // model.addAttribute("equipements", equipements);
        model.addAttribute("equipements", equipements != null ? equipements : Collections.emptyList());
+       UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = userDetails.getUsername();
+        User user = userServiceNom.getUserDetails(email);
+        model.addAttribute("userName", user.getNom());
         return "equipements-list";   // vista: equipements-list.html
     }
 
