@@ -98,10 +98,20 @@ public class EquipementServiceImpl implements EquipementService {
         Equipement equipement = getEquipementOrThrow(id);
         equipement.setActif(Boolean.FALSE);
 
-        if (equipement.getStatut() == null || equipement.getStatut().isBlank()) {
-            equipement.setStatut("ARCHIVED");
-        }
+      //  if (equipement.getStatut() == null || equipement.getStatut().isBlank()) {
+        //    equipement.setStatut("ARCHIVED")     
+       // };
+       equipement.setStatut("ARCHIVED");
 
+        equipementRepository.save(equipement);
+    }
+
+    @Override
+    public void unarchive(Long id) {
+        Equipement equipement = equipementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Equipement introuvable avec l'id : " + id));
+        equipement.setActif(Boolean.TRUE);
+        equipement.setStatut("ACTIF"); 
         equipementRepository.save(equipement);
     }
 

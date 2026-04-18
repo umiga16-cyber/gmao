@@ -22,6 +22,8 @@ public interface EquipementService {
 
     void archive(Long id);
 
+    void unarchive(Long id);
+
     EquipementResponse changeStatus(Long id, String statut);
 
     List<EquipementResponse> search(String keyword);

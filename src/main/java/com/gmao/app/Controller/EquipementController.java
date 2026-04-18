@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.gmao.app.Service.EquipementService;
@@ -14,15 +16,20 @@ import com.gmao.app.dto.EquipementDetailResponse;
 import com.gmao.app.dto.EquipementResponse;
 import com.gmao.app.dto.EquipementTreeResponse;
 import com.gmao.app.dto.EquipementUpdateRequest;
+import com.gmao.app.Service.UserServiceNom;
+import org.springframework.ui.Model;
+
 
 @RestController
-@RequestMapping("/api/equipement")
+@RequestMapping("/api/equipements")
 public class EquipementController {
 
     private final EquipementService equipementService;
+    private final UserServiceNom userServiceNom;
 
-    public EquipementController(EquipementService equipementService) {
+    public EquipementController(EquipementService equipementService, UserServiceNom userServiceNom) {
         this.equipementService = equipementService;
+        this.userServiceNom = userServiceNom;
     }
 
     @PostMapping
@@ -45,7 +52,11 @@ public class EquipementController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EquipementResponse>> getAll() {
+    public ResponseEntity<List<EquipementResponse>> getAll(Model model) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = userDetails.getUsername();
+        String nom = userServiceNom.getUserDetails(email).getNom();
+        model.addAttribute("userName", nom);
         List<EquipementResponse> response = equipementService.getAll();
         return ResponseEntity.ok(response);
     }
@@ -60,6 +71,12 @@ public class EquipementController {
     public ResponseEntity<Void> archive(@PathVariable Long id) {
         equipementService.archive(id);
         return ResponseEntity.noContent().build();
+    }
+    
+    @PatchMapping("/{id:\\d+}/unarchive")
+    public ResponseEntity<Void> unarchive(@PathVariable Long id) {
+        equipementService.unarchive(id);
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id:\\d+}/status")
