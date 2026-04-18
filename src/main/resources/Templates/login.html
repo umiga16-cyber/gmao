@@ -19,7 +19,7 @@
                 <div class="form-group">
                     <label><i class="fas fa-user me-2"></i> Email</label>
                     <input type="email" name="email" required 
-                           placeholder="user@gmao.com" autocomplete="email">
+                           placeholder="utilisateur@gmao.com" autocomplete="email">
                 </div>               
                 <div class="form-group">
                     <label><i class="fas fa-lock me-2"></i> Mot de passe</label>
@@ -28,10 +28,10 @@
                 </div>              
                 <button type="submit" class="login-btn">
                     <i class="fas fa-sign-in-alt me-2"></i>
-                    ACCEDER AU SYSTÈME
+                    ACCÉDER AU SYSTÈME
                 </button>
                 <div th:if="${param.error}" class="alert alert-danger">
-                    <p style="color: red;">Nom d'utilisateur ou mot de passe incorrect</p>
+                    <p style="color: red;">Email ou mot de passe incorrect</p>
                 </div>
             </form>
         </div>
