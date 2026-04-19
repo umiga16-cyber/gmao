@@ -64,6 +64,6 @@ public class UserInterv {
     }
 
     public enum Statut {
-        ACTIVE, SUSPENDU, ANNULE
+        ACTIF, SUSPENDU, ANNULE
     }
 }    

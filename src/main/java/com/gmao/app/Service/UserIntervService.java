@@ -63,7 +63,7 @@ public class UserIntervService {
     }
 
     public Long getUsersActifs() {
-        return userIntervRepo.countByStatut(UserInterv.Statut.ACTIVE);
+        return userIntervRepo.countByStatut(UserInterv.Statut.ACTIF);
     }
 
     public Long getUsersInactifs() {
