@@ -115,18 +115,23 @@ public class EquipementServiceImpl implements EquipementService {
         equipementRepository.save(equipement);
     }
 
-    @Override
-    public EquipementResponse changeStatus(Long id, String statut) {
-        if (statut == null || statut.isBlank()) {
-            throw new IllegalArgumentException("Le statut est obligatoire.");
-        }
-
-        Equipement equipement = getEquipementOrThrow(id);
-        equipement.setStatut(statut.trim());
-
-        Equipement saved = equipementRepository.save(equipement);
-        return equipementMapper.mapToResponse(saved);
+@Override
+public EquipementResponse changeStatus(Long id, String statut) {
+    if (statut == null || statut.isBlank()) {
+        throw new IllegalArgumentException("Le statut est obligatoire.");
     }
+
+    Equipement equipement = getEquipementOrThrow(id);
+
+    if (equipement.getStatut() != null && equipement.getStatut().equalsIgnoreCase("ARCHIVED")) {
+        throw new IllegalStateException("Impossible de changer le statut d’un équipement archivé.");
+    }
+
+    equipement.setStatut(statut.trim());
+
+    Equipement saved = equipementRepository.save(equipement);
+    return equipementMapper.mapToResponse(saved);
+}
 
     @Override
     @Transactional(readOnly = true)
