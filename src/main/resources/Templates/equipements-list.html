@@ -120,6 +120,11 @@
             border-radius: 40px;
             font-size: 0.75rem;
             font-weight: 600;
+            display: block;
+              overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
         }
         .btn-action {
             padding: 4px 8px;
@@ -146,12 +151,18 @@
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             padding: 8px 14px;
+            transition: all 0.2s;
         }
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
         }
-        /* Estilos para el detalle mejorado */
+        /* Estilo para campo obligatorio vacío */
+        .required-error {
+            border: 1px solid var(--danger) !important;
+            background-color: #fff5f5;
+            box-shadow: 0 0 0 1px rgba(239,68,68,0.2);
+        }
         .detail-card {
             background: #ffffff;
             border-radius: 24px;
@@ -192,6 +203,20 @@
             padding-left: 12px;
             margin-bottom: 1rem;
         }
+        /* Truncate largo texto en tabla */
+.table-cell-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Alineación perfecta de botones */
+.action-buttons {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    align-items: center;
+}
         @media (max-width: 992px) {
             .d-lg-table-cell { display: none !important; }
         }
@@ -200,6 +225,29 @@
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; }
             .table thead th, .table tbody td { padding: 6px 6px; font-size: 0.7rem; }
+        }
+
+        /* === FIX: evitar movimiento en columna Statut y Actions === */
+        .table td:nth-child(5), .table th:nth-child(5) {
+            width: 95px;
+            min-width: 95px;
+            max-width: 95px;
+        }
+        .table td:nth-child(7), .table th:nth-child(7) {
+            width: 170px;
+            min-width: 170px;
+            max-width: 170px;
+        }
+        .status-badge {
+            display: inline-block;
+            min-width: 80px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .action-buttons .btn-group {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
         }
     </style>
 </head>
@@ -320,7 +368,7 @@
         </div>
     </div>
 
-    <!-- Tabla SIN columna ID y compacta -->
+
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -362,19 +410,64 @@
         <form id="equipementFormCanvas">
             <input type="hidden" id="equipementIdCanvas">
             <div class="row g-3">
-                <div class="col-md-6"><label class="form-label">Code</label><input type="text" id="codeCanvas" class="form-control" required></div>
-                <div class="col-md-6"><label class="form-label">Description</label><input type="text" id="descriptionCanvas" class="form-control" required></div>
-                <div class="col-md-6"><label class="form-label">Type</label><input type="text" id="typeCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Marque</label><input type="text" id="marqueCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Modèle</label><input type="text" id="modeleCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Numéro de série</label><input type="text" id="numeroSerieCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Localisation</label><input type="text" id="localisationCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Statut</label><select id="statutCanvas" class="form-select" required><option value="">Sélectionner</option><option value="ACTIF">ACTIF</option><option value="MAINTENANCE">MAINTENANCE</option><option value="HS">HS</option><option value="ARCHIVED">ARCHIVED</option></select></div>
-                <div class="col-md-6"><label class="form-label">Criticité</label><input type="text" id="criticiteCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Date installation</label><input type="date" id="dateInstallationCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Date mise en service</label><input type="date" id="dateMiseEnServiceCanvas" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Parent ID</label><input type="number" id="parentIdCanvas" class="form-control"></div>
-                <div class="col-12"><label class="form-label">Commentaire</label><textarea id="commentaireCanvas" class="form-control" rows="3"></textarea></div>
+                <div class="col-md-6">
+                    <label class="form-label">Code *</label>
+                    <input type="text" id="codeCanvas" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Description *</label>
+                    <input type="text" id="descriptionCanvas" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Type *</label>
+                    <input type="text" id="typeCanvas" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Marque</label>
+                    <input type="text" id="marqueCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Modèle</label>
+                    <input type="text" id="modeleCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Numéro de série</label>
+                    <input type="text" id="numeroSerieCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Localisation</label>
+                    <input type="text" id="localisationCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Statut *</label>
+                    <select id="statutCanvas" class="form-select" required>
+                        <option value="">Sélectionner</option>
+                        <option value="ACTIF">ACTIF</option>
+                        <option value="MAINTENANCE">MAINTENANCE</option>
+                        <option value="HS">HS</option>
+                        <option value="ARCHIVED">ARCHIVED</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Criticité</label>
+                    <input type="text" id="criticiteCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Date installation</label>
+                    <input type="date" id="dateInstallationCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Date mise en service</label>
+                    <input type="date" id="dateMiseEnServiceCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Parent ID</label>
+                    <input type="number" id="parentIdCanvas" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Commentaire</label>
+                    <textarea id="commentaireCanvas" class="form-control" rows="3"></textarea>
+                </div>
             </div>
             <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
             <div class="mt-4 d-flex gap-2">
@@ -384,6 +477,7 @@
         </form>
     </div>
 </div>
+
 
 <!-- MODAL CONFIRMACIÓN ELIMINAR -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
@@ -463,10 +557,56 @@
     let pendingDeleteId = null;
     let pendingStatusId = null;
 
+    // ---- Validación en tiempo real (solo quitar el error cuando se completa) ----
+    function setupRealtimeValidation() {
+        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas', 'statutCanvas'];
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const validateField = () => {
+                    if (field.value.trim() !== '') {
+                        field.classList.remove('required-error');
+                    } else {
+                        field.classList.add('required-error');
+                    }
+                };
+                field.addEventListener('input', validateField);
+                field.addEventListener('change', validateField);
+                // Estado inicial
+                validateField();
+            }
+        });
+    }
+
+    // Aplicar clase required-error a campos vacíos (al abrir el formulario)
+    function applyRequiredErrorOnEmpty() {
+        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas', 'statutCanvas'];
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (field.value.trim() === '') {
+                    field.classList.add('required-error');
+                } else {
+                    field.classList.remove('required-error');
+                }
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         await refreshPage();
         document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
             e.preventDefault();
+            // Verificar campos obligatorios antes de enviar
+            const code = document.getElementById('codeCanvas').value.trim();
+            const description = document.getElementById('descriptionCanvas').value.trim();
+            const type = document.getElementById('typeCanvas').value.trim();
+            const statut = document.getElementById('statutCanvas').value;
+            if (!code || !description || !type || !statut) {
+                showWarning("Veuillez remplir tous les champs obligatoires (Code, Description, Type, Statut).");
+                applyRequiredErrorOnEmpty(); // resaltar los que faltan
+                return;
+            }
             await saveEquipementCanvas();
         });
         document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
@@ -486,6 +626,8 @@
                 }
             });
         });
+        // Inicializar validación en tiempo real
+        setupRealtimeValidation();
     });
 
     function showWarning(message) {
@@ -520,30 +662,22 @@
             await loadStats();
             await loadEquipments();
         } catch (err) {
-            alert("Erreur: " + err.message);
+            showWarning("Erreur: " + err.message);
         }
     }
 
-   async function loadStats() {
-    const data = await fetchJson(API_URL);
-    const equipments = Array.isArray(data) ? data : [];
-
-    const getStatus = (e) => (e.statut || '').toUpperCase();
-
-    document.getElementById('totalEquipments').textContent = equipments.length;
-
-    document.getElementById('equipmentsActifs').textContent =
-        equipments.filter(e => getStatus(e) === 'ACTIF').length;
-
-    document.getElementById('equipmentsMaintenance').textContent =
-        equipments.filter(e => getStatus(e) === 'MAINTENANCE').length;
-
-    document.getElementById('equipmentsInactive').textContent =
-        equipments.filter(e => {
+    async function loadStats() {
+        const data = await fetchJson(API_URL);
+        const equipments = Array.isArray(data) ? data : [];
+        const getStatus = (e) => (e.statut || '').toUpperCase();
+        document.getElementById('totalEquipments').textContent = equipments.length;
+        document.getElementById('equipmentsActifs').textContent = equipments.filter(e => getStatus(e) === 'ACTIF').length;
+        document.getElementById('equipmentsMaintenance').textContent = equipments.filter(e => getStatus(e) === 'MAINTENANCE').length;
+        document.getElementById('equipmentsInactive').textContent = equipments.filter(e => {
             const s = getStatus(e);
             return s === 'ARCHIVED' || s === 'HS';
         }).length;
-}
+    }
 
     async function loadEquipments() { const data = await fetchJson(API_URL); renderTable(data); }
     async function loadRoots() { const data = await fetchJson(`${API_URL}/roots`); renderTable(data); }
@@ -566,30 +700,43 @@
     }
 
     function renderTable(data) {
-        const tbody = document.getElementById('equipementsTableBody');
-        if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fas fa-tools fa-3x mb-3"></i><h5>Aucun équipement</h5></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = data.map(e => `
-            <tr>
-                <td class="fw-bold text-primary">${escapeHtml(e.code)}</td>
-                <td>${escapeHtml(e.description)}</td>
-                <td><span class="badge-type">${escapeHtml(e.type) || '—'}</span></td>
-                <td class="d-md-table-cell">${escapeHtml(e.localisation) || '—'}</td>
-                <td>${renderStatusBadge(e.statut)}</td>
-                <td class="d-lg-table-cell">${e.parentId ? `<span class="badge bg-light text-dark px-2 py-1 rounded-pill">${e.parentId}</span>` : '—'}</td>
-                <td class="text-nowrap">
-                    <button class="btn btn-sm btn-outline-primary btn-action" onclick="showDetailCanvas(${e.id})" title="Détail"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-sm btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-info btn-action" onclick="openStatusModal(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchivez dabord' : 'Changer statut'}" ><i class="fas fa-repeat"></i></button>
-                    <button class="btn btn-sm btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}"> <i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i></button>
-                    <button class="btn btn-sm btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    const tbody = document.getElementById('equipementsTableBody');
+    if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-tools fa-3x mb-3"></i><h5>Aucun équipement</h5></td></tr>`;
+        return;
     }
-
+    tbody.innerHTML = data.map(e => `
+        <tr>
+            <td class="fw-bold text-primary table-cell-truncate" style="max-width: 50px;" title="${escapeHtml(e.code)}">${escapeHtml(e.code)}</td>
+            <td class="table-cell-truncate" style="max-width: 100px;" title="${escapeHtml(e.description)}">${escapeHtml(e.description)}</td>
+            <td class="table-cell-truncate" style="max-width: 100px;"><span class="badge-type">${escapeHtml(e.type) || '—'}</span></td>
+            <td class="d-md-table-cell table-cell-truncate" style="max-width: 150px;" title="${escapeHtml(e.localisation) || '—'}">${escapeHtml(e.localisation) || '—'}</td>
+            <td class="table-cell-truncate" style="max-width: 140px;">
+                ${renderStatusBadge(e.statut)}
+            </td>
+            <td class="d-lg-table-cell">${e.parentId ? e.parentId : '—'}</td>
+            <td class="text-center action-buttons">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${e.id})" title="Détail" style="padding: 4px 6px; font-size: 0.75rem;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer" style="padding: 4px 6px; font-size: 0.75rem;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchivez dabord' : 'Changer statut'}" style="padding: 4px 6px; font-size: 0.75rem;">
+                        <i class="fas fa-repeat"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}" style="padding: 4px 6px; font-size: 0.75rem;">
+                        <i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer" style="padding: 4px 6px; font-size: 0.75rem;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
     function renderStatusBadge(status) {
         const val = (status || '').toUpperCase();
         let cls = 'status-actif';
@@ -597,8 +744,7 @@
         if (val === 'HS' || val === 'ARCHIVED') cls = 'status-hs';
         return `<span class="status-badge ${cls}">${escapeHtml(status || '')}</span>`;
     }
-  
-    // DETALL MEJORADO: diseño moderno con tarjetas e iconos
+
     async function showDetailCanvas(id) {
         try {
             const e = await fetchJson(`${API_URL}/${id}/detail`);
@@ -610,92 +756,30 @@
                     <h4 class="fw-bold">${escapeHtml(e.code)}</h4>
                     <p class="text-muted">${escapeHtml(e.description)}</p>
                 </div>
-
-                <div class="section-title">
-                    <i class="fas fa-info-circle me-2 text-primary"></i> Informations générales
-                </div>
+                <div class="section-title"><i class="fas fa-info-circle me-2 text-primary"></i> Informations générales</div>
                 <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Type</div>
-                            <div class="detail-value">${escapeHtml(e.type) || '—'}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Marque / Modèle</div>
-                            <div class="detail-value">${escapeHtml(e.marque) || '—'} ${escapeHtml(e.modele) ? '('+escapeHtml(e.modele)+')' : ''}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">N° série</div>
-                            <div class="detail-value">${escapeHtml(e.numeroSerie) || '—'}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Localisation</div>
-                            <div class="detail-value"><i class="fas fa-map-marker-alt me-1 text-primary"></i> ${escapeHtml(e.localisation) || '—'}</div>
-                        </div>
-                    </div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(e.type) || '—'}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Marque / Modèle</div><div class="detail-value">${escapeHtml(e.marque) || '—'} ${escapeHtml(e.modele) ? '('+escapeHtml(e.modele)+')' : ''}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">N° série</div><div class="detail-value">${escapeHtml(e.numeroSerie) || '—'}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Localisation</div><div class="detail-value"><i class="fas fa-map-marker-alt me-1 text-primary"></i> ${escapeHtml(e.localisation) || '—'}</div></div></div>
                 </div>
-
-                <div class="section-title">
-                    <i class="fas fa-chart-line me-2 text-primary"></i> Statut & Maintenance
-                </div>
+                <div class="section-title"><i class="fas fa-chart-line me-2 text-primary"></i> Statut & Maintenance</div>
                 <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Statut actuel</div>
-                            <div class="detail-value">${renderStatusBadge(e.statut)}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Criticité</div>
-                            <div class="detail-value">${escapeHtml(e.criticite) || '—'}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Parent ID</div>
-                            <div class="detail-value">${e.parentId ? e.parentId : '—'}</div>
-                        </div>
-                    </div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Statut actuel</div><div class="detail-value">${renderStatusBadge(e.statut)}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Criticité</div><div class="detail-value">${escapeHtml(e.criticite) || '—'}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Parent ID</div><div class="detail-value">${e.parentId ? e.parentId : '—'}</div></div></div>
                 </div>
-
-                <div class="section-title">
-                    <i class="fas fa-calendar-alt me-2 text-primary"></i> Dates clés
-                </div>
+                <div class="section-title"><i class="fas fa-calendar-alt me-2 text-primary"></i> Dates clés</div>
                 <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Date d'installation</div>
-                            <div class="detail-value">${formatDate(e.dateInstallation)}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="detail-card">
-                            <div class="detail-label">Mise en service</div>
-                            <div class="detail-value">${formatDate(e.dateMiseEnService)}</div>
-                        </div>
-                    </div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Date d'installation</div><div class="detail-value">${formatDate(e.dateInstallation)}</div></div></div>
+                    <div class="col-6"><div class="detail-card"><div class="detail-label">Mise en service</div><div class="detail-value">${formatDate(e.dateMiseEnService)}</div></div></div>
                 </div>
-
-                ${e.commentaire ? `
-                <div class="section-title">
-                    <i class="fas fa-comment-dots me-2 text-primary"></i> Commentaire
-                </div>
-                <div class="detail-card mb-3">
-                    <div class="detail-value">${escapeHtml(e.commentaire)}</div>
-                </div>
-                ` : ''}
+                ${e.commentaire ? `<div class="section-title"><i class="fas fa-comment-dots me-2 text-primary"></i> Commentaire</div><div class="detail-card mb-3"><div class="detail-value">${escapeHtml(e.commentaire)}</div></div>` : ''}
             `;
             document.getElementById('detailBodyCanvas').innerHTML = html;
             detailOffcanvas.show();
         } catch (err) {
-            alert(err.message);
+            showWarning(err.message);
         }
     }
 
@@ -704,6 +788,8 @@
         document.getElementById('equipementFormCanvas').reset();
         document.getElementById('equipementIdCanvas').value = '';
         document.getElementById('formErrorCanvas').classList.add('d-none');
+        // Aplicar clase error a campos vacíos
+        applyRequiredErrorOnEmpty();
         formOffcanvas.show();
     }
 
@@ -726,8 +812,10 @@
             document.getElementById('commentaireCanvas').value = e.commentaire ?? '';
             document.getElementById('parentIdCanvas').value = e.parentId ?? '';
             document.getElementById('formErrorCanvas').classList.add('d-none');
+            // Aplicar clase error a campos vacíos después de cargar los datos
+            applyRequiredErrorOnEmpty();
             formOffcanvas.show();
-        } catch (err) { alert(err.message); }
+        } catch (err) { showWarning(err.message); }
     }
 
     async function saveEquipementCanvas() {
@@ -770,35 +858,35 @@
             }
             await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
             await refreshPage();
-        } catch (err) { alert(err.message); }
+        } catch (err) { showWarning(err.message); }
     }
+
     async function toggleArchive(id, statut) {
-    try {
+        try {
+            if (statut === 'ARCHIVED') {
+                await fetchJson(`${API_URL}/${id}/unarchive`, { method: 'PATCH' });
+            } else {
+                await fetchJson(`${API_URL}/${id}/archive`, { method: 'PATCH' });
+            }
+            await refreshPage();
+        } catch (err) { showWarning(err.message); }
+    }
+
+    function openStatusModalWrapper(id, statut) {
         if (statut === 'ARCHIVED') {
-            // 👉 DESARCHIVAR
-            await fetchJson(`${API_URL}/${id}/unarchive`, { method: 'PATCH' });
-            
-        } else {
-            // 👉 ARCHIVAR
-            
-            await fetchJson(`${API_URL}/${id}/archive`, { method: 'PATCH' });
+            showWarning("Vous devez désarchiver l’équipement avant de changer son statut.");
+            return;
         }
-        await refreshPage();
-    } catch (err) {
-        alert(err.message);
+        pendingStatusId = id;
+        statusModal.show();
     }
-}
-    
-    function openStatusModal(id) { pendingStatusId = id; statusModal.show(); }
-    function openStatusModal(id, statut) {
-    if (statut === 'ARCHIVED') {
-        showWarning("Vous devez désarchiver l’équipement avant de changer son statut.");
-        return;
+
+    async function changeStatus(id, newStatus) {
+        try {
+            await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, { method: 'PATCH' });
+            await refreshPage();
+        } catch (err) { showWarning(err.message); }
     }
-    pendingStatusId = id;
-    statusModal.show();
-}
-    async function changeStatus(id, newStatus) { await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, { method: 'PATCH' }); await refreshPage(); }
 
     function getVal(id) { return document.getElementById(id).value.trim(); }
     function getNumberVal(id) { const v = document.getElementById(id).value.trim(); return v ? Number(v) : null; }
