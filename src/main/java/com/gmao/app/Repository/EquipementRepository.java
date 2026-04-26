@@ -31,4 +31,6 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
            or lower(e.numeroSerie) like lower(concat('%', :keyword, '%'))
     """)
     List<Equipement> search(@Param("keyword") String keyword);
+    
+    List<Equipement> findByCompanyId(Long companyId);
 }

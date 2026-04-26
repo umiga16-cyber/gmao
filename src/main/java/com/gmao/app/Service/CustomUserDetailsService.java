@@ -1,35 +1,40 @@
 package com.gmao.app.Service;
 
-import com.gmao.app.Model.User;
-import com.gmao.app.Repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.Optional;
 
+import com.gmao.app.Model.User;
+import com.gmao.app.Repository.UserRepository;
 
-@Service        
+@Service
 public class CustomUserDetailsService implements UserDetailsService {
-    
-    private static final Logger log = LoggerFactory.getLogger(CustomUserDetailsService.class);
-    
-    @Autowired
-    private UserRepository userRepository;
+
+    private final UserRepository userRepository;
+
+    public CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable : " + email));
 
-        
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        User user = userOpt.get();
-        return org.springframework.security.core.userdetails.User.builder()
-            .username(user.getEmail())
-            .password(user.getPassword())
-            .authorities("ROLE_" + user.getRole().getNom())
-            .build();
+        boolean enabled = Boolean.TRUE.equals(user.getActif());
+
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                enabled,
+                true,
+                true,
+                true,
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getNom()))
+        );
     }
-}        
+}

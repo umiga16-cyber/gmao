@@ -42,7 +42,29 @@ public class InterventionServiceImpl implements InterventionService {
         this.preventifRepository = preventifRepository;
         this.interventionMapper = interventionMapper;
     }
+    @Override
+    @Transactional(readOnly = true)
+    public List<InterventionResponse> filter(String statut, String type, String equipementKeyword) {
+        return interventionRepository.findAll()
+                .stream()
+                .filter(i -> statut == null || statut.isBlank() || 
+                        (i.getStatut() != null && i.getStatut().equalsIgnoreCase(statut)))
+                .filter(i -> type == null || type.isBlank() || 
+                        (i.getType() != null && i.getType().equalsIgnoreCase(type)))
+                .filter(i -> equipementKeyword == null || equipementKeyword.isBlank() ||
+                        (i.getEquipement() != null
+                                && i.getEquipement().getDescription() != null
+                                && i.getEquipement().getDescription().toLowerCase()
+                                   .contains(equipementKeyword.toLowerCase())))
+                .map(interventionMapper::mapToResponse)
+                .toList();
+    }
 
+    @Override
+    public boolean canBeDeleted(Long id) {
+        getInterventionOrThrow(id);
+        return true;
+    }
     @Override
     public InterventionResponse create(InterventionCreateRequest request) {
         validateCreateRequest(request);

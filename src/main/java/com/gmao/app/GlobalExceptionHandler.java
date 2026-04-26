@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,8 +21,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public Map<String, Object> handleIllegalStateException(IllegalStateException ex) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(IllegalStateException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Conflict");
+        body.put("message", ex.getMessage());
+        body.put("status", 409);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     @ExceptionHandler(RuntimeException.class)

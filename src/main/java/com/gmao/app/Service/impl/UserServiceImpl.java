@@ -19,27 +19,26 @@ import com.gmao.app.dto.UserCreateRequest;
 import com.gmao.app.dto.UserResponse;
 import com.gmao.app.dto.UserUpdateRequest;
 import com.gmao.app.mapper.UserMapper;
- 
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository appUserRepository;
+    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final DisponibiliteRepository disponibiliteRepository;
-    private final UserMapper appUserMapper;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository appUserRepository,
-                              RoleRepository roleRepository,
-                              DisponibiliteRepository disponibiliteRepository,
-                              UserMapper appUserMapper,
-                              PasswordEncoder passwordEncoder) {
-        this.appUserRepository = appUserRepository;
+    public UserServiceImpl(UserRepository userRepository,
+                           RoleRepository roleRepository,
+                           DisponibiliteRepository disponibiliteRepository,
+                           UserMapper userMapper,
+                           PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.disponibiliteRepository = disponibiliteRepository;
-        this.appUserMapper = appUserMapper;
+        this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -47,7 +46,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse create(UserCreateRequest request) {
         validateCreateRequest(request);
 
-        if (appUserRepository.existsByEmail(request.getEmail().trim())) {
+        if (userRepository.existsByEmail(request.getEmail().trim())) {
             throw new IllegalArgumentException("L'email existe déjà.");
         }
 
@@ -61,8 +60,7 @@ public class UserServiceImpl implements UserService {
         user.setStatut(request.getStatut() != null ? request.getStatut() : "ACTIVE");
         user.setActif(request.getActif() != null ? request.getActif() : Boolean.TRUE);
 
-        User saved = appUserRepository.save(user);
-        return appUserMapper.mapToResponse(saved);
+        return userMapper.mapToResponse(userRepository.save(user));
     }
 
     @Override
@@ -81,7 +79,7 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getEmail() != null) {
             String email = request.getEmail().trim();
-            if (!email.equalsIgnoreCase(user.getEmail()) && appUserRepository.existsByEmail(email)) {
+            if (!email.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(email)) {
                 throw new IllegalArgumentException("L'email existe déjà.");
             }
             user.setEmail(email);
@@ -96,22 +94,21 @@ public class UserServiceImpl implements UserService {
             user.setActif(request.getActif());
         }
 
-        User saved = appUserRepository.save(user);
-        return appUserMapper.mapToResponse(saved);
+        return userMapper.mapToResponse(userRepository.save(user));
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserResponse getById(Long id) {
-        return appUserMapper.mapToResponse(getUserOrThrow(id));
+        return userMapper.mapToResponse(getUserOrThrow(id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> getAll() {
-        return appUserRepository.findAll()
+        return userRepository.findAll()
                 .stream()
-                .map(appUserMapper::mapToResponse)
+                .map(userMapper::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -120,9 +117,9 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> findByRole(Long roleId) {
         getRoleOrThrow(roleId);
 
-        return appUserRepository.findByRoleId(roleId)
+        return userRepository.findByRoleId(roleId)
                 .stream()
-                .map(appUserMapper::mapToResponse)
+                .map(userMapper::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -133,9 +130,9 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Le statut est obligatoire.");
         }
 
-        return appUserRepository.findByStatut(statut)
+        return userRepository.findByStatut(statut)
                 .stream()
-                .map(appUserMapper::mapToResponse)
+                .map(userMapper::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -147,14 +144,14 @@ public class UserServiceImpl implements UserService {
         }
 
         List<User> users = roleId != null
-                ? appUserRepository.findByRoleId(roleId)
-                : appUserRepository.findByActifTrue();
+                ? userRepository.findByRoleId(roleId)
+                : userRepository.findByActifTrue();
 
         return users.stream()
                 .filter(u -> Boolean.TRUE.equals(u.getActif()))
                 .filter(u -> u.getStatut() == null || "ACTIVE".equalsIgnoreCase(u.getStatut()))
                 .filter(u -> isAvailable(u.getId(), date))
-                .map(appUserMapper::mapToResponse)
+                .map(userMapper::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -167,8 +164,7 @@ public class UserServiceImpl implements UserService {
         User user = getUserOrThrow(id);
         user.setStatut(statut.trim());
 
-        User saved = appUserRepository.save(user);
-        return appUserMapper.mapToResponse(saved);
+        return userMapper.mapToResponse(userRepository.save(user));
     }
 
     @Override
@@ -177,10 +173,21 @@ public class UserServiceImpl implements UserService {
         user.setActif(Boolean.FALSE);
         user.setStatut("INACTIVE");
 
-        User saved = appUserRepository.save(user);
-        return appUserMapper.mapToResponse(saved);
+        return userMapper.mapToResponse(userRepository.save(user));
     }
 
+    @Override
+    public void delete(Long id) {
+        User user = getUserOrThrow(id);
+
+        if (disponibiliteRepository.existsByUserId(id)) {
+            throw new IllegalStateException(
+                "Impossible de supprimer cet utilisateur car il possède encore des disponibilités liées. Supprimez d'abord ses disponibilités ou archivez-le."
+            );
+        }
+
+        userRepository.delete(user);
+    }
     private boolean isAvailable(Long userId, LocalDate date) {
         return disponibiliteRepository.findByUserIdAndDate(userId, date)
                 .map(Disponibilite::getDisponible)
@@ -188,7 +195,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private User getUserOrThrow(Long id) {
-        return appUserRepository.findById(id)
+        return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec l'id : " + id));
     }
 

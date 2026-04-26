@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gmao.app.Model.Company;
 import com.gmao.app.Model.Equipement;
+import com.gmao.app.Repository.CompanyRepository;
 import com.gmao.app.Repository.EquipementRepository;
 import com.gmao.app.Service.EquipementService;
 import com.gmao.app.dto.EquipementCreateRequest;
@@ -23,11 +25,13 @@ public class EquipementServiceImpl implements EquipementService {
 
     private final EquipementRepository equipementRepository;
     private final EquipementMapper equipementMapper;
-
+    private final CompanyRepository companyRepository;
+    
     public EquipementServiceImpl(EquipementRepository equipementRepository,
-                                 EquipementMapper equipementMapper) {
+                                 EquipementMapper equipementMapper ,CompanyRepository companyRepository) {
         this.equipementRepository = equipementRepository;
         this.equipementMapper = equipementMapper;
+        this.companyRepository=companyRepository;
     }
 
     @Override
@@ -42,7 +46,11 @@ public class EquipementServiceImpl implements EquipementService {
             validateParentRelation(equipement, parent);
             equipement.setParent(parent);
         }
-
+        if (request.getCompanyId() != null) {
+            Company company = companyRepository.findById(request.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
+            equipement.setCompany(company);
+        }
         Equipement saved = equipementRepository.save(equipement);
         return equipementMapper.mapToResponse(saved);
     }
@@ -61,9 +69,22 @@ public class EquipementServiceImpl implements EquipementService {
         } else {
             equipement.setParent(null);
         }
-
+        if (request.getCompanyId() != null) {
+            Company company = companyRepository.findById(request.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
+            equipement.setCompany(company);
+        }
         Equipement saved = equipementRepository.save(equipement);
         return equipementMapper.mapToResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EquipementResponse> findByCompany(Long companyId) {
+        return equipementRepository.findByCompanyId(companyId)
+                .stream()
+                .map(equipementMapper::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override

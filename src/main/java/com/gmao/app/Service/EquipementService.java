@@ -23,6 +23,7 @@ public interface EquipementService {
     void archive(Long id);
 
     void unarchive(Long id);
+    List<EquipementResponse> findByCompany(Long companyId);
 
     EquipementResponse changeStatus(Long id, String statut);
 

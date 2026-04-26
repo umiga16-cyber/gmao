@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,15 +102,6 @@
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
         }
-        .table th:nth-child(1), .table td:nth-child(1) { width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .table th:nth-child(2), .table td:nth-child(2) { width: auto; white-space: normal; word-break: break-word; }
-        .table th:nth-child(3), .table td:nth-child(3) {
-            width: 120px;
-            min-width: 120px;
-            max-width: 120px;
-        }
-        .table th:nth-child(4), .table td:nth-child(4) { width: 170px; white-space: nowrap; }
-        
         .status-badge {
             display: inline-block;
             width: 100%;
@@ -124,17 +115,21 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        
+        .company-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
         @media (max-width: 768px) {
-            .table th:nth-child(1), .table td:nth-child(1) { width: 100px; }
-            .table th:nth-child(4), .table td:nth-child(4) { width: 140px; }
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; }
             .table thead th, .table tbody td { padding: 6px 6px; font-size: 0.7rem; }
-            .table th:nth-child(3), .table td:nth-child(3) { width: 90px; min-width: 90px; max-width: 90px; }
             .status-badge { min-width: 80px; font-size: 0.7rem; }
         }
-        
         .status-actif { background: #dcfce7; color: #166534; }
         .status-maintenance { background: #fef3c7; color: #92400e; }
         .status-hs { background: #fee2e2; color: #991b1b; }
@@ -242,6 +237,7 @@
         <ul class="nav flex-column">
             <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link active" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
+            <li class="nav-item"><a class="nav-link" href="/company-list"><i class="fas fa-building me-2"></i>Sociétés</a></li>
             <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
             <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
             <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
@@ -288,7 +284,6 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
@@ -313,19 +308,18 @@
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="stat-icon bg-danger text-white"><i class="fas fa-exclamation-triangle"></i></div>
-                <h3 class="text-danger mb-1" id="equipmentsInactive">0</h3>
-                <p class="text-muted mb-0">Inactifs / Archivés</p>
+                <div class="stat-icon bg-info text-white"><i class="fas fa-building"></i></div>
+                <h3 class="text-info mb-1" id="equipmentsWithCompany">0</h3>
+                <p class="text-muted mb-0">Liés à une société</p>
             </div>
         </div>
     </div>
 
-    <!-- Filtros -->
     <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Recherche</label>
-                <input type="text" id="searchKeyword" class="form-control" placeholder="Code, description">
+                <input type="text" id="searchKeyword" class="form-control" placeholder="Code, description, société">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Statut</label>
@@ -338,8 +332,10 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Type</label>
-                <input type="text" id="typeFilter" class="form-control" placeholder="Filtrer par type">
+                <label class="form-label">Société</label>
+                <select id="companyFilter" class="form-select">
+                    <option value="">Toutes</option>
+                </select>
             </div>
             <div class="col-md-2 d-flex align-items-end gap-2">
                 <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
@@ -354,7 +350,8 @@
                 <thead>
                 <tr>
                     <th>Code</th>
-                    <th>Description</th> 
+                    <th>Description</th>
+                    <th>Société</th>
                     <th>Statut</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -365,7 +362,6 @@
     </div>
 </div>
 
-<!-- Offcanvas Détail -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 500px;">
     <div class="offcanvas-header border-0 pb-0">
         <h5 class="offcanvas-title fw-bold">
@@ -376,7 +372,6 @@
     <div class="offcanvas-body pt-0" id="detailBodyCanvas"></div>
 </div>
 
-<!-- Offcanvas Formulaire -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 580px;">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouvel équipement</h5>
@@ -393,6 +388,12 @@
                 <div class="col-md-6">
                     <label class="form-label">Description *</label>
                     <input type="text" id="descriptionCanvas" class="form-control" required maxlength="200">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Société</label>
+                    <select id="companyIdCanvas" class="form-select">
+                        <option value="">Sélectionner</option>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Type *</label>
@@ -459,7 +460,6 @@
     </div>
 </div>
 
-<!-- Modales -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -470,7 +470,6 @@
             <div class="modal-body p-4">
                 <p>Êtes-vous sûr de vouloir supprimer cet équipement ?</p>
                 <p class="text-muted small">Cette action est irréversible.</p>
-                <input type="hidden" id="deleteEquipmentId">
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -495,7 +494,6 @@
                     <button class="btn btn-outline-danger status-option-btn" data-status="HS"><i class="fas fa-exclamation-triangle me-2"></i> HS</button>
                     <button class="btn btn-outline-secondary status-option-btn" data-status="ARCHIVED"><i class="fas fa-archive me-2"></i> ARCHIVED</button>
                 </div>
-                <input type="hidden" id="statusEquipmentId">
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -520,386 +518,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const API_URL = '/api/equipements';
-
-    const detailOffcanvas = new bootstrap.Offcanvas(document.getElementById('detailOffcanvas'));
-    const formOffcanvas = new bootstrap.Offcanvas(document.getElementById('formOffcanvas'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-
-    let pendingDeleteId = null;
-    let pendingStatusId = null;
-
-    function truncateText(text, maxLen) {
-        if (!text) return '—';
-        if (text.length <= maxLen) return text;
-        return text.substring(0, maxLen) + '…';
-    }
-
-    function validateFieldLengths() {
-        const fields = [
-            { id: 'codeCanvas', max: 50, name: 'Code' },
-            { id: 'descriptionCanvas', max: 200, name: 'Description' },
-            { id: 'typeCanvas', max: 50, name: 'Type' },
-            { id: 'marqueCanvas', max: 50, name: 'Marque' },
-            { id: 'modeleCanvas', max: 50, name: 'Modèle' },
-            { id: 'numeroSerieCanvas', max: 50, name: 'Numéro de série' },
-            { id: 'localisationCanvas', max: 100, name: 'Localisation' },
-            { id: 'commentaireCanvas', max: 500, name: 'Commentaire' }
-        ];
-        for (let field of fields) {
-            const element = document.getElementById(field.id);
-            if (element && element.value && element.value.length > field.max) {
-                showWarning(`Le champ "${field.name}" dépasse la longueur maximale autorisée (${field.max} caractères).`);
-                element.focus();
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function setupRealtimeValidation() {
-        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas', 'statutCanvas'];
-        requiredFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                const validateField = () => {
-                    if (field.value.trim() !== '') {
-                        field.classList.remove('required-error');
-                    } else {
-                        field.classList.add('required-error');
-                    }
-                };
-                field.addEventListener('input', validateField);
-                field.addEventListener('change', validateField);
-                validateField();
-            }
-        });
-    }
-
-    function applyRequiredErrorOnEmpty() {
-        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas', 'statutCanvas'];
-        requiredFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                if (field.value.trim() === '') {
-                    field.classList.add('required-error');
-                } else {
-                    field.classList.remove('required-error');
-                }
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        await refreshPage();
-        document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const code = document.getElementById('codeCanvas').value.trim();
-            const description = document.getElementById('descriptionCanvas').value.trim();
-            const type = document.getElementById('typeCanvas').value.trim();
-            const statut = document.getElementById('statutCanvas').value;
-            if (!code || !description || !type || !statut) {
-                showWarning("Veuillez remplir tous les champs obligatoires (Code, Description, Type, Statut).");
-                applyRequiredErrorOnEmpty();
-                return;
-            }
-            if (!validateFieldLengths()) return;
-            await saveEquipementCanvas();
-        });
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (pendingDeleteId !== null) {
-                await executeDelete(pendingDeleteId);
-                deleteModal.hide();
-                pendingDeleteId = null;
-            }
-        });
-        document.querySelectorAll('.status-option-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const newStatus = btn.getAttribute('data-status');
-                if (pendingStatusId && newStatus) {
-                    await changeStatus(pendingStatusId, newStatus);
-                    statusModal.hide();
-                    pendingStatusId = null;
-                }
-            });
-        });
-        setupRealtimeValidation();
-    });
-
-    function showWarning(message) {
-        document.getElementById('warningMessage').textContent = message;
-        warningModal.show();
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('collapsed');
-        document.getElementById('mainContent').classList.toggle('expanded');
-        const logo = document.getElementById('logo-text');
-        if (logo) logo.style.display = document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
-    }
-
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options
-        });
-        const rawText = await response.text();
-        if (!response.ok) {
-            let message = rawText;
-            try { const err = JSON.parse(rawText); message = err.message || err.error || rawText; } catch (_) {}
-            throw new Error(message);
-        }
-        if (!rawText) return null;
-        try { return JSON.parse(rawText); } catch (_) { return rawText; }
-    }
-
-    async function refreshPage() {
-        try {
-            await loadStats();
-            await loadEquipments();
-        } catch (err) {
-            showWarning("Erreur: " + err.message);
-        }
-    }
-
-    async function loadStats() {
-        const data = await fetchJson(API_URL);
-        const equipments = Array.isArray(data) ? data : [];
-        const getStatus = (e) => (e.statut || '').toUpperCase();
-        document.getElementById('totalEquipments').textContent = equipments.length;
-        document.getElementById('equipmentsActifs').textContent = equipments.filter(e => getStatus(e) === 'ACTIF').length;
-        document.getElementById('equipmentsMaintenance').textContent = equipments.filter(e => getStatus(e) === 'MAINTENANCE').length;
-        document.getElementById('equipmentsInactive').textContent = equipments.filter(e => {
-            const s = getStatus(e);
-            return s === 'ARCHIVED' || s === 'HS';
-        }).length;
-    }
-
-    async function loadEquipments() { const data = await fetchJson(API_URL); renderTable(data); }
-    async function loadRoots() { const data = await fetchJson(`${API_URL}/roots`); renderTable(data); }
-    async function applyFilters() {
-        const kw = document.getElementById('searchKeyword').value.trim();
-        const st = document.getElementById('statusFilter').value.trim();
-        const tp = document.getElementById('typeFilter').value.trim();
-        let data;
-        if (kw) data = await fetchJson(`${API_URL}/search?keyword=${encodeURIComponent(kw)}`);
-        else if (st) data = await fetchJson(`${API_URL}/statut/${encodeURIComponent(st)}`);
-        else if (tp) data = await fetchJson(`${API_URL}/type/${encodeURIComponent(tp)}`);
-        else data = await fetchJson(API_URL);
-        renderTable(data);
-    }
-    function resetFilters() {
-        document.getElementById('searchKeyword').value = '';
-        document.getElementById('statusFilter').value = '';
-        document.getElementById('typeFilter').value = '';
-        loadEquipments();
-    }
-
-    function renderTable(data) {
-        const tbody = document.getElementById('equipementsTableBody');
-        if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="empty-state"><i class="fas fa-tools fa-3x mb-3"></i><h5>Aucun équipement</h5></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = data.map(e => {
-            const codeFull = escapeHtml(e.code);
-            const descFull = escapeHtml(e.description);
-            const codeTrunc = truncateText(codeFull, 40);
-            const descTrunc = truncateText(descFull, 80);
-            return `
-                <tr>
-                    <td title="${codeFull}">${codeTrunc}</td>
-                    <td title="${descFull}">${descTrunc}</td>
-                    <td>${renderStatusBadge(e.statut)}</td>
-                    <td class="text-center action-buttons">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${e.id})" title="Détail" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchivez dabord' : 'Changer statut'}" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-repeat"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    function renderStatusBadge(status) {
-        const val = (status || '').toUpperCase();
-        let cls = 'status-actif';
-        if (val === 'MAINTENANCE') cls = 'status-maintenance';
-        if (val === 'HS' || val === 'ARCHIVED') cls = 'status-hs';
-        return `<span class="status-badge ${cls}">${escapeHtml(status || '')}</span>`;
-    }
-
-    async function showDetailCanvas(id) {
-        try {
-            const e = await fetchJson(`${API_URL}/${id}/detail`);
-            const html = `
-                <div class="detail-header">
-                    <div class="detail-icon">
-                        <i class="fas fa-microchip fa-2x" style="color: var(--primary);"></i>
-                    </div>
-                    <h4 class="fw-bold mb-1" style="word-break: break-word;">${escapeHtml(e.code)}</h4>
-                    <p class="text-muted mb-0" style="word-break: break-word;">${escapeHtml(e.description)}</p>
-                </div>
-                <div class="section-title"><i class="fas fa-info-circle me-2 text-primary"></i> Informations générales</div>
-                <div class="row g-3 mb-4">
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(e.type) || '—'}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Marque / Modèle</div><div class="detail-value">${escapeHtml(e.marque) || '—'} ${escapeHtml(e.modele) ? '('+escapeHtml(e.modele)+')' : ''}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">N° série</div><div class="detail-value">${escapeHtml(e.numeroSerie) || '—'}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Localisation</div><div class="detail-value"><i class="fas fa-map-marker-alt me-1 text-primary"></i> ${escapeHtml(e.localisation) || '—'}</div></div></div>
-                </div>
-                <div class="section-title"><i class="fas fa-chart-line me-2 text-primary"></i> Statut & Maintenance</div>
-                <div class="row g-3 mb-4">
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Statut actuel</div><div class="detail-value">${renderStatusBadge(e.statut)}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Criticité</div><div class="detail-value">${e.criticite ? (e.criticite === 'BAJA' ? 'Baja' : e.criticite === 'MEDIA' ? 'Media' : e.criticite === 'ALTA' ? 'Alta' : escapeHtml(e.criticite)) : '—'}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Parent ID</div><div class="detail-value">${e.parentId ? e.parentId : '—'}</div></div></div>
-                </div>
-                <div class="section-title"><i class="fas fa-calendar-alt me-2 text-primary"></i> Dates clés</div>
-                <div class="row g-3 mb-4">
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Date d'installation</div><div class="detail-value">${formatDate(e.dateInstallation)}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Mise en service</div><div class="detail-value">${formatDate(e.dateMiseEnService)}</div></div></div>
-                </div>
-                ${e.commentaire ? `<div class="section-title"><i class="fas fa-comment-dots me-2 text-primary"></i> Commentaire</div><div class="detail-card mb-3"><div class="detail-value">${escapeHtml(e.commentaire)}</div></div>` : ''}
-                <hr class="my-3">
-                <div class="text-end text-muted small">
-                    <i class="fas fa-hashtag me-1"></i> ID interne : ${e.id}
-                </div>
-            `;
-            document.getElementById('detailBodyCanvas').innerHTML = html;
-            detailOffcanvas.show();
-        } catch (err) {
-            showWarning(err.message);
-        }
-    }
-
-    function openCreateOffcanvas() {
-        document.getElementById('formOffcanvasLabel').innerText = 'Nouvel équipement';
-        document.getElementById('equipementFormCanvas').reset();
-        document.getElementById('equipementIdCanvas').value = '';
-        document.getElementById('formErrorCanvas').classList.add('d-none');
-        applyRequiredErrorOnEmpty();
-        formOffcanvas.show();
-    }
-
-    async function openEditCanvas(id) {
-        try {
-            const e = await fetchJson(`${API_URL}/${id}/detail`);
-            document.getElementById('formOffcanvasLabel').innerText = 'Éditer équipement';
-            document.getElementById('equipementIdCanvas').value = e.id ?? '';
-            document.getElementById('codeCanvas').value = e.code ?? '';
-            document.getElementById('descriptionCanvas').value = e.description ?? '';
-            document.getElementById('typeCanvas').value = e.type ?? '';
-            document.getElementById('marqueCanvas').value = e.marque ?? '';
-            document.getElementById('modeleCanvas').value = e.modele ?? '';
-            document.getElementById('numeroSerieCanvas').value = e.numeroSerie ?? '';
-            document.getElementById('localisationCanvas').value = e.localisation ?? '';
-            document.getElementById('statutCanvas').value = e.statut ?? '';
-            document.getElementById('criticiteCanvas').value = e.criticite ?? '';
-            document.getElementById('dateInstallationCanvas').value = e.dateInstallation ?? '';
-            document.getElementById('dateMiseEnServiceCanvas').value = e.dateMiseEnService ?? '';
-            document.getElementById('commentaireCanvas').value = e.commentaire ?? '';
-            document.getElementById('parentIdCanvas').value = e.parentId ?? '';
-            document.getElementById('formErrorCanvas').classList.add('d-none');
-            applyRequiredErrorOnEmpty();
-            formOffcanvas.show();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    async function saveEquipementCanvas() {
-        const id = document.getElementById('equipementIdCanvas').value;
-        const isUpdate = !!id;
-        const payload = isUpdate ? {
-            description: getVal('descriptionCanvas'), type: getVal('typeCanvas'), marque: getVal('marqueCanvas'), modele: getVal('modeleCanvas'),
-            numeroSerie: getVal('numeroSerieCanvas'), localisation: getVal('localisationCanvas'), statut: getVal('statutCanvas'),
-            dateInstallation: getVal('dateInstallationCanvas') || null, dateMiseEnService: getVal('dateMiseEnServiceCanvas') || null,
-            criticite: getVal('criticiteCanvas'), commentaire: getVal('commentaireCanvas'),
-            parentId: getNumberVal('parentIdCanvas')
-        } : {
-            code: getVal('codeCanvas'), description: getVal('descriptionCanvas'), type: getVal('typeCanvas'), marque: getVal('marqueCanvas'),
-            modele: getVal('modeleCanvas'), numeroSerie: getVal('numeroSerieCanvas'), localisation: getVal('localisationCanvas'),
-            statut: getVal('statutCanvas'), dateInstallation: getVal('dateInstallationCanvas') || null, dateMiseEnService: getVal('dateMiseEnServiceCanvas') || null,
-            criticite: getVal('criticiteCanvas'), commentaire: getVal('commentaireCanvas'), parentId: getNumberVal('parentIdCanvas')
-        };
-        try {
-            if (!isUpdate && payload.code) {
-                const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
-                if (exists) throw new Error('Code déjà existant');
-            }
-            await fetchJson(isUpdate ? `${API_URL}/${id}` : API_URL, { method: isUpdate ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-            formOffcanvas.hide();
-            await refreshPage();
-        } catch (err) {
-            const errBox = document.getElementById('formErrorCanvas');
-            errBox.textContent = err.message;
-            errBox.classList.remove('d-none');
-        }
-    }
-
-    function confirmDelete(id) { pendingDeleteId = id; deleteModal.show(); }
-    async function executeDelete(id) {
-        try {
-            const can = await fetchJson(`${API_URL}/${id}/can-delete`);
-            if (!can) {
-                showWarning("Cet équipement ne peut pas être supprimé car il est lié à des éléments existants (sous-équipements, interventions ou plans préventifs).");
-                return;
-            }
-            await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
-            await refreshPage();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    async function toggleArchive(id, statut) {
-        try {
-            if (statut === 'ARCHIVED') {
-                await fetchJson(`${API_URL}/${id}/unarchive`, { method: 'PATCH' });
-            } else {
-                await fetchJson(`${API_URL}/${id}/archive`, { method: 'PATCH' });
-            }
-            await refreshPage();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    function openStatusModalWrapper(id, statut) {
-        if (statut === 'ARCHIVED') {
-            showWarning("Vous devez désarchiver l’équipement avant de changer son statut.");
-            return;
-        }
-        pendingStatusId = id;
-        statusModal.show();
-    }
-
-    async function changeStatus(id, newStatus) {
-        try {
-            await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, { method: 'PATCH' });
-            await refreshPage();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    function getVal(id) { return document.getElementById(id).value.trim(); }
-    function getNumberVal(id) { const v = document.getElementById(id).value.trim(); return v ? Number(v) : null; }
-    function formatDate(v) { return v || 'N/A'; }
-    function escapeHtml(v) { if (v == null) return ''; return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
-
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        document.getElementById('mainContent').classList.add('expanded');
-    }
-</script>
+<script src="../JS/equipement.js"></script>
 </body>
 </html>

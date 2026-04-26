@@ -11,18 +11,15 @@ import com.gmao.app.Repository.RoleRepository;
 import com.gmao.app.Service.RoleService;
 import com.gmao.app.dto.RoleCreateRequest;
 import com.gmao.app.dto.RoleResponse;
-import com.gmao.app.mapper.RoleMapper;
 
 @Service
 @Transactional
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
-    private final RoleMapper roleMapper;
 
-    public RoleServiceImpl(RoleRepository roleRepository, RoleMapper roleMapper) {
+    public RoleServiceImpl(RoleRepository roleRepository) {
         this.roleRepository = roleRepository;
-        this.roleMapper = roleMapper;
     }
 
     @Override
@@ -31,13 +28,21 @@ public class RoleServiceImpl implements RoleService {
             throw new IllegalArgumentException("Le nom du rôle est obligatoire.");
         }
 
-        String nom = request.getNom().trim();
+        String nom = request.getNom().trim().toUpperCase();
+
         if (roleRepository.existsByNom(nom)) {
-            throw new IllegalArgumentException("Le rôle existe déjà : " + nom);
+            throw new IllegalArgumentException("Ce rôle existe déjà.");
         }
 
-        Role saved = roleRepository.save(roleMapper.mapToEntity(request));
-        return roleMapper.mapToResponse(saved);
+        Role role = new Role();
+        role.setNom(nom);
+
+        Role saved = roleRepository.save(role);
+
+        RoleResponse response = new RoleResponse();
+        response.setId(saved.getId());
+        response.setNom(saved.getNom());
+        return response;
     }
 
     @Override
@@ -45,7 +50,12 @@ public class RoleServiceImpl implements RoleService {
     public List<RoleResponse> getAll() {
         return roleRepository.findAll()
                 .stream()
-                .map(roleMapper::mapToResponse)
+                .map(role -> {
+                    RoleResponse response = new RoleResponse();
+                    response.setId(role.getId());
+                    response.setNom(role.getNom());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 }

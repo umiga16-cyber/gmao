@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Gestion des Sociétés</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            height: 100vh;
+            position: fixed;
+            width: 260px;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed { width: 70px; }
+        .main-content {
+            margin-left: 260px;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+        .main-content.expanded { margin-left: 70px; }
+        .navbar-top {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white !important;
+            transform: translateX(5px);
+        }
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        .table {
+            margin-bottom: 0;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+        .table thead th {
+            background: #f8fafc;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            padding: 12px 8px;
+            white-space: nowrap;
+        }
+        .table tbody td {
+            padding: 10px 8px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .badge-demo {
+            display: inline-block;
+            min-width: 70px;
+            text-align: center;
+            box-sizing: border-box;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .demo-yes { background: #fef3c7; color: #92400e; }
+        .demo-no { background: #dcfce7; color: #166534; }
+
+        .btn-action {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            margin: 0 2px;
+        }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+        .offcanvas, .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+        }
+        .offcanvas-header, .modal-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 8px 14px;
+            transition: all 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+        }
+        .detail-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .detail-icon {
+            width: 48px;
+            height: 48px;
+            background: #f1f5f9;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin: 0 auto 1rem auto;
+        }
+        .detail-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .detail-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .detail-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #0f172a;
+            word-break: break-word;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .main-content { margin-left: 70px; }
+            .table thead th, .table tbody td { padding: 6px 6px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+    <div class="p-4 text-white">
+        <h4 class="mb-4">
+            <i class="fas fa-industry me-2"></i>
+            <span id="logo-text">GMAO</span>
+        </h4>
+        <hr class="text-white opacity-25">
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/company-list"><i class="fas fa-building me-2"></i>Sociétés</a></li>
+            <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
+            <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content" id="mainContent">
+    <nav class="navbar navbar-top p-3 mb-4">
+        <div class="container-fluid">
+            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
+                <i class="fas fa-bars fa-2x"></i>
+            </button>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user-circle text-primary"></i> Admin
+                </span>
+                <a href="/logout" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold text-dark mb-1">
+                <i class="fas fa-building text-primary me-2"></i> Gestion des Sociétés
+            </h1>
+            <p class="text-muted mb-0">Visualisez et gérez toutes les sociétés</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary" onclick="openCreateCompanyOffcanvas()">
+                <i class="fas fa-plus me-1"></i> Nouvelle société
+            </button>
+            <button class="btn btn-outline-secondary" onclick="loadCompanies()">
+                <i class="fas fa-rotate me-1"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white"><i class="fas fa-building"></i></div>
+                <h3 class="text-primary mb-1" id="totalCompanies">0</h3>
+                <p class="text-muted mb-0">Total sociétés</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-success text-white"><i class="fas fa-city"></i></div>
+                <h3 class="text-success mb-1" id="companiesWithCity">0</h3>
+                <p class="text-muted mb-0">Avec ville renseignée</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning text-white"><i class="fas fa-flask"></i></div>
+                <h3 class="text-warning mb-1" id="demoCompanies">0</h3>
+                <p class="text-muted mb-0">Sociétés démo</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-info text-white"><i class="fas fa-users"></i></div>
+                <h3 class="text-info mb-1" id="totalEmployees">0</h3>
+                <p class="text-muted mb-0">Employés cumulés</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Recherche</label>
+                <input type="text" id="searchCompanyKeyword" class="form-control" placeholder="Nom, email, ville..." oninput="renderFilteredCompanies()">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Démo</label>
+                <select id="demoFilter" class="form-select" onchange="renderFilteredCompanies()">
+                    <option value="">Tous</option>
+                    <option value="true">Démo</option>
+                    <option value="false">Réelle</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button class="btn btn-primary w-100" onclick="renderFilteredCompanies()">Filtrer</button>
+                <button class="btn btn-outline-secondary w-100" onclick="resetCompanyFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Ville</th>
+                    <th>Employés</th>
+                    <th>Démo</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="companyTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="companyDetailOffcanvas" style="width: 500px;">
+    <div class="offcanvas-header border-0 pb-0">
+        <h5 class="offcanvas-title fw-bold">
+            <i class="fas fa-building text-primary me-2"></i> Fiche société
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body pt-0" id="companyDetailBodyCanvas"></div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="companyFormOffcanvas" style="width: 580px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="companyFormOffcanvasLabel">Nouvelle société</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="companyFormCanvas">
+            <input type="hidden" id="companyIdCanvas">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nom *</label>
+                    <input type="text" id="companyNameCanvas" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="text" id="companyEmailCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Téléphone</label>
+                    <input type="text" id="companyPhoneCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Site web</label>
+                    <input type="text" id="companyWebsiteCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Adresse</label>
+                    <input type="text" id="companyAddressCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Ville</label>
+                    <input type="text" id="companyCityCanvas" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">État</label>
+                    <input type="text" id="companyStateCanvas" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Code postal</label>
+                    <input type="text" id="companyZipCodeCanvas" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Employés</label>
+                    <input type="number" id="companyEmployeesCountCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Logo URL</label>
+                    <input type="text" id="companyLogoUrlCanvas" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Démo</label>
+                    <select id="companyDemoCanvas" class="form-select">
+                        <option value="false">Non</option>
+                        <option value="true">Oui</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Langue</label>
+                    <input type="text" id="companyLanguageCanvas" class="form-control" placeholder="EN / FR">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date format</label>
+                    <input type="text" id="companyDateFormatCanvas" class="form-control" placeholder="MMDDYY">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Currency code</label>
+                    <input type="text" id="companyCurrencyCodeCanvas" class="form-control" placeholder="EUR">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Business type</label>
+                    <input type="text" id="companyBusinessTypeCanvas" class="form-control" placeholder="GENERAL_ASSET_MANAGEMENT">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Time zone</label>
+                    <input type="text" id="companyTimeZoneCanvas" class="form-control" placeholder="Europe/Paris">
+                </div>
+            </div>
+
+            <div class="alert alert-danger mt-3 d-none" id="companyFormErrorCanvas"></div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fas fa-trash-alt me-2"></i>Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Êtes-vous sûr de vouloir supprimer cette société ?</p>
+                <p class="text-muted small">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCompanyBtn">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="companyWarningModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Attention</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="companyWarningMessage"></div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../JS/company.js">
+    
+</script>
+</body>
+</html>

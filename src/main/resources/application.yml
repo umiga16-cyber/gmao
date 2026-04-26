@@ -1,19 +1,24 @@
 spring:
   application:
     name: gmao
+
   datasource:
-    url: jdbc:mysql://localhost:3306/gmao
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: ana0000YNS
+    url: jdbc:h2:file:./data/gmao;MODE=MySQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
     show-sql: true
+
   h2:
     console:
       enabled: true
+      path: /h2-console
+
   thymeleaf:
     cache: false
 

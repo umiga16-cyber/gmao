@@ -20,6 +20,10 @@ public interface InterventionService {
     List<InterventionResponse> getAll();
 
     void delete(Long id);
+    
+    List<InterventionResponse> filter(String statut, String type, String equipementKeyword);
+
+    boolean canBeDeleted(Long id);
 
     InterventionResponse changeStatus(Long id, String statut);
 

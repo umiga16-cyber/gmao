@@ -16,5 +16,5 @@ public interface InterventionRepository extends JpaRepository<Intervention, Long
 
     List<Intervention> findByPreventifId(Long preventifId);
 
-   
+    List<Intervention> findByTypeIgnoreCase(String type);
 }

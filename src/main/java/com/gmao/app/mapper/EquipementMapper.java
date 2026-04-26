@@ -58,6 +58,8 @@ public class EquipementMapper {
         response.setCode(entity.getCode());
         response.setDescription(entity.getDescription());
         response.setType(entity.getType());
+        response.setCompanyId(entity.getCompany() != null ? entity.getCompany().getId() : null);
+        response.setCompanyName(entity.getCompany() != null ? entity.getCompany().getName() : null);
         response.setStatut(entity.getStatut());
         response.setLocalisation(entity.getLocalisation());
         response.setActif(entity.getActif());
@@ -73,6 +75,8 @@ public class EquipementMapper {
         response.setType(entity.getType());
         response.setMarque(entity.getMarque());
         response.setModele(entity.getModele());
+        response.setCompanyId(entity.getCompany() != null ? entity.getCompany().getId() : null);
+        response.setCompanyName(entity.getCompany() != null ? entity.getCompany().getName() : null);
         response.setNumeroSerie(entity.getNumeroSerie());
         response.setLocalisation(entity.getLocalisation());
         response.setStatut(entity.getStatut());

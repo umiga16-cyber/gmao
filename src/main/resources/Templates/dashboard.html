@@ -1,6 +1,5 @@
-<!-- src/main/resources/templates/dashboard.html -->
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #667eea;
@@ -48,7 +48,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 0 0 20px 20px;
         }
-        .stat-card {
+        .stat-card, .panel-card {
             background: white;
             border-radius: 20px;
             padding: 30px;
@@ -57,7 +57,7 @@
             border: none;
             height: 100%;
         }
-        .stat-card:hover {
+        .stat-card:hover, .panel-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
@@ -83,184 +83,227 @@
             color: white !important;
             transform: translateX(5px);
         }
+        .chart-wrap {
+            position: relative;
+            min-height: 320px;
+        }
+        .chart-wrap.small {
+            min-height: 260px;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .list-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .mini-badge {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-planifiee { background: #dbeafe; color: #1d4ed8; }
+        .badge-encours { background: #fef3c7; color: #92400e; }
+        .badge-terminee { background: #dcfce7; color: #166534; }
+        .badge-annulee { background: #fee2e2; color: #991b1b; }
+        .badge-actif { background: #dcfce7; color: #166534; }
+        .badge-maintenance { background: #fef3c7; color: #92400e; }
+        .badge-hs { background: #fee2e2; color: #991b1b; }
+        .empty-state {
+            color: #64748b;
+            text-align: center;
+            padding: 30px 10px;
+        }
+        .loading {
+            color: #64748b;
+            text-align: center;
+            padding: 20px 10px;
+        }
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; }
+            .chart-wrap { min-height: 260px; }
+            .chart-wrap.small { min-height: 220px; }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="p-4 text-white">
-            <h4 class="mb-4">
-                <i class="fas fa-industry me-2"></i>
-                <span id="logo-text">GMAO</span>
-            </h4>
-            <hr class="text-white opacity-25">
-            <!-- Liens directs de la barre latérale -->
-<ul class="nav flex-column">
-    <li class="nav-item">
-        <a class="nav-link active" href="/dashboard">
-            <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/equipements-list">
-            <i class="fas fa-tools me-2"></i>Équipements
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/interventions">
-            <i class="fas fa-wrench me-2"></i>Interventions
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/users">
-            <i class="fas fa-users me-2"></i>Utilisateurs
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/stock">
-            <i class="fas fa-boxes me-2"></i>Stock PRs
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/preventif">
-            <i class="fas fa-calendar-check me-2"></i>Préventif
-        </a>
-    </li>
-</ul>
+<div class="sidebar" id="sidebar">
+    <div class="p-4 text-white">
+        <h4 class="mb-4">
+            <i class="fas fa-industry me-2"></i>
+            <span id="logo-text">GMAO</span>
+        </h4>
+        <hr class="text-white opacity-25">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="/dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/equipements-list">
+                    <i class="fas fa-tools me-2"></i>Équipements
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/interventions">
+                    <i class="fas fa-wrench me-2"></i>Interventions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/users">
+                    <i class="fas fa-users me-2"></i>Utilisateurs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/stock">
+                    <i class="fas fa-boxes me-2"></i>Stock PRs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/preventif">
+                    <i class="fas fa-calendar-check me-2"></i>Préventif
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content" id="mainContent">
+    <nav class="navbar navbar-top p-3 mb-4">
+        <div class="container-fluid">
+            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
+                <i class="fas fa-bars fa-2x"></i>
+            </button>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user-circle text-primary"></i> Admin
+                </span>
+                <a href="/logout" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold text-dark mb-1">
+                <i class="fas fa-chart-pie text-primary me-2"></i> Tableau de bord
+            </h1>
+            <p class="text-muted mb-0">Vue globale des données GMAO en temps réel</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-secondary" onclick="loadDashboard()">
+                <i class="fas fa-rotate me-1"></i> Refresh
+            </button>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-        <!-- Top Navbar -->
-        <nav class="navbar navbar-top p-3 mb-4">
-            <div class="container-fluid">
-                <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
-                    <i class="fas fa-bars fa-2x"></i>
-                </button>
-                <div class="navbar-nav ms-auto">
-                    <span class="navbar-text me-3">
-                        <i class="fas fa-user-circle text-primary"></i>
-                        <span th:text="${userName}">admin</span>
-                    </span>
-                    <a href="/logout" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Déconnexion
-                    </a>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white">
+                    <i class="fas fa-tools"></i>
                 </div>
+                <h3 class="text-primary mb-1" id="statEquipements">0</h3>
+                <p class="text-muted mb-0">Équipements</p>
+                <small class="text-secondary fw-bold" id="statEquipementsSub">0 actifs</small>
             </div>
-        </nav>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-success text-white">
+                    <i class="fas fa-wrench"></i>
+                </div>
+                <h3 class="text-success mb-1" id="statInterventions">0</h3>
+                <p class="text-muted mb-0">Interventions</p>
+                <small class="text-secondary fw-bold" id="statInterventionsSub">0 en cours</small>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning text-white">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 class="text-warning mb-1" id="statPreventifs">0</h3>
+                <p class="text-muted mb-0">Préventifs</p>
+                <small class="text-secondary fw-bold" id="statPreventifsSub">0 à venir</small>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-info text-white">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="text-info mb-1" id="statUsers">0</h3>
+                <p class="text-muted mb-0">Utilisateurs</p>
+                <small class="text-secondary fw-bold" id="statUsersSub">0 actifs</small>
+            </div>
+        </div>
+    </div>
 
-        <!-- Stats Cards -->
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary text-white">
-                        <i class="fas fa-tools"></i>
-                    </div>
-                    <h3 class="text-primary mb-1">47</h3>
-                    <p class="text-muted mb-0">Équipements Actifs</p>
-                    <small class="text-success fw-bold">+2 cette semaine</small>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-chart-donut text-primary me-2"></i>Interventions par statut</h5>
                 </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-success text-white">
-                        <i class="fas fa-wrench"></i>
-                    </div>
-                    <h3 class="text-success mb-1">12</h3>
-                    <p class="text-muted mb-0">Interventions</p>
-                    <small class="text-danger fw-bold">-3 en attente</small>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning text-white">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                    <h3 class="text-warning mb-1">156</h3>
-                    <p class="text-muted mb-0">Stock de pièces</p>
-                    <small class="text-success fw-bold">+15 unités</small>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-icon bg-info text-white">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <h3 class="text-info mb-1">8</h3>
-                    <p class="text-muted mb-0">Préventifs</p>
-                    <small class="text-warning fw-bold">5 prochains 7 jours</small>
+                <div class="chart-wrap small">
+                    <canvas id="interventionsStatusChart"></canvas>
                 </div>
             </div>
         </div>
-
-        <!-- Activité Récente -->
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card stat-card">
-                    <div class="card-header bg-transparent border-0 pb-0">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-chart-line text-primary me-2"></i>
-                            Activité Récente
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 border-0 py-3">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="fas fa-wrench"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h6 class="mb-1">Maintenance Moteur Principal</h6>
-                                        <small class="text-muted">Équipement #EQ001 • Terminé</small>
-                                    </div>
-                                    <div class="col-auto">
-                                        <span class="badge bg-success">Aujourd'hui</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Plus d'éléments... -->
-                        </div>
-                    </div>
+        <div class="col-lg-6">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar text-warning me-2"></i>Équipements par statut</h5>
                 </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card stat-card">
-                    <div class="card-header bg-transparent border-0 pb-0">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-calendar text-warning me-2"></i>
-                            Prochains Préventifs
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-3 p-2 rounded bg-light">
-                                <small class="text-muted d-block mb-1">EQ005 - Bomba</small>
-                                <span class="badge bg-warning">Demain</span>
-                            </li>
-                            <!-- Plus d'éléments... -->
-                        </ul>
-                    </div>
+                <div class="chart-wrap small">
+                    <canvas id="equipementsStatusChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('mainContent').classList.toggle('expanded');
-            document.getElementById('logo-text').style.display = 
-                document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
-        }
-    </script>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-chart-line text-success me-2"></i>Interventions par type</h5>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="interventionsTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="panel-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-bolt text-warning me-2"></i>Activité récente</h5>
+                </div>
+                <div id="recentActivity" class="loading">Chargement...</div>
+            </div>
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-calendar text-info me-2"></i>Préventifs à venir</h5>
+                </div>
+                <div id="upcomingPreventifs" class="loading">Chargement...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../JS/dashboard.js">
+    
+</script>
 </body>
 </html>

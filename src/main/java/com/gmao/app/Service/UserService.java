@@ -1,5 +1,4 @@
 package com.gmao.app.Service;
- 
 
 import java.time.LocalDate;
 import java.util.List;
@@ -10,9 +9,9 @@ import com.gmao.app.dto.UserUpdateRequest;
 
 public interface UserService {
 
-     UserResponse create(UserCreateRequest request);
+    UserResponse create(UserCreateRequest request);
 
-     UserResponse update(Long id, UserUpdateRequest request);
+    UserResponse update(Long id, UserUpdateRequest request);
 
     UserResponse getById(Long id);
 
@@ -27,4 +26,6 @@ public interface UserService {
     UserResponse changeStatus(Long id, String statut);
 
     UserResponse archive(Long id);
+
+    void delete(Long id);
 }

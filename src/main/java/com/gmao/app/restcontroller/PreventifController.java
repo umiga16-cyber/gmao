@@ -1,4 +1,4 @@
-package com.gmao.app.Controller;
+package com.gmao.app.restcontroller;
 
 import java.time.LocalDate;
 import java.util.List;

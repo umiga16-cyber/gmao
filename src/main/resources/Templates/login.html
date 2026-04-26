@@ -1,6 +1,5 @@
-<!-- src/main/resources/templates/login.html -->
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,27 +13,45 @@
             <div class="logo">
                 <h1><i class="fas fa-industry"></i> GMAO</h1>
                 <p>Gestion de la Maintenance Assistée par Ordinateur</p>
-            </div>          
+            </div>
+
             <form method="post" action="/login">
                 <div class="form-group">
                     <label><i class="fas fa-user me-2"></i> Email</label>
-                    <input type="email" name="email" required 
-                           placeholder="utilisateur@gmao.com" autocomplete="email">
-                </div>               
+                    <input type="email" name="email" required placeholder="utilisateur@gmao.com" autocomplete="email">
+                </div>
+
                 <div class="form-group">
                     <label><i class="fas fa-lock me-2"></i> Mot de passe</label>
-                    <input type="password" name="password" required 
-                           placeholder="mot de passe">
-                </div>              
+                    <input type="password" name="password" required placeholder="mot de passe">
+                </div>
+
                 <button type="submit" class="login-btn">
                     <i class="fas fa-sign-in-alt me-2"></i>
                     ACCÉDER AU SYSTÈME
                 </button>
-                <div th:if="${param.error}" class="alert alert-danger">
-                    <p style="color: red;">Email ou mot de passe incorrect</p>
+
+                <div id="errorBox" class="alert alert-danger mt-3" style="display:none;">
+                    <p style="color:red; margin:0;">Email ou mot de passe incorrect</p>
+                </div>
+
+                <div id="logoutBox" class="alert alert-success mt-3" style="display:none;">
+                    <p style="color:green; margin:0;">Déconnexion réussie</p>
                 </div>
             </form>
         </div>
     </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.get('error') === 'true') {
+            document.getElementById('errorBox').style.display = 'block';
+        }
+
+        if (params.get('logout') === 'true') {
+            document.getElementById('logoutBox').style.display = 'block';
+        }
+    </script>
 </body>
 </html>

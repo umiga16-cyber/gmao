@@ -1,4 +1,4 @@
-package com.gmao.app.Controller;
+package com.gmao.app.restcontroller;
 
 import java.util.List;
 
@@ -46,8 +46,18 @@ public class InterventionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InterventionResponse>> getAll() {
-        return ResponseEntity.ok(interventionService.getAll());
+    public ResponseEntity<List<InterventionResponse>> getAll(
+            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String equipement) {
+
+        if ((statut == null || statut.isBlank())
+                && (type == null || type.isBlank())
+                && (equipement == null || equipement.isBlank())) {
+            return ResponseEntity.ok(interventionService.getAll());
+        }
+
+        return ResponseEntity.ok(interventionService.filter(statut, type, equipement));
     }
 
     @DeleteMapping("/{id:\\d+}")
@@ -60,6 +70,11 @@ public class InterventionController {
     public ResponseEntity<InterventionResponse> changeStatus(@PathVariable Long id,
                                                              @RequestParam String statut) {
         return ResponseEntity.ok(interventionService.changeStatus(id, statut));
+    }
+
+    @GetMapping("/{id:\\d+}/can-delete")
+    public ResponseEntity<Boolean> canDelete(@PathVariable Long id) {
+        return ResponseEntity.ok(interventionService.canBeDeleted(id));
     }
 
     @GetMapping("/search")
@@ -75,6 +90,11 @@ public class InterventionController {
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<InterventionResponse>> findByStatut(@PathVariable String statut) {
         return ResponseEntity.ok(interventionService.findByStatut(statut));
+    }
+
+    @GetMapping("/type/{type}")
+    public ResponseEntity<List<InterventionResponse>> findByType(@PathVariable String type) {
+        return ResponseEntity.ok(interventionService.filter(null, type, null));
     }
 
     @GetMapping("/created-by/{createdById:\\d+}")

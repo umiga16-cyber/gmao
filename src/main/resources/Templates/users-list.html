@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,23 +48,8 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
             border: none;
             height: 100%;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 15px;
         }
         .nav-link {
             color: rgba(255,255,255,0.9) !important;
@@ -78,6 +63,16 @@
             color: white !important;
             transform: translateX(5px);
         }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
         .table-container {
             background: white;
             border-radius: 20px;
@@ -87,7 +82,6 @@
         .table {
             margin-bottom: 0;
             font-size: 0.85rem;
-            table-layout: fixed;
             width: 100%;
         }
         .table thead th {
@@ -102,51 +96,24 @@
             padding: 10px 8px;
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
-        /* Anchos de columna fijos (7 columnas) */
-        .table th:nth-child(1), .table td:nth-child(1) { width: 60px; }   /* Avatar */
-        .table th:nth-child(2), .table td:nth-child(2) { width: 150px; }  /* Nom */
-        .table th:nth-child(3), .table td:nth-child(3) { width: 180px; }  /* Email */
-        .table th:nth-child(4), .table td:nth-child(4) { width: 110px; }  /* Rôle */
-        .table th:nth-child(5), .table td:nth-child(5) { width: 100px; }  /* Statut */
-        .table th:nth-child(6), .table td:nth-child(6) { width: 110px; }  /* Dernière connexion */
-        .table th:nth-child(7), .table td:nth-child(7) { width: 100px; }  /* Créé le */
-        .table th:nth-child(8), .table td:nth-child(8) { width: 140px; }  /* Actions */
-
-        @media (max-width: 992px) {
-            .table th:nth-child(6), .table td:nth-child(6) { display: none; }
-            .table th:nth-child(7), .table td:nth-child(7) { display: none; }
-            .table th:nth-child(8), .table td:nth-child(8) { width: 160px; }
-        }
-        @media (max-width: 768px) {
-            .table th:nth-child(1), .table td:nth-child(1) { width: 50px; }
-            .table th:nth-child(2), .table td:nth-child(2) { width: 120px; }
-            .table th:nth-child(3), .table td:nth-child(3) { width: 140px; }
-            .sidebar { width: 70px; }
-            .main-content { margin-left: 70px; }
-            .table thead th, .table tbody td { padding: 6px 6px; font-size: 0.7rem; }
-        }
-
         .role-badge, .status-badge {
             display: inline-block;
-            width: 100%;
+            min-width: 100px;
             text-align: center;
-            white-space: nowrap;
             padding: 5px 10px;
             border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 600;
         }
         .role-ADMIN { background: #667eea; color: white; }
-        .role-TECHNICIEN { background: #10b981; color: white; }
-        .role-SUPERVISEUR { background: #f59e0b; color: white; }
-        .role-OPERATEUR { background: #3b82f6; color: white; }
-        .status-ACTIF { background: #10b981; color: white; }
-        .status-INACTIF { background: #ef4444; color: white; }
-        .status-SUSPENDU { background: #f59e0b; color: white; }
+        .role-TECHNICIAN { background: #10b981; color: white; }
+        .role-SUPERVISOR { background: #f59e0b; color: white; }
+        .role-OPERATOR { background: #3b82f6; color: white; }
+
+        .status-ACTIVE { background: #10b981; color: white; }
+        .status-INACTIVE { background: #ef4444; color: white; }
+        .status-SUSPENDED { background: #f59e0b; color: white; }
 
         .avatar {
             width: 40px;
@@ -192,38 +159,16 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
         }
-        .required-error {
-            border: 1px solid var(--danger) !important;
-            background-color: #fff5f5;
-            box-shadow: 0 0 0 1px rgba(239,68,68,0.2);
-        }
-        .detail-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        .detail-icon {
-            width: 48px;
-            height: 48px;
-            background: #f1f5f9;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            color: var(--primary);
-            margin: 0 auto 1rem auto;
-        }
         .detail-card {
             background: #ffffff;
-            border-radius: 24px;
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
+            border-radius: 18px;
+            padding: 1rem;
+            margin-bottom: 1rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .detail-label {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             font-weight: 600;
             color: #64748b;
         }
@@ -233,19 +178,9 @@
             color: #0f172a;
             word-break: break-word;
         }
-        .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e293b;
-            border-left: 4px solid var(--primary);
-            padding-left: 12px;
-            margin-bottom: 1rem;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 2px;
-            justify-content: center;
-            align-items: center;
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .main-content { margin-left: 70px; }
         }
     </style>
 </head>
@@ -262,8 +197,7 @@
             <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
             <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
             <li class="nav-item"><a class="nav-link active" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
-            <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
-            <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
+            <li class="nav-item"><a class="nav-link" href="/roles"><i class="fas fa-user-shield me-2"></i>Rôles</a></li>
         </ul>
     </div>
 </div>
@@ -276,8 +210,7 @@
             </button>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">
-                    <i class="fas fa-user-circle text-primary"></i>
-                    <span th:text="${userName}">admin</span>
+                    <i class="fas fa-user-circle text-primary"></i> Admin
                 </span>
                 <a href="/logout" class="btn btn-outline-danger">
                     <i class="fas fa-sign-out-alt"></i> Déconnexion
@@ -291,53 +224,45 @@
             <h1 class="fw-bold text-dark mb-1">
                 <i class="fas fa-users text-primary me-2"></i> Gestion des Utilisateurs
             </h1>
-            <p class="text-muted mb-0">Administrez vos techniciens et opérateurs</p>
+            <p class="text-muted mb-0">Créer des utilisateurs et leur affecter un rôle</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+            <a href="/roles" class="btn btn-outline-primary">
+                <i class="fas fa-user-shield me-1"></i> Gérer les rôles
+            </a>
             <button class="btn btn-primary" onclick="openCreateOffcanvas()">
                 <i class="fas fa-plus me-1"></i> Nouvel utilisateur
             </button>
             <button class="btn btn-outline-secondary" onclick="loadUsers()">
                 <i class="fas fa-rotate me-1"></i> Refresh
             </button>
-            <button class="btn btn-outline-info" data-bs-toggle="collapse" href="#filterSection">
-                <i class="fas fa-filter me-1"></i> Filtres
-            </button>
         </div>
     </div>
 
-    <!-- Filtros colapsables -->
-    <div class="collapse mb-4" id="filterSection">
-        <div class="card bg-white rounded-4 shadow-sm p-3">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Rôle</label>
-                    <select id="roleFilter" class="form-select">
-                        <option value="">Tous</option>
-                        <option value="ADMIN">Admin</option>
-                        <option value="TECHNICIEN">Technicien</option>
-                        <option value="SUPERVISEUR">Superviseur</option>
-                        <option value="OPERATEUR">Opérateur</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Statut</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">Tous</option>
-                        <option value="ACTIF">Actif</option>
-                        <option value="INACTIF">Inactif</option>
-                        <option value="SUSPENDU">Suspendu</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
-                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
-                </div>
+    <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Recherche</label>
+                <input type="text" id="keywordFilter" class="form-control" placeholder="Nom ou email..." oninput="renderFilteredUsers()">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Rôle</label>
+                <select id="roleFilter" class="form-select" onchange="renderFilteredUsers()">
+                    <option value="">Tous</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Statut</label>
+                <select id="statusFilter" class="form-select" onchange="renderFilteredUsers()">
+                    <option value="">Tous</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                </select>
             </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
@@ -355,8 +280,8 @@
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="stat-icon bg-warning text-white"><i class="fas fa-user-slash"></i></div>
-                <h3 class="text-warning mb-1" id="usersInactifs">0</h3>
+                <div class="stat-icon bg-danger text-white"><i class="fas fa-user-slash"></i></div>
+                <h3 class="text-danger mb-1" id="usersInactifs">0</h3>
                 <p class="text-muted mb-0">Inactifs</p>
             </div>
         </div>
@@ -369,7 +294,6 @@
         </div>
     </div>
 
-    <!-- Users Table -->
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -380,8 +304,7 @@
                     <th>Email</th>
                     <th>Rôle</th>
                     <th>Statut</th>
-                    <th>Dernière connexion</th>
-                    <th>Créé le</th>
+                    <th>Actif</th>
                     <th class="text-center">Actions</th>
                 </tr>
                 </thead>
@@ -391,19 +314,17 @@
     </div>
 </div>
 
-<!-- Offcanvas Détail -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 500px;">
-    <div class="offcanvas-header border-0 pb-0">
-        <h5 class="offcanvas-title fw-bold">
-            <i class="fas fa-user-circle text-primary me-2"></i>Profil utilisateur
+<div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 420px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">
+            <i class="fas fa-user-circle text-primary me-2"></i> Détail utilisateur
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
-    <div class="offcanvas-body pt-0" id="detailBodyCanvas"></div>
+    <div class="offcanvas-body" id="detailBodyCanvas"></div>
 </div>
 
-<!-- Offcanvas Formulaire -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 580px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 520px;">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouvel utilisateur</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
@@ -413,38 +334,40 @@
             <input type="hidden" id="userIdCanvas">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nom complet *</label>
-                    <input type="text" id="nomCanvas" class="form-control" required maxlength="100">
+                    <label class="form-label">Nom *</label>
+                    <input type="text" id="nomCanvas" class="form-control" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email *</label>
-                    <input type="email" id="emailCanvas" class="form-control" required maxlength="150">
+                    <input type="email" id="emailCanvas" class="form-control" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Rôle *</label>
-                    <select id="roleCanvas" class="form-select" required>
-                        <option value="">Sélectionner</option>
-                        <option value="ADMIN">Administrateur</option>
-                        <option value="TECHNICIEN">Technicien</option>
-                        <option value="SUPERVISEUR">Superviseur</option>
-                        <option value="OPERATEUR">Opérateur</option>
-                    </select>
+                    <select id="roleIdCanvas" class="form-select" required></select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Statut *</label>
                     <select id="statusCanvas" class="form-select" required>
-                        <option value="">Sélectionner</option>
-                        <option value="ACTIF">Actif</option>
-                        <option value="INACTIF">Inactif</option>
-                        <option value="SUSPENDU">Suspendu</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                        <option value="SUSPENDED">SUSPENDED</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Mot de passe *</label>
-                    <input type="password" id="passwordCanvas" class="form-control" required minlength="6" maxlength="100">
+                    <label class="form-label">Actif</label>
+                    <select id="actifCanvas" class="form-select">
+                        <option value="true">Oui</option>
+                        <option value="false">Non</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Mot de passe <span id="passwordHelp">*</span></label>
+                    <input type="password" id="passwordCanvas" class="form-control">
                 </div>
             </div>
+
             <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
+
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
@@ -453,45 +376,39 @@
     </div>
 </div>
 
-<!-- Modales -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-danger"><i class="fas fa-trash-alt me-2"></i>Confirmer la suppression</h5>
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Confirmer la suppression
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
-                <p class="text-muted small">Cette action est irréversible.</p>
-                <input type="hidden" id="deleteUserId">
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer cet utilisateur ?
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-exchange-alt me-2"></i>Changer le statut</h5>
+                <h5 class="modal-title">Changer le statut</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <p class="mb-3">Sélectionnez le nouveau statut :</p>
+            <div class="modal-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-success status-option-btn" data-status="ACTIF"><i class="fas fa-check-circle me-2"></i> Actif</button>
-                    <button class="btn btn-outline-danger status-option-btn" data-status="INACTIF"><i class="fas fa-ban me-2"></i> Inactif</button>
-                    <button class="btn btn-outline-warning status-option-btn" data-status="SUSPENDU"><i class="fas fa-pause-circle me-2"></i> Suspendu</button>
+                    <button class="btn btn-outline-success status-option-btn" data-status="ACTIVE">ACTIVE</button>
+                    <button class="btn btn-outline-danger status-option-btn" data-status="INACTIVE">INACTIVE</button>
+                    <button class="btn btn-outline-warning status-option-btn" data-status="SUSPENDED">SUSPENDED</button>
                 </div>
-                <input type="hidden" id="statusUserId">
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
             </div>
         </div>
     </div>
@@ -500,389 +417,20 @@
 <div class="modal fade" id="warningModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Attention</h5>
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Attention
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="warningMessage"></div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
-            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const API_URL = '/api/users';
-
-    const detailOffcanvas = new bootstrap.Offcanvas(document.getElementById('detailOffcanvas'));
-    const formOffcanvas = new bootstrap.Offcanvas(document.getElementById('formOffcanvas'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-
-    let pendingDeleteId = null;
-    let pendingStatusId = null;
-
-    // Helper truncate
-    function truncateText(text, maxLen) {
-        if (!text) return '—';
-        if (text.length <= maxLen) return text;
-        return text.substring(0, maxLen) + '…';
-    }
-
-    // Générer les initiales pour l'avatar
-    function getInitials(nom) {
-        if (!nom) return '?';
-        return nom.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    }
-
-    // Validations
-    function validateFieldLengths() {
-        const fields = [
-            { id: 'nomCanvas', max: 100, name: 'Nom' },
-            { id: 'emailCanvas', max: 150, name: 'Email' },
-            { id: 'passwordCanvas', max: 100, name: 'Mot de passe' }
-        ];
-        for (let field of fields) {
-            const element = document.getElementById(field.id);
-            if (element && element.value && element.value.length > field.max) {
-                showWarning(`Le champ "${field.name}" dépasse la longueur maximale autorisée (${field.max} caractères).`);
-                element.focus();
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function setupRealtimeValidation() {
-        const requiredFields = ['nomCanvas', 'emailCanvas', 'roleCanvas', 'statusCanvas'];
-        if (document.getElementById('userIdCanvas').value === '') {
-            requiredFields.push('passwordCanvas');
-        }
-        requiredFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                const validate = () => {
-                    if (field.value.trim() !== '') {
-                        field.classList.remove('required-error');
-                    } else {
-                        field.classList.add('required-error');
-                    }
-                };
-                field.addEventListener('input', validate);
-                field.addEventListener('change', validate);
-                validate();
-            }
-        });
-    }
-
-    function applyRequiredErrorOnEmpty() {
-        const requiredFields = ['nomCanvas', 'emailCanvas', 'roleCanvas', 'statusCanvas'];
-        if (document.getElementById('userIdCanvas').value === '') {
-            requiredFields.push('passwordCanvas');
-        }
-        requiredFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                if (field.value.trim() === '') {
-                    field.classList.add('required-error');
-                } else {
-                    field.classList.remove('required-error');
-                }
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        await refreshPage();
-        document.getElementById('userFormCanvas').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nom = document.getElementById('nomCanvas').value.trim();
-            const email = document.getElementById('emailCanvas').value.trim();
-            const role = document.getElementById('roleCanvas').value;
-            const status = document.getElementById('statusCanvas').value;
-            const password = document.getElementById('passwordCanvas').value;
-            const isUpdate = document.getElementById('userIdCanvas').value !== '';
-            if (!nom || !email || !role || !status) {
-                showWarning("Veuillez remplir tous les champs obligatoires (Nom, Email, Rôle, Statut).");
-                applyRequiredErrorOnEmpty();
-                return;
-            }
-            if (!isUpdate && !password) {
-                showWarning("Le mot de passe est obligatoire pour un nouvel utilisateur.");
-                applyRequiredErrorOnEmpty();
-                return;
-            }
-            if (!validateFieldLengths()) return;
-            await saveUserCanvas();
-        });
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (pendingDeleteId !== null) {
-                await executeDelete(pendingDeleteId);
-                deleteModal.hide();
-                pendingDeleteId = null;
-            }
-        });
-        document.querySelectorAll('.status-option-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const newStatus = btn.getAttribute('data-status');
-                if (pendingStatusId && newStatus) {
-                    await changeStatus(pendingStatusId, newStatus);
-                    statusModal.hide();
-                    pendingStatusId = null;
-                }
-            });
-        });
-        setupRealtimeValidation();
-    });
-
-    function showWarning(message) {
-        document.getElementById('warningMessage').textContent = message;
-        warningModal.show();
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('collapsed');
-        document.getElementById('mainContent').classList.toggle('expanded');
-        const logo = document.getElementById('logo-text');
-        if (logo) logo.style.display = document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
-    }
-
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options
-        });
-        const rawText = await response.text();
-        if (!response.ok) {
-            let message = rawText;
-            try { const err = JSON.parse(rawText); message = err.message || err.error || rawText; } catch (_) {}
-            throw new Error(message);
-        }
-        if (!rawText) return null;
-        try { return JSON.parse(rawText); } catch (_) { return rawText; }
-    }
-
-    async function refreshPage() {
-        try {
-            await loadStats();
-            await loadUsers();
-        } catch (err) {
-            showWarning("Erreur: " + err.message);
-        }
-    }
-
-    async function loadStats() {
-        const data = await fetchJson(API_URL);
-        const users = Array.isArray(data) ? data : [];
-        document.getElementById('totalUsers').textContent = users.length;
-        document.getElementById('usersActifs').textContent = users.filter(u => u.statut === 'ACTIF').length;
-        document.getElementById('usersInactifs').textContent = users.filter(u => u.statut === 'INACTIF').length;
-        document.getElementById('adminsCount').textContent = users.filter(u => u.role === 'ADMIN').length;
-    }
-
-    async function loadUsers() { const data = await fetchJson(API_URL); renderTable(data); }
-    async function applyFilters() {
-        const role = document.getElementById('roleFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        let url = API_URL;
-        const params = new URLSearchParams();
-        if (role) params.append('role', role);
-        if (status) params.append('statut', status);
-        if (params.toString()) url += '?' + params.toString();
-        const data = await fetchJson(url);
-        renderTable(data);
-    }
-    function resetFilters() {
-        document.getElementById('roleFilter').value = '';
-        document.getElementById('statusFilter').value = '';
-        loadUsers();
-    }
-
-    function renderTable(data) {
-        const tbody = document.getElementById('usersTableBody');
-        if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fas fa-users fa-3x mb-3"></i><h5>Aucun utilisateur</h5></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = data.map(u => {
-            const nomFull = escapeHtml(u.nom);
-            const emailFull = escapeHtml(u.email);
-            const nomTrunc = truncateText(nomFull, 25);
-            const emailTrunc = truncateText(emailFull, 30);
-            const initials = getInitials(nomFull);
-            const lastConnexion = u.derniereConnexion ? formatDate(u.derniereConnexion) : 'Jamais';
-            const createdAt = u.createdAt ? formatDate(u.createdAt) : '—';
-            return `
-                <tr>
-                    <td><div class="avatar">${initials}</div></td>
-                    <td title="${nomFull}">${nomTrunc}</td>
-                    <td title="${emailFull}">${emailTrunc}</td>
-                    <td>${renderRoleBadge(u.role)}</td>
-                    <td>${renderStatusBadge(u.statut)}</td>
-                    <td class="date-badge" style="white-space: nowrap;">${lastConnexion}</td>
-                    <td class="date-badge" style="white-space: nowrap;">${createdAt}</td>
-                    <td class="text-center action-buttons">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${u.id})" title="Détail"><i class="fas fa-eye"></i></button>
-                            <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${u.id})" title="Éditer"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-outline-info btn-action" onclick="openStatusModal(${u.id})" title="Changer statut"><i class="fas fa-repeat"></i></button>
-                            <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${u.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    function renderRoleBadge(role) {
-        let cls = 'role-badge ';
-        if (role === 'ADMIN') cls += 'role-ADMIN';
-        else if (role === 'TECHNICIEN') cls += 'role-TECHNICIEN';
-        else if (role === 'SUPERVISEUR') cls += 'role-SUPERVISEUR';
-        else cls += 'role-OPERATEUR';
-        let label = role === 'ADMIN' ? 'Admin' : role === 'TECHNICIEN' ? 'Technicien' : role === 'SUPERVISEUR' ? 'Superviseur' : 'Opérateur';
-        return `<span class="${cls}">${label}</span>`;
-    }
-
-    function renderStatusBadge(status) {
-        let cls = 'status-badge ';
-        if (status === 'ACTIF') cls += 'status-ACTIF';
-        else if (status === 'INACTIF') cls += 'status-INACTIF';
-        else cls += 'status-SUSPENDU';
-        let label = status === 'ACTIF' ? 'Actif' : status === 'INACTIF' ? 'Inactif' : 'Suspendu';
-        return `<span class="${cls}">${label}</span>`;
-    }
-
-    async function showDetailCanvas(id) {
-        try {
-            const u = await fetchJson(`${API_URL}/${id}/detail`);
-            const initials = getInitials(u.nom);
-            const lastConnexion = u.derniereConnexion ? formatDate(u.derniereConnexion) : 'Jamais';
-            const createdAt = u.createdAt ? formatDate(u.createdAt) : '—';
-            const html = `
-                <div class="detail-header">
-                    <div class="detail-icon">
-                        <i class="fas fa-user-circle fa-2x" style="color: var(--primary);"></i>
-                    </div>
-                    <div class="avatar mx-auto" style="width: 60px; height: 60px; font-size: 24px;">${initials}</div>
-                    <h4 class="fw-bold mb-1" style="word-break: break-word;">${escapeHtml(u.nom)}</h4>
-                    <p class="text-muted mb-0">${escapeHtml(u.email)}</p>
-                </div>
-                <div class="section-title"><i class="fas fa-id-badge me-2 text-primary"></i> Informations</div>
-                <div class="row g-3 mb-4">
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Rôle</div><div class="detail-value">${renderRoleBadge(u.role)}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Statut</div><div class="detail-value">${renderStatusBadge(u.statut)}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Dernière connexion</div><div class="detail-value">${lastConnexion}</div></div></div>
-                    <div class="col-6"><div class="detail-card"><div class="detail-label">Compte créé le</div><div class="detail-value">${createdAt}</div></div></div>
-                </div>
-                <hr class="my-3">
-                <div class="text-end text-muted small">
-                    <i class="fas fa-hashtag me-1"></i> ID interne : ${u.id}
-                </div>
-            `;
-            document.getElementById('detailBodyCanvas').innerHTML = html;
-            detailOffcanvas.show();
-        } catch (err) {
-            showWarning(err.message);
-        }
-    }
-
-    function openCreateOffcanvas() {
-        document.getElementById('formOffcanvasLabel').innerText = 'Nouvel utilisateur';
-        document.getElementById('userFormCanvas').reset();
-        document.getElementById('userIdCanvas').value = '';
-        document.getElementById('formErrorCanvas').classList.add('d-none');
-        // Le champ mot de passe est requis pour création
-        document.getElementById('passwordCanvas').required = true;
-        applyRequiredErrorOnEmpty();
-        formOffcanvas.show();
-    }
-
-    async function openEditCanvas(id) {
-        try {
-            const u = await fetchJson(`${API_URL}/${id}/detail`);
-            document.getElementById('formOffcanvasLabel').innerText = 'Éditer utilisateur';
-            document.getElementById('userIdCanvas').value = u.id ?? '';
-            document.getElementById('nomCanvas').value = u.nom ?? '';
-            document.getElementById('emailCanvas').value = u.email ?? '';
-            document.getElementById('roleCanvas').value = u.role ?? '';
-            document.getElementById('statusCanvas').value = u.statut ?? '';
-            document.getElementById('passwordCanvas').value = '';
-            document.getElementById('passwordCanvas').required = false;
-            document.getElementById('formErrorCanvas').classList.add('d-none');
-            applyRequiredErrorOnEmpty();
-            formOffcanvas.show();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    async function saveUserCanvas() {
-        const id = document.getElementById('userIdCanvas').value;
-        const isUpdate = !!id;
-        const payload = {
-            nom: getVal('nomCanvas'),
-            email: getVal('emailCanvas'),
-            role: getVal('roleCanvas'),
-            statut: getVal('statusCanvas')
-        };
-        if (!isUpdate) {
-            payload.password = getVal('passwordCanvas');
-        } else if (getVal('passwordCanvas') !== '') {
-            payload.password = getVal('passwordCanvas');
-        }
-        try {
-            const url = isUpdate ? `${API_URL}/${id}` : API_URL;
-            const method = isUpdate ? 'PUT' : 'POST';
-            await fetchJson(url, { method, body: JSON.stringify(payload) });
-            formOffcanvas.hide();
-            await refreshPage();
-        } catch (err) {
-            const errBox = document.getElementById('formErrorCanvas');
-            errBox.textContent = err.message;
-            errBox.classList.remove('d-none');
-        }
-    }
-
-    function confirmDelete(id) { pendingDeleteId = id; deleteModal.show(); }
-    async function executeDelete(id) {
-        try {
-            const can = await fetchJson(`${API_URL}/${id}/can-delete`);
-            if (!can) {
-                showWarning("Cet utilisateur ne peut pas être supprimé car il est lié à d'autres données.");
-                return;
-            }
-            await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
-            await refreshPage();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    function openStatusModal(id) {
-        pendingStatusId = id;
-        statusModal.show();
-    }
-    async function changeStatus(id, newStatus) {
-        try {
-            await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, { method: 'PATCH' });
-            await refreshPage();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    function getVal(id) { return document.getElementById(id).value.trim(); }
-    function formatDate(dateStr) { 
-        if (!dateStr) return 'N/A';
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('fr-FR');
-        } catch { return dateStr; }
-    }
-    function escapeHtml(str) { if (!str) return ''; return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
-
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        document.getElementById('mainContent').classList.add('expanded');
-    }
+<script src="../JS/user.js">
+    
 </script>
 </body>
 </html>

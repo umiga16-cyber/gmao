@@ -16,6 +16,7 @@ public class EquipementCreateRequest {
     private String criticite;
     private String commentaire;
     private Long parentId;
+    private Long companyId;
 	public String getCode() {
 		return code;
 	}
@@ -93,6 +94,12 @@ public class EquipementCreateRequest {
 	}
 	public void setParentId(Long parentId) {
 		this.parentId = parentId;
+	}
+	public Long getCompanyId() {
+		return companyId;
+	}
+	public void setCompanyId(Long companyId) {
+		this.companyId = companyId;
 	}
     
 }

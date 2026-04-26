@@ -16,4 +16,6 @@ public interface DisponibiliteRepository extends JpaRepository<Disponibilite, Lo
 	Optional<Disponibilite> findByUserIdAndDate(Long userId, LocalDate date);
 
 	boolean existsByUserIdAndDate(Long userId, LocalDate date);
+	
+	boolean existsByUserId(Long userId);
 }
