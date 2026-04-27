@@ -40,4 +40,14 @@ public class PageController {
     public String companiesPage() {
         return "company-list";
     }
+
+    @GetMapping("/stock")
+    public String stockPage() {
+        return "stock";
+    }
+
+    @GetMapping("/preventif")
+    public String preventifPage() {
+        return "preventif";
+    }
 }
