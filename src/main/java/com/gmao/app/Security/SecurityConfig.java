@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.Customizer;
 import jakarta.servlet.DispatcherType;
 
 @Configuration
@@ -35,7 +36,7 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .logoutSuccessUrl("/login?logout=true")
             .permitAll()
         )
-        .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+        .headers(headers -> headers.cacheControl(Customizer.withDefaults()).frameOptions(frame -> frame.sameOrigin()));
 
     return http.build();
 }
