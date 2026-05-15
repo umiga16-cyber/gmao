@@ -16,11 +16,13 @@
             --warning: #f59e0b;
             --info: #3b82f6;
         }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
         .sidebar {
             background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
             height: 100vh;
@@ -31,18 +33,27 @@
             z-index: 1000;
             transition: all 0.3s ease;
         }
-        .sidebar.collapsed { width: 70px; }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
         .main-content {
             margin-left: 260px;
             transition: all 0.3s ease;
             padding: 20px;
         }
-        .main-content.expanded { margin-left: 70px; }
+
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+
         .navbar-top {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 0 0 20px 20px;
         }
+
         .stat-card {
             background: white;
             border-radius: 20px;
@@ -51,6 +62,7 @@
             border: none;
             height: 100%;
         }
+
         .nav-link {
             color: rgba(255,255,255,0.9) !important;
             padding: 12px 20px;
@@ -58,11 +70,14 @@
             margin: 5px 10px;
             transition: all 0.3s ease;
         }
-        .nav-link:hover, .nav-link.active {
+
+        .nav-link:hover,
+        .nav-link.active {
             background: rgba(255,255,255,0.2);
             color: white !important;
             transform: translateX(5px);
         }
+
         .stat-icon {
             width: 60px;
             height: 60px;
@@ -73,17 +88,20 @@
             font-size: 24px;
             margin-bottom: 15px;
         }
+
         .table-container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.08);
             overflow-x: auto;
         }
+
         .table {
             margin-bottom: 0;
             font-size: 0.85rem;
             width: 100%;
         }
+
         .table thead th {
             background: #f8fafc;
             color: #1e293b;
@@ -92,46 +110,54 @@
             padding: 12px 8px;
             white-space: nowrap;
         }
+
         .table tbody td {
             padding: 10px 8px;
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
         }
+
         .btn-action {
             padding: 4px 8px;
             border-radius: 8px;
             font-size: 0.75rem;
             margin: 0 2px;
         }
+
         .empty-state {
             padding: 40px 20px;
             text-align: center;
             color: #6b7280;
         }
-        .offcanvas, .modal-content {
+
+        .offcanvas,
+        .modal-content {
             border-radius: 20px;
             border: none;
             box-shadow: 0 20px 35px rgba(0,0,0,0.1);
         }
-        .offcanvas-header, .modal-header {
+
+        .offcanvas-header,
+        .modal-header {
             background: white;
             border-bottom: 1px solid #e2e8f0;
             color: #1e293b;
         }
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             padding: 8px 14px;
             transition: all 0.2s;
         }
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
         }
-        .required-error {
-            border: 1px solid var(--danger) !important;
-            background-color: #fff5f5;
-        }
+
         .stock-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -139,12 +165,60 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .stock-normal { background: #dcfce7; color: #166534; }
-        .stock-low { background: #fef3c7; color: #92400e; }
-        .stock-out { background: #fee2e2; color: #991b1b; }
+
+        .stock-normal {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .stock-low {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .stock-out {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .detail-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .detail-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 0.96rem;
+            font-weight: 500;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .text-truncate-cell {
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         @media (max-width: 768px) {
-            .sidebar { width: 70px; }
-            .main-content { margin-left: 70px; }
+            .sidebar {
+                width: 70px;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
         }
     </style>
 </head>
@@ -159,6 +233,7 @@
         <ul class="nav flex-column">
             <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
+            <li class="nav-item"><a class="nav-link" href="/company-list"><i class="fas fa-building me-2"></i>Sociétés</a></li>
             <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
             <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
             <li class="nav-item"><a class="nav-link active" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
@@ -189,11 +264,11 @@
             <h1 class="fw-bold text-dark mb-1">
                 <i class="fas fa-boxes text-primary me-2"></i> Gestion du Stock (PRs)
             </h1>
-            <p class="text-muted mb-0">Pièces de rechange – suivez les quantités et les alertes de stock</p>
+            <p class="text-muted mb-0">Gérez les pièces de rechange avec leur quantité en stock et leur seuil minimum</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" onclick="openCreateOffcanvas()">
-                <i class="fas fa-plus me-1"></i> Nouvelle pièce
+                <i class="fas fa-plus me-1"></i> Nouvelle PR
             </button>
             <button class="btn btn-outline-secondary" onclick="loadStock()">
                 <i class="fas fa-rotate me-1"></i> Refresh
@@ -201,13 +276,12 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
                 <div class="stat-icon bg-primary text-white"><i class="fas fa-box"></i></div>
                 <h3 class="text-primary mb-1" id="totalItems">0</h3>
-                <p class="text-muted mb-0">Total pièces</p>
+                <p class="text-muted mb-0">Total PRs</p>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
@@ -226,25 +300,18 @@
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="stat-icon bg-success text-white"><i class="fas fa-euro-sign"></i></div>
-                <h3 class="text-success mb-1" id="totalValue">0 €</h3>
-                <p class="text-muted mb-0">Valeur totale</p>
+                <div class="stat-icon bg-success text-white"><i class="fas fa-layer-group"></i></div>
+                <h3 class="text-success mb-1" id="totalQuantity">0</h3>
+                <p class="text-muted mb-0">Quantité totale</p>
             </div>
         </div>
     </div>
 
-    <!-- Filtres -->
     <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
         <div class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-10">
                 <label class="form-label">Recherche</label>
-                <input type="text" id="searchName" class="form-control" placeholder="Nom, référence..." oninput="filterStock()">
-            </div>
-            <div class="col-md-5">
-                <label class="form-label">Catégorie</label>
-                <select id="categoryFilter" class="form-select" onchange="filterStock()">
-                    <option value="">Toutes</option>
-                </select>
+                <input type="text" id="searchName" class="form-control" placeholder="Rechercher par libellé..." oninput="filterStock()">
             </div>
             <div class="col-md-2 d-flex align-items-end gap-2">
                 <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
@@ -252,19 +319,17 @@
         </div>
     </div>
 
-    <!-- Tableau du stock -->
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead>
                 <tr>
-                    <th>Référence</th>
-                    <th>Nom</th>
-                    <th>Catégorie</th>
-                    <th>Quantité</th>
-                    <th>Unité</th>
-                    <th>Seuil d'alerte</th>
-                    <th>Localisation</th>
+                    <th>Libellé</th>
+                    <th>Quantité stock</th>
+                    <th>Seuil mini</th>
+                    <th>Statut</th>
+                    <th>Mouvements</th>
+                    <th>Interventions</th>
                     <th class="text-center">Actions</th>
                 </tr>
                 </thead>
@@ -274,71 +339,44 @@
     </div>
 </div>
 
-<!-- Offcanvas Détail (optionnel – peut afficher le détail complet) -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 450px;">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title"><i class="fas fa-info-circle text-primary me-2"></i> Détail pièce</h5>
+        <h5 class="offcanvas-title">
+            <i class="fas fa-info-circle text-primary me-2"></i> Détail PR
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body" id="detailBodyCanvas"></div>
 </div>
 
-<!-- Offcanvas Formulaire (création / édition) -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 560px;">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouvelle pièce</h5>
+        <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouvelle PR</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
         <form id="stockFormCanvas">
             <input type="hidden" id="stockIdCanvas">
+
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Référence *</label>
-                    <input type="text" id="referenceCanvas" class="form-control" required maxlength="50">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Nom *</label>
-                    <input type="text" id="nomCanvas" class="form-control" required maxlength="100">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Catégorie *</label>
-                    <select id="categorieCanvas" class="form-select" required>
-                        <option value="">Sélectionner</option>
-                        <option value="Mécanique">Mécanique</option>
-                        <option value="Électrique">Électrique</option>
-                        <option value="Hydraulique">Hydraulique</option>
-                        <option value="Pneumatique">Pneumatique</option>
-                        <option value="Électronique">Électronique</option>
-                        <option value="Consommable">Consommable</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Unité</label>
-                    <input type="text" id="uniteCanvas" class="form-control" placeholder="pièce, kg, litre..." maxlength="20">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Quantité *</label>
-                    <input type="number" id="quantiteCanvas" class="form-control" required min="0" step="1">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Seuil d'alerte</label>
-                    <input type="number" id="seuilCanvas" class="form-control" min="0" step="1" value="10">
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label">Localisation</label>
-                    <input type="text" id="localisationCanvas" class="form-control" placeholder="Emplacement, allée, étagère..." maxlength="100">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Prix unitaire (€)</label>
-                    <input type="number" id="prixCanvas" class="form-control" step="0.01" min="0">
-                </div>
                 <div class="col-12">
-                    <label class="form-label">Commentaire</label>
-                    <textarea id="commentaireCanvas" class="form-control" rows="2" maxlength="300"></textarea>
+                    <label class="form-label">Libellé *</label>
+                    <input type="text" id="libelleCanvas" class="form-control" required maxlength="200">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Quantité stock *</label>
+                    <input type="number" id="quantiteStockCanvas" class="form-control" required min="0" step="0.001">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Seuil mini *</label>
+                    <input type="number" id="seuilMiniCanvas" class="form-control" required min="0" step="0.001">
                 </div>
             </div>
+
             <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
+
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
@@ -347,18 +385,18 @@
     </div>
 </div>
 
-<!-- Modal confirmation suppression -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-danger"><i class="fas fa-trash-alt me-2"></i>Confirmer la suppression</h5>
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Confirmer la suppression
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer cette pièce ?</p>
-                <p class="text-muted small">Cette action est irréversible.</p>
-                <input type="hidden" id="deleteStockId">
+                <p>Êtes-vous sûr de vouloir supprimer cette PR ?</p>
+                <p class="text-muted small">La suppression est impossible si elle est déjà liée à des mouvements ou à des interventions.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -368,12 +406,13 @@
     </div>
 </div>
 
-<!-- Modal d'avertissement général -->
 <div class="modal fade" id="warningModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Attention</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Attention
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="warningMessage"></div>
@@ -385,300 +424,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // API URL (à adapter selon votre backend)
-    const API_STOCK_URL = '/api/stock';
-
-    // Éléments DOM
-    const detailOffcanvas = new bootstrap.Offcanvas(document.getElementById('detailOffcanvas'));
-    const formOffcanvas = new bootstrap.Offcanvas(document.getElementById('formOffcanvas'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-
-    let stockData = [];
-    let pendingDeleteId = null;
-
-    // Helper
-    function showWarning(message) {
-        document.getElementById('warningMessage').textContent = message;
-        warningModal.show();
-    }
-
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options
-        });
-        const rawText = await response.text();
-        if (!response.ok) {
-            let message = rawText;
-            try { const err = JSON.parse(rawText); message = err.message || err.error || rawText; } catch(_) {}
-            throw new Error(message);
-        }
-        if (!rawText) return null;
-        try { return JSON.parse(rawText); } catch(_) { return rawText; }
-    }
-
-    // Calculer les statistiques et mettre à jour les cartes
-    function updateStats() {
-        const total = stockData.length;
-        let low = 0, out = 0, totalVal = 0;
-        stockData.forEach(item => {
-            const qty = Number(item.quantite) || 0;
-            const threshold = Number(item.seuil) || 0;
-            const price = Number(item.prix) || 0;
-            totalVal += qty * price;
-            if (qty === 0) out++;
-            else if (threshold > 0 && qty <= threshold) low++;
-        });
-        document.getElementById('totalItems').textContent = total;
-        document.getElementById('lowStockCount').textContent = low;
-        document.getElementById('outOfStockCount').textContent = out;
-        document.getElementById('totalValue').textContent = totalVal.toFixed(2) + ' €';
-    }
-
-    // Remplir le filtre catégorie dynamiquement
-    function populateCategoryFilter() {
-        const cats = new Set();
-        stockData.forEach(item => { if (item.categorie) cats.add(item.categorie); });
-        const select = document.getElementById('categoryFilter');
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">Toutes</option>';
-        Array.from(cats).sort().forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat;
-            opt.textContent = cat;
-            select.appendChild(opt);
-        });
-        if (currentValue) select.value = currentValue;
-    }
-
-    // Rendu du tableau
-    function renderTable(filteredData) {
-        const tbody = document.getElementById('stockTableBody');
-        if (!filteredData.length) {
-            tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fas fa-box-open fa-3x mb-3 d-block"></i><h5>Aucune pièce en stock</h5><p class="text-muted mb-0">Ajoutez votre première pièce de rechange.</p></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = filteredData.map(item => {
-            const qty = Number(item.quantite) || 0;
-            const threshold = Number(item.seuil) || 0;
-            let stockClass = 'stock-normal';
-            let stockLabel = 'Normal';
-            if (qty === 0) { stockClass = 'stock-out'; stockLabel = 'Rupture'; }
-            else if (threshold > 0 && qty <= threshold) { stockClass = 'stock-low'; stockLabel = 'Stock bas'; }
-            return `
-                <tr>
-                    <td><strong>${escapeHtml(item.reference)}</strong></td>
-                    <td>${escapeHtml(item.nom)}</td>
-                    <td>${escapeHtml(item.categorie) || '—'}</td>
-                    <td><span class="stock-badge ${stockClass}">${stockLabel} (${qty})</span></td>
-                    <td>${escapeHtml(item.unite) || 'pièce'}</td>
-                    <td>${threshold}</td>
-                    <td><i class="fas fa-map-marker-alt me-1 text-secondary"></i> ${escapeHtml(item.localisation) || '—'}</td>
-                    <td class="text-nowrap">
-                        <button class="btn btn-outline-info btn-action" onclick="showDetail(${item.id})" title="Détail"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${item.id})" title="Éditer"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${item.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                    </td>
-                <tr>
-            `;
-        }).join('');
-    }
-
-    // Filtrage en temps réel
-    function filterStock() {
-        const search = document.getElementById('searchName').value.trim().toLowerCase();
-        const cat = document.getElementById('categoryFilter').value;
-        let filtered = [...stockData];
-        if (search) {
-            filtered = filtered.filter(item => 
-                (item.nom && item.nom.toLowerCase().includes(search)) ||
-                (item.reference && item.reference.toLowerCase().includes(search))
-            );
-        }
-        if (cat) {
-            filtered = filtered.filter(item => item.categorie === cat);
-        }
-        renderTable(filtered);
-    }
-
-    function resetFilters() {
-        document.getElementById('searchName').value = '';
-        document.getElementById('categoryFilter').value = '';
-        filterStock();
-    }
-
-    // Charger les données depuis l'API
-    async function loadStock() {
-        try {
-            const data = await fetchJson(API_STOCK_URL);
-            stockData = Array.isArray(data) ? data : [];
-            updateStats();
-            populateCategoryFilter();
-            filterStock(); // applique les filtres actuels (ou aucun)
-        } catch (err) {
-            showWarning("Erreur chargement stock : " + err.message);
-        }
-    }
-
-    // Détail (offcanvas)
-    async function showDetail(id) {
-        try {
-            const item = stockData.find(s => s.id == id);
-            if (!item) throw new Error("Pièce non trouvée");
-            const html = `
-                <div class="detail-card">
-                    <div class="detail-label">Référence</div>
-                    <div class="detail-value">${escapeHtml(item.reference)}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Nom</div>
-                    <div class="detail-value">${escapeHtml(item.nom)}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Catégorie</div>
-                    <div class="detail-value">${escapeHtml(item.categorie) || '—'}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Quantité / Unité</div>
-                    <div class="detail-value">${item.quantite} ${escapeHtml(item.unite) || 'pièce'}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Seuil d'alerte</div>
-                    <div class="detail-value">${item.seuil || '—'}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Localisation</div>
-                    <div class="detail-value">${escapeHtml(item.localisation) || '—'}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Prix unitaire</div>
-                    <div class="detail-value">${item.prix ? item.prix + ' €' : '—'}</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-label">Commentaire</div>
-                    <div class="detail-value">${escapeHtml(item.commentaire) || '—'}</div>
-                </div>
-                <hr class="my-3">
-                <div class="text-end text-muted small"><i class="fas fa-hashtag me-1"></i> ID interne : ${item.id}</div>
-            `;
-            document.getElementById('detailBodyCanvas').innerHTML = html;
-            detailOffcanvas.show();
-        } catch (err) {
-            showWarning(err.message);
-        }
-    }
-
-    // Création / Édition
-    function openCreateOffcanvas() {
-        document.getElementById('formOffcanvasLabel').innerText = 'Nouvelle pièce';
-        document.getElementById('stockFormCanvas').reset();
-        document.getElementById('stockIdCanvas').value = '';
-        document.getElementById('formErrorCanvas').classList.add('d-none');
-        formOffcanvas.show();
-    }
-
-    async function openEditCanvas(id) {
-        try {
-            const item = stockData.find(s => s.id == id);
-            if (!item) throw new Error("Pièce non trouvée");
-            document.getElementById('formOffcanvasLabel').innerText = 'Modifier la pièce';
-            document.getElementById('stockIdCanvas').value = item.id;
-            document.getElementById('referenceCanvas').value = item.reference || '';
-            document.getElementById('nomCanvas').value = item.nom || '';
-            document.getElementById('categorieCanvas').value = item.categorie || '';
-            document.getElementById('uniteCanvas').value = item.unite || '';
-            document.getElementById('quantiteCanvas').value = item.quantite || 0;
-            document.getElementById('seuilCanvas').value = item.seuil || 0;
-            document.getElementById('localisationCanvas').value = item.localisation || '';
-            document.getElementById('prixCanvas').value = item.prix || '';
-            document.getElementById('commentaireCanvas').value = item.commentaire || '';
-            document.getElementById('formErrorCanvas').classList.add('d-none');
-            formOffcanvas.show();
-        } catch (err) { showWarning(err.message); }
-    }
-
-    async function saveStock() {
-        const id = document.getElementById('stockIdCanvas').value;
-        const isUpdate = !!id;
-        const payload = {
-            reference: document.getElementById('referenceCanvas').value.trim(),
-            nom: document.getElementById('nomCanvas').value.trim(),
-            categorie: document.getElementById('categorieCanvas').value,
-            unite: document.getElementById('uniteCanvas').value.trim(),
-            quantite: parseInt(document.getElementById('quantiteCanvas').value) || 0,
-            seuil: parseInt(document.getElementById('seuilCanvas').value) || 0,
-            localisation: document.getElementById('localisationCanvas').value.trim(),
-            prix: parseFloat(document.getElementById('prixCanvas').value) || null,
-            commentaire: document.getElementById('commentaireCanvas').value.trim()
-        };
-        if (!payload.reference || !payload.nom || !payload.categorie) {
-            showWarning("La référence, le nom et la catégorie sont obligatoires.");
-            return;
-        }
-        try {
-            const url = isUpdate ? `${API_STOCK_URL}/${id}` : API_STOCK_URL;
-            const method = isUpdate ? 'PUT' : 'POST';
-            await fetchJson(url, { method, body: JSON.stringify(payload) });
-            formOffcanvas.hide();
-            await loadStock();
-        } catch (err) {
-            const errBox = document.getElementById('formErrorCanvas');
-            errBox.textContent = err.message;
-            errBox.classList.remove('d-none');
-        }
-    }
-
-    function confirmDelete(id) {
-        pendingDeleteId = id;
-        deleteModal.show();
-    }
-
-    async function executeDelete(id) {
-        try {
-            await fetchJson(`${API_STOCK_URL}/${id}`, { method: 'DELETE' });
-            await loadStock();
-        } catch (err) {
-            showWarning("Erreur suppression : " + err.message);
-        }
-    }
-
-    // Écouteurs d'événements
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadStock();
-        document.getElementById('stockFormCanvas').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveStock();
-        });
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (pendingDeleteId !== null) {
-                await executeDelete(pendingDeleteId);
-                deleteModal.hide();
-                pendingDeleteId = null;
-            }
-        });
-    });
-
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const main = document.getElementById('mainContent');
-        const logoText = document.getElementById('logo-text');
-        sidebar.classList.toggle('collapsed');
-        main.classList.toggle('expanded');
-        if (logoText) logoText.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline';
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
-    }
-
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        document.getElementById('mainContent').classList.add('expanded');
-        if (document.getElementById('logo-text')) document.getElementById('logo-text').style.display = 'none';
-    }
-</script>
+<script src="/JS/stock.js"></script>
 </body>
 </html>

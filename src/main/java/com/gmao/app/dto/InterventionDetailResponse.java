@@ -1,6 +1,8 @@
 package com.gmao.app.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class InterventionDetailResponse {
 
@@ -15,6 +17,7 @@ public class InterventionDetailResponse {
     private String commentaire;
     private Long preventifId;
     private Long createdById;
+    private List<InterventionPrsLineResponse> prsItems = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -102,5 +105,13 @@ public class InterventionDetailResponse {
 
     public void setCreatedById(Long createdById) {
         this.createdById = createdById;
+    }
+
+    public List<InterventionPrsLineResponse> getPrsItems() {
+        return prsItems;
+    }
+
+    public void setPrsItems(List<InterventionPrsLineResponse> prsItems) {
+        this.prsItems = prsItems;
     }
 }

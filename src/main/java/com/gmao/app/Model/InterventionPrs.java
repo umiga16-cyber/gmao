@@ -1,5 +1,8 @@
 package com.gmao.app.Model;
 
+import java.math.BigDecimal;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +29,8 @@ public class InterventionPrs {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "prs_id", nullable = false)
     private Prs prs;
+    @Column(name = "quantite", nullable = false, precision = 19, scale = 3)
+    private BigDecimal quantite = BigDecimal.ZERO;
 
 	public Long getId() {
 		return id;
@@ -51,5 +56,11 @@ public class InterventionPrs {
 		this.prs = prs;
 	}
     
-    
+	public BigDecimal getQuantite() {
+        return quantite;
+    }
+
+    public void setQuantite(BigDecimal quantite) {
+        this.quantite = quantite;
+    }
 }

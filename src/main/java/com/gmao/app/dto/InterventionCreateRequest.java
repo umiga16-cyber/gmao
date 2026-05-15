@@ -1,7 +1,10 @@
 package com.gmao.app.dto;
- 
-import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,6 +31,9 @@ public class InterventionCreateRequest {
 
     @NotNull(message = "L'id du créateur est obligatoire.")
     private Long createdById;
+
+    @Valid
+    private List<PrsUsageRequest> prsItems = new ArrayList<>();
 
     public String getLibele() {
         return libele;
@@ -99,5 +105,13 @@ public class InterventionCreateRequest {
 
     public void setCreatedById(Long createdById) {
         this.createdById = createdById;
+    }
+
+    public List<PrsUsageRequest> getPrsItems() {
+        return prsItems;
+    }
+
+    public void setPrsItems(List<PrsUsageRequest> prsItems) {
+        this.prsItems = prsItems;
     }
 }

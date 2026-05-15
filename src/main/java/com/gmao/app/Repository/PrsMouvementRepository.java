@@ -9,4 +9,10 @@ import com.gmao.app.Model.PrsMouvement;
 public interface PrsMouvementRepository extends JpaRepository<PrsMouvement, Long> {
     List<PrsMouvement> findByPrsId(Long prsId);
     List<PrsMouvement> findByInterventionId(Long interventionId);
+    
+    boolean existsByPrsId(Long prsId);
+
+    long countByPrsId(Long prsId);
+
+    List<PrsMouvement> findByPrsIdOrderByDateDesc(Long prsId);
 }
