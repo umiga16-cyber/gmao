@@ -8,12 +8,27 @@ public class EquipementTreeResponse {
     private String description;
     private String type;
     private String statut;
+    private String localisation;
+    private Long parentId;
     private List<EquipementTreeResponse> children;
 	public Long getId() {
 		return id;
 	}
 	public void setId(Long id) {
 		this.id = id;
+	}
+	
+	public Long getParentId() {
+		return parentId;
+	}
+	public void setParentId(Long parentId) {
+		this.parentId = parentId;
+	}
+	public String getLocalisation() {
+		return localisation;
+	}
+	public void setLocalisation(String localisation) {
+		this.localisation = localisation;
 	}
 	public String getCode() {
 		return code;

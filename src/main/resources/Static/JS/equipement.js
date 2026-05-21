@@ -18,7 +18,17 @@
         if (text.length <= maxLen) return text;
         return text.substring(0, maxLen) + '…';
     }
+	function validateInstallationDatesCanvas() {
+	    const dateInstallation = getVal('dateInstallationCanvas');
+	    const dateMiseEnService = getVal('dateMiseEnServiceCanvas');
 
+	    if (dateInstallation && dateMiseEnService && dateInstallation >= dateMiseEnService) {
+	        showWarning("La date d’installation doit être strictement antérieure à la date de mise en service.");
+	        return false;
+	    }
+
+	    return true;
+	}
     function validateFieldLengths() {
         const fields = [
             { id: 'codeCanvas', max: 50, name: 'Code' },
@@ -88,8 +98,10 @@
                 applyRequiredErrorOnEmpty();
                 return;
             }
-            if (!validateFieldLengths()) return;
-            await saveEquipementCanvas();
+			if (!validateFieldLengths()) return;
+			if (!validateInstallationDatesCanvas()) return;
+
+			await saveEquipementCanvas();
         });
         document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
             if (pendingDeleteId !== null) {
@@ -184,12 +196,75 @@
         renderTable(currentEquipements);
     }
 
-    async function loadRoots() {
-        const data = await fetchJson(`${API_URL}/roots`);
-        currentEquipements = Array.isArray(data) ? data : [];
-        renderTable(currentEquipements);
-    }
+	const rootsModal = new bootstrap.Modal(document.getElementById('rootsModal'));
 
+	async function loadRoots() {
+	    try {
+	        const tree = await fetchJson(`${API_URL}/tree`);
+	        const container = document.getElementById('rootsTreeContainer');
+
+	        if (!Array.isArray(tree) || tree.length === 0) {
+	            container.innerHTML = `
+	                <div class="empty-state">
+	                    <i class="fas fa-sitemap fa-3x mb-3 d-block"></i>
+	                    <h5>Aucune racine trouvée</h5>
+	                </div>
+	            `;
+	        } else {
+	            container.innerHTML = renderEquipmentTree(tree);
+	        }
+
+	        rootsModal.show();
+	    } catch (err) {
+	        showWarning(err.message);
+	    }
+	}
+
+	function renderEquipmentTree(nodes) {
+	    return `
+	        <div class="equipment-tree">
+	            ${nodes.map(node => renderEquipmentNode(node)).join('')}
+	        </div>
+	    `;
+	}
+
+	function renderEquipmentNode(node) {
+	    const children = Array.isArray(node.children) ? node.children : [];
+
+	    return `
+	        <div class="tree-node mb-3">
+	            <div class="card rounded-4 shadow-sm border-0">
+	                <div class="card-body">
+	                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+	                        <div>
+	                            <div class="fw-bold">
+	                                <i class="fas fa-tools text-primary me-2"></i>
+	                                ${escapeHtml(node.code || '')}
+	                            </div>
+	                            <div class="text-muted small">
+	                                ${escapeHtml(node.description || '')}
+	                            </div>
+	                        </div>
+
+	                        <div class="text-end small">
+	                            <div><strong>Parent ID :</strong> ${node.parentId ?? 'Racine'}</div>
+	                            <div><strong>Localisation :</strong> ${escapeHtml(node.localisation || '—')}</div>
+	                            <div><strong>Statut :</strong> ${escapeHtml(node.statut || '—')}</div>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+
+	            ${
+	                children.length > 0
+	                    ? `<div class="ms-4 mt-2 ps-3 border-start">
+	                           ${children.map(child => renderEquipmentNode(child)).join('')}
+	                       </div>`
+	                    : ''
+	            }
+	        </div>
+	    `;
+	}
     async function applyFilters() {
         const kw = document.getElementById('searchKeyword').value.trim().toLowerCase();
         const st = document.getElementById('statusFilter').value.trim();
@@ -413,14 +488,44 @@
         } catch (err) { showWarning(err.message); }
     }
 
-    function openStatusModalWrapper(id, statut) {
-        if (statut === 'ARCHIVED') {
-            showWarning('Vous devez désarchiver l’équipement avant de changer son statut.');
-            return;
-        }
-        pendingStatusId = id;
-        statusModal.show();
-    }
+	function getAllowedManualStatuses(currentStatus) {
+	    const status = (currentStatus || '').toUpperCase();
+
+	    if (status === 'ACTIF') {
+	        return ['ARCHIVED'];
+	    }
+
+	    if (status === 'MAINTENANCE') {
+	        return ['HS'];
+	    }
+
+	    if (status === 'HS') {
+	        return ['MAINTENANCE', 'ARCHIVED'];
+	    }
+
+	    if (status === 'ARCHIVED') {
+	        return ['ACTIF'];
+	    }
+
+	    return [];
+	}
+
+	function openStatusModalWrapper(id, statut) {
+	    const allowedStatuses = getAllowedManualStatuses(statut);
+
+	    if (allowedStatuses.length === 0) {
+	        showWarning("Aucun changement manuel autorisé pour ce statut.");
+	        return;
+	    }
+
+	    document.querySelectorAll('.status-option-btn').forEach(btn => {
+	        const target = btn.getAttribute('data-status');
+	        btn.classList.toggle('d-none', !allowedStatuses.includes(target));
+	    });
+
+	    pendingStatusId = id;
+	    statusModal.show();
+	}
 
     async function changeStatus(id, newStatus) {
         try {

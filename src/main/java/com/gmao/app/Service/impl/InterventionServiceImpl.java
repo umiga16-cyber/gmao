@@ -66,7 +66,43 @@ public class InterventionServiceImpl implements InterventionService {
         this.prsMouvementRepository = prsMouvementRepository;
         this.interventionMapper = interventionMapper;
     }
+    private void synchronizeEquipementStatusWithIntervention(Intervention intervention) {
+        if (intervention == null || intervention.getEquipement() == null || intervention.getStatut() == null) {
+            return;
+        }
 
+        Equipement equipement = intervention.getEquipement();
+
+        String interventionStatus = intervention.getStatut().trim().toUpperCase();
+        String equipementStatus = equipement.getStatut() == null
+                ? ""
+                : equipement.getStatut().trim().toUpperCase();
+
+        if ("ARCHIVED".equals(equipementStatus)) {
+            throw new IllegalStateException("Impossible de modifier le statut d’un équipement archivé via une intervention.");
+        }
+
+        if ("HS".equals(equipementStatus)) {
+            throw new IllegalStateException("Un équipement HS ne peut pas être remis en maintenance ou actif automatiquement via une intervention.");
+        }
+
+        if ("EN_COURS".equals(interventionStatus)) {
+            if ("ACTIF".equals(equipementStatus)) {
+                equipement.setStatut("MAINTENANCE");
+                equipement.setActif(Boolean.TRUE);
+                equipementRepository.save(equipement);
+            }
+            return;
+        }
+
+        if ("TERMINEE".equals(interventionStatus)) {
+            if ("MAINTENANCE".equals(equipementStatus)) {
+                equipement.setStatut("ACTIF");
+                equipement.setActif(Boolean.TRUE);
+                equipementRepository.save(equipement);
+            }
+        }
+    }
     @Override
     @Transactional(readOnly = true)
     public List<InterventionResponse> filter(String statut, String type, String equipementKeyword) {
@@ -106,10 +142,11 @@ public class InterventionServiceImpl implements InterventionService {
         intervention.setPreventif(preventif);
 
         if (intervention.getStatut() == null || intervention.getStatut().isBlank()) {
-            intervention.setStatut("OPEN");
+            intervention.setStatut("PLANIFIEE");
         }
 
         Intervention saved = interventionRepository.save(intervention);
+        synchronizeEquipementStatusWithIntervention(saved);
 
         if (request.getPrsItems() != null && !request.getPrsItems().isEmpty()) {
             applyPrsConsumptionOnCreate(saved, request.getPrsItems());
@@ -139,6 +176,7 @@ public class InterventionServiceImpl implements InterventionService {
         }
 
         Intervention saved = interventionRepository.save(intervention);
+        synchronizeEquipementStatusWithIntervention(saved);
         syncPrsConsumptionOnUpdate(saved, request.getPrsItems());
 
         return interventionMapper.mapToResponse(saved);
@@ -186,17 +224,33 @@ public class InterventionServiceImpl implements InterventionService {
         restorePrsConsumptionOnDelete(intervention);
         interventionRepository.delete(intervention);
     }
-
-    @Override
-    public InterventionResponse changeStatus(Long id, String statut) {
+    private String normalizeInterventionStatus(String statut) {
         if (statut == null || statut.isBlank()) {
             throw new IllegalArgumentException("Le statut est obligatoire.");
         }
 
+        String value = statut.trim().toUpperCase();
+
+        if (!"PLANIFIEE".equals(value)
+                && !"EN_COURS".equals(value)
+                && !"TERMINEE".equals(value)
+                && !"ANNULEE".equals(value)) {
+            throw new IllegalArgumentException("Statut intervention invalide : " + statut);
+        }
+
+        return value;
+    }
+
+    @Override
+    public InterventionResponse changeStatus(Long id, String statut) {
+        String targetStatus = normalizeInterventionStatus(statut);
+
         Intervention intervention = getInterventionOrThrow(id);
-        intervention.setStatut(statut.trim());
+        intervention.setStatut(targetStatus);
 
         Intervention saved = interventionRepository.save(intervention);
+        synchronizeEquipementStatusWithIntervention(saved);
+
         return interventionMapper.mapToResponse(saved);
     }
 

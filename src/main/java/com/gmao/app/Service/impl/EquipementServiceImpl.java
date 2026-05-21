@@ -23,303 +23,398 @@ import com.gmao.app.mapper.EquipementMapper;
 @Transactional
 public class EquipementServiceImpl implements EquipementService {
 
-    private final EquipementRepository equipementRepository;
-    private final EquipementMapper equipementMapper;
-    private final CompanyRepository companyRepository;
-    
-    public EquipementServiceImpl(EquipementRepository equipementRepository,
-                                 EquipementMapper equipementMapper ,CompanyRepository companyRepository) {
-        this.equipementRepository = equipementRepository;
-        this.equipementMapper = equipementMapper;
-        this.companyRepository=companyRepository;
-    }
+	private final EquipementRepository equipementRepository;
+	private final EquipementMapper equipementMapper;
+	private final CompanyRepository companyRepository;
 
-    @Override
-    public EquipementResponse create(EquipementCreateRequest request) {
-        validateCreateRequest(request);
-        checkCodeUniqueness(request.getCode());
+	public EquipementServiceImpl(EquipementRepository equipementRepository, EquipementMapper equipementMapper,
+			CompanyRepository companyRepository) {
+		this.equipementRepository = equipementRepository;
+		this.equipementMapper = equipementMapper;
+		this.companyRepository = companyRepository;
+	}
 
-        Equipement equipement = equipementMapper.mapToEntity(request);
+	private void validateInstallationDates(java.time.LocalDate dateInstallation,
+			java.time.LocalDate dateMiseEnService) {
+		if (dateInstallation != null && dateMiseEnService != null && !dateInstallation.isBefore(dateMiseEnService)) {
+			throw new IllegalArgumentException(
+					"La date d’installation doit être strictement antérieure à la date de mise en service.");
+		}
+	}
 
-        if (request.getParentId() != null) {
-            Equipement parent = getEquipementOrThrow(request.getParentId());
-            validateParentRelation(equipement, parent);
-            equipement.setParent(parent);
-        }
-        if (request.getCompanyId() != null) {
-            Company company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
-            equipement.setCompany(company);
-        }
-        Equipement saved = equipementRepository.save(equipement);
-        return equipementMapper.mapToResponse(saved);
-    }
+	@Override
+	public EquipementResponse create(EquipementCreateRequest request) {
+		validateCreateRequest(request);
+		validateInstallationDates(request.getDateInstallation(), request.getDateMiseEnService());
+		checkCodeUniqueness(request.getCode());
 
-    @Override
-    public EquipementResponse update(Long id, EquipementUpdateRequest request) {
-        validateUpdateRequest(request);
+		Equipement equipement = equipementMapper.mapToEntity(request);
 
-        Equipement equipement = getEquipementOrThrow(id);
-        equipementMapper.mapToEntity(request, equipement);
+		if (request.getParentId() != null) {
+			Equipement parent = getEquipementOrThrow(request.getParentId());
+			validateParentRelation(equipement, parent);
+			equipement.setParent(parent);
+		}
+		if (request.getCompanyId() != null) {
+			Company company = companyRepository.findById(request.getCompanyId()).orElseThrow(
+					() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
+			equipement.setCompany(company);
+		}
+		Equipement saved = equipementRepository.save(equipement);
+		return equipementMapper.mapToResponse(saved);
+	}
 
-        if (request.getParentId() != null) {
-            Equipement parent = getEquipementOrThrow(request.getParentId());
-            validateParentRelation(equipement, parent);
-            equipement.setParent(parent);
-        } else {
-            equipement.setParent(null);
-        }
-        if (request.getCompanyId() != null) {
-            Company company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
-            equipement.setCompany(company);
-        }
-        Equipement saved = equipementRepository.save(equipement);
-        return equipementMapper.mapToResponse(saved);
-    }
+	@Override
+	public EquipementResponse update(Long id, EquipementUpdateRequest request) {
+		validateUpdateRequest(request);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> findByCompany(Long companyId) {
-        return equipementRepository.findByCompanyId(companyId)
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		Equipement equipement = getEquipementOrThrow(id);
 
-    @Override
-    @Transactional(readOnly = true)
-    public EquipementResponse getById(Long id) {
-        return equipementMapper.mapToResponse(getEquipementOrThrow(id));
-    }
+		String oldStatus = equipement.getStatut() == null || equipement.getStatut().isBlank() ? ACTIF
+				: normalizeStatus(equipement.getStatut());
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> getAll() {
-        return equipementRepository.findAll()
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		String requestedStatus = request.getStatut() == null || request.getStatut().isBlank() ? oldStatus
+				: normalizeStatus(request.getStatut());
 
-    @Override
-    public void delete(Long id) {
-        Equipement equipement = getEquipementOrThrow(id);
+		if (request.getStatut() != null && !oldStatus.equals(requestedStatus)) {
+			validateManualStatusTransition(equipement, requestedStatus);
+		}
 
-        if (!canBeDeleted(id)) {
-            throw new IllegalStateException(
-                    "Impossible de supprimer cet équipement car il possède des enfants, des interventions ou des préventifs.");
-        }
+		equipementMapper.mapToEntity(request, equipement);
 
-        equipementRepository.delete(equipement);
-    }
+		validateInstallationDates(equipement.getDateInstallation(), equipement.getDateMiseEnService());
 
-    @Override
-    public void archive(Long id) {
-        Equipement equipement = getEquipementOrThrow(id);
-        equipement.setActif(Boolean.FALSE);
+		if (request.getParentId() != null) {
+			Equipement parent = getEquipementOrThrow(request.getParentId());
+			validateParentRelation(equipement, parent);
+			equipement.setParent(parent);
+		} else {
+			equipement.setParent(null);
+		}
 
-      //  if (equipement.getStatut() == null || equipement.getStatut().isBlank()) {
-        //    equipement.setStatut("ARCHIVED")     
-       // };
-       equipement.setStatut("ARCHIVED");
+		if (request.getCompanyId() != null) {
+			Company company = companyRepository.findById(request.getCompanyId()).orElseThrow(
+					() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
+			equipement.setCompany(company);
+		} else {
+			equipement.setCompany(null);
+		}
 
-        equipementRepository.save(equipement);
-    }
+		Equipement saved = equipementRepository.save(equipement);
+		return equipementMapper.mapToResponse(saved);
+	}
 
-    @Override
-    public void unarchive(Long id) {
-        Equipement equipement = equipementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Equipement introuvable avec l'id : " + id));
-        equipement.setActif(Boolean.TRUE);
-        equipement.setStatut("ACTIF"); 
-        equipementRepository.save(equipement);
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> findByCompany(Long companyId) {
+		return equipementRepository.findByCompanyId(companyId).stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-@Override
-public EquipementResponse changeStatus(Long id, String statut) {
-    if (statut == null || statut.isBlank()) {
-        throw new IllegalArgumentException("Le statut est obligatoire.");
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public EquipementResponse getById(Long id) {
+		return equipementMapper.mapToResponse(getEquipementOrThrow(id));
+	}
 
-    Equipement equipement = getEquipementOrThrow(id);
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> getAll() {
+		return equipementRepository.findAll().stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-    if (equipement.getStatut() != null && equipement.getStatut().equalsIgnoreCase("ARCHIVED")) {
-        throw new IllegalStateException("Impossible de changer le statut d’un équipement archivé.");
-    }
+	@Override
+	public void delete(Long id) {
+		Equipement equipement = getEquipementOrThrow(id);
 
-    equipement.setStatut(statut.trim());
+		if (!canBeDeleted(id)) {
+			throw new IllegalStateException(
+					"Impossible de supprimer cet équipement car il possède des enfants, des interventions ou des préventifs.");
+		}
 
-    Equipement saved = equipementRepository.save(equipement);
-    return equipementMapper.mapToResponse(saved);
-}
+		equipementRepository.delete(equipement);
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> search(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return getAll();
-        }
+	@Override
+	public void archive(Long id) {
+		Equipement equipement = getEquipementOrThrow(id);
 
-        return equipementRepository.search(keyword.trim())
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		validateManualStatusTransition(equipement, ARCHIVED);
+		applyEquipmentStatus(equipement, ARCHIVED);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> findByType(String type) {
-        if (type == null || type.isBlank()) {
-            throw new IllegalArgumentException("Le type est obligatoire.");
-        }
+		equipementRepository.save(equipement);
+	}
 
-        return equipementRepository.findByTypeIgnoreCase(type.trim())
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+	@Override
+	public void unarchive(Long id) {
+		Equipement equipement = getEquipementOrThrow(id);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> findByStatut(String statut) {
-        if (statut == null || statut.isBlank()) {
-            throw new IllegalArgumentException("Le statut est obligatoire.");
-        }
+		validateManualStatusTransition(equipement, ACTIF);
+		applyEquipmentStatus(equipement, ACTIF);
 
-        return equipementRepository.findByStatutIgnoreCase(statut.trim())
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		equipementRepository.save(equipement);
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> findRoots() {
-        return equipementRepository.findByParentIsNull()
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+	@Override
+	public EquipementResponse changeStatus(Long id, String statut) {
+		String targetStatus = normalizeStatus(statut);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementResponse> findChildren(Long parentId) {
-        getEquipementOrThrow(parentId);
+		Equipement equipement = getEquipementOrThrow(id);
 
-        return equipementRepository.findByParentId(parentId)
-                .stream()
-                .map(equipementMapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		validateManualStatusTransition(equipement, targetStatus);
+		applyEquipmentStatus(equipement, targetStatus);
 
-    @Override
-    public EquipementResponse assignParent(Long childId, Long parentId) {
-        Equipement child = getEquipementOrThrow(childId);
-        Equipement parent = getEquipementOrThrow(parentId);
+		Equipement saved = equipementRepository.save(equipement);
+		return equipementMapper.mapToResponse(saved);
+	}
 
-        validateParentRelation(child, parent);
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> search(String keyword) {
+		if (keyword == null || keyword.isBlank()) {
+			return getAll();
+		}
 
-        child.setParent(parent);
-        Equipement saved = equipementRepository.save(child);
-        return equipementMapper.mapToResponse(saved);
-    }
+		return equipementRepository.search(keyword.trim()).stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-    @Override
-    public EquipementResponse detachParent(Long childId) {
-        Equipement child = getEquipementOrThrow(childId);
-        child.setParent(null);
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> findByType(String type) {
+		if (type == null || type.isBlank()) {
+			throw new IllegalArgumentException("Le type est obligatoire.");
+		}
 
-        Equipement saved = equipementRepository.save(child);
-        return equipementMapper.mapToResponse(saved);
-    }
+		return equipementRepository.findByTypeIgnoreCase(type.trim()).stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EquipementTreeResponse> getTree() {
-        return equipementRepository.findByParentIsNull()
-                .stream()
-                .map(equipementMapper::mapToTreeResponse)
-                .collect(Collectors.toList());
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> findByStatut(String statut) {
+		if (statut == null || statut.isBlank()) {
+			throw new IllegalArgumentException("Le statut est obligatoire.");
+		}
 
-    @Override
-    @Transactional(readOnly = true)
-    public EquipementDetailResponse getDetail(Long id) {
-        return equipementMapper.mapToDetailResponse(getEquipementOrThrow(id));
-    }
+		return equipementRepository.findByStatutIgnoreCase(statut.trim()).stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByCode(String code) {
-        if (code == null || code.isBlank()) {
-            return false;
-        }
-        return equipementRepository.existsByCode(code.trim());
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> findRoots() {
+		return equipementRepository.findByParentIsNull().stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean canBeDeleted(Long id) {
-        Equipement equipement = getEquipementOrThrow(id);
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementResponse> findChildren(Long parentId) {
+		getEquipementOrThrow(parentId);
 
-        boolean hasChildren = equipement.getChildren() != null && !equipement.getChildren().isEmpty();
-        boolean hasInterventions = equipement.getInterventions() != null && !equipement.getInterventions().isEmpty();
-        boolean hasPreventifs = equipement.getPreventifs() != null && !equipement.getPreventifs().isEmpty();
+		return equipementRepository.findByParentId(parentId).stream().map(equipementMapper::mapToResponse)
+				.collect(Collectors.toList());
+	}
 
-        return !hasChildren && !hasInterventions && !hasPreventifs;
-    }
+	@Override
+	public EquipementResponse assignParent(Long childId, Long parentId) {
+		Equipement child = getEquipementOrThrow(childId);
+		Equipement parent = getEquipementOrThrow(parentId);
 
-    private Equipement getEquipementOrThrow(Long id) {
-        return equipementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Equipement introuvable avec l'id : " + id));
-    }
+		validateParentRelation(child, parent);
 
-    private void validateCreateRequest(EquipementCreateRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("La requête de création est obligatoire.");
-        }
-        if (request.getCode() == null || request.getCode().isBlank()) {
-            throw new IllegalArgumentException("Le code équipement est obligatoire.");
-        }
-        if (request.getDescription() == null || request.getDescription().isBlank()) {
-            throw new IllegalArgumentException("La description est obligatoire.");
-        }
-    }
+		child.setParent(parent);
+		Equipement saved = equipementRepository.save(child);
+		return equipementMapper.mapToResponse(saved);
+	}
 
-    private void validateUpdateRequest(EquipementUpdateRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("La requête de mise à jour est obligatoire.");
-        }
-        if (request.getDescription() != null && request.getDescription().isBlank()) {
-            throw new IllegalArgumentException("La description ne peut pas être vide.");
-        }
-        if (request.getStatut() != null && request.getStatut().isBlank()) {
-            throw new IllegalArgumentException("Le statut ne peut pas être vide.");
-        }
-    }
+	@Override
+	public EquipementResponse detachParent(Long childId) {
+		Equipement child = getEquipementOrThrow(childId);
+		child.setParent(null);
 
-    private void validateParentRelation(Equipement child, Equipement parent) {
-        if (child == null || parent == null) {
-            throw new IllegalArgumentException("La relation parent/enfant est invalide.");
-        }
+		Equipement saved = equipementRepository.save(child);
+		return equipementMapper.mapToResponse(saved);
+	}
 
-        if (child.getId() != null && Objects.equals(child.getId(), parent.getId())) {
-            throw new IllegalArgumentException("Un équipement ne peut pas être son propre parent.");
-        }
+	@Override
+	@Transactional(readOnly = true)
+	public List<EquipementTreeResponse> getTree() {
+		return equipementRepository.findByParentIsNull().stream().map(equipementMapper::mapToTreeResponse)
+				.collect(Collectors.toList());
+	}
 
-        Equipement current = parent;
-        while (current != null) {
-            if (child.getId() != null && Objects.equals(current.getId(), child.getId())) {
-                throw new IllegalArgumentException("Relation hiérarchique circulaire détectée.");
-            }
-            current = current.getParent();
-        }
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public EquipementDetailResponse getDetail(Long id) {
+		return equipementMapper.mapToDetailResponse(getEquipementOrThrow(id));
+	}
 
-    private void checkCodeUniqueness(String code) {
-        if (equipementRepository.existsByCode(code.trim())) {
-            throw new IllegalArgumentException("Le code équipement existe déjà : " + code);
-        }
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public boolean existsByCode(String code) {
+		if (code == null || code.isBlank()) {
+			return false;
+		}
+		return equipementRepository.existsByCode(code.trim());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public boolean canBeDeleted(Long id) {
+		Equipement equipement = getEquipementOrThrow(id);
+
+		boolean hasChildren = equipement.getChildren() != null && !equipement.getChildren().isEmpty();
+		boolean hasInterventions = equipement.getInterventions() != null && !equipement.getInterventions().isEmpty();
+		boolean hasPreventifs = equipement.getPreventifs() != null && !equipement.getPreventifs().isEmpty();
+
+		return !hasChildren && !hasInterventions && !hasPreventifs;
+	}
+
+	private Equipement getEquipementOrThrow(Long id) {
+		return equipementRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Equipement introuvable avec l'id : " + id));
+	}
+
+	private void validateCreateRequest(EquipementCreateRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("La requête de création est obligatoire.");
+		}
+		if (request.getCode() == null || request.getCode().isBlank()) {
+			throw new IllegalArgumentException("Le code équipement est obligatoire.");
+		}
+		if (request.getDescription() == null || request.getDescription().isBlank()) {
+			throw new IllegalArgumentException("La description est obligatoire.");
+		}
+	}
+
+	private void validateUpdateRequest(EquipementUpdateRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("La requête de mise à jour est obligatoire.");
+		}
+		if (request.getDescription() != null && request.getDescription().isBlank()) {
+			throw new IllegalArgumentException("La description ne peut pas être vide.");
+		}
+		if (request.getStatut() != null && request.getStatut().isBlank()) {
+			throw new IllegalArgumentException("Le statut ne peut pas être vide.");
+		}
+	}
+
+	private void validateParentRelation(Equipement child, Equipement parent) {
+		if (child == null || parent == null) {
+			throw new IllegalArgumentException("La relation parent/enfant est invalide.");
+		}
+
+		if (child.getId() != null && Objects.equals(child.getId(), parent.getId())) {
+			throw new IllegalArgumentException("Un équipement ne peut pas être son propre parent.");
+		}
+
+		Equipement current = parent;
+		while (current != null) {
+			if (child.getId() != null && Objects.equals(current.getId(), child.getId())) {
+				throw new IllegalArgumentException("Relation hiérarchique circulaire détectée.");
+			}
+			current = current.getParent();
+		}
+	}
+
+	private void checkCodeUniqueness(String code) {
+		if (equipementRepository.existsByCode(code.trim())) {
+			throw new IllegalArgumentException("Le code équipement existe déjà : " + code);
+		}
+	}
+
+	private static final String ACTIF = "ACTIF";
+	private static final String MAINTENANCE = "MAINTENANCE";
+	private static final String HS = "HS";
+	private static final String ARCHIVED = "ARCHIVED";
+
+	private String normalizeStatus(String statut) {
+		if (statut == null || statut.isBlank()) {
+			throw new IllegalArgumentException("Le statut est obligatoire.");
+		}
+
+		String value = statut.trim().toUpperCase();
+
+		if (!ACTIF.equals(value) && !MAINTENANCE.equals(value) && !HS.equals(value) && !ARCHIVED.equals(value)) {
+			throw new IllegalArgumentException("Statut équipement invalide : " + statut);
+		}
+
+		return value;
+	}
+
+	private void applyEquipmentStatus(Equipement equipement, String statut) {
+		equipement.setStatut(statut);
+		equipement.setActif(!ARCHIVED.equals(statut));
+	}
+
+	private void validateManualStatusTransition(Equipement equipement, String targetStatus) {
+		String currentStatus = normalizeStatus(equipement.getStatut());
+
+		if (currentStatus.equals(targetStatus)) {
+			return;
+		}
+
+		switch (currentStatus) {
+		case ACTIF -> {
+			if (ARCHIVED.equals(targetStatus)) {
+				requireAdmin("archiver un équipement actif");
+				return;
+			}
+
+			if (MAINTENANCE.equals(targetStatus)) {
+				throw new IllegalStateException(
+						"Le passage ACTIF vers MAINTENANCE doit se faire uniquement via une intervention en cours.");
+			}
+		}
+
+		case MAINTENANCE -> {
+			if (HS.equals(targetStatus)) {
+				return;
+			}
+
+			if (ACTIF.equals(targetStatus)) {
+				throw new IllegalStateException(
+						"Le passage MAINTENANCE vers ACTIF doit se faire automatiquement à la clôture de l’intervention.");
+			}
+		}
+
+		case HS -> {
+			if (MAINTENANCE.equals(targetStatus)) {
+				return;
+			}
+
+			if (ARCHIVED.equals(targetStatus)) {
+				requireAdmin("archiver un équipement HS");
+				return;
+			}
+		}
+
+		case ARCHIVED -> {
+			if (ACTIF.equals(targetStatus)) {
+				requireAdmin("réactiver un équipement archivé");
+				return;
+			}
+		}
+
+		default -> throw new IllegalStateException("Statut courant non géré : " + currentStatus);
+		}
+
+		throw new IllegalStateException("Changement de statut non autorisé : " + currentStatus + " -> " + targetStatus);
+	}
+
+	private void requireAdmin(String action) {
+		var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+				.getAuthentication();
+
+		boolean isAdmin = authentication != null && authentication.getAuthorities() != null
+				&& authentication.getAuthorities().stream()
+						.anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ADMIN".equals(a.getAuthority()));
+
+		if (!isAdmin) {
+			throw new IllegalStateException("Action réservée à un administrateur : " + action);
+		}
+	}
 }

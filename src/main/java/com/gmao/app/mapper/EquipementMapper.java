@@ -97,21 +97,29 @@ public class EquipementMapper {
         return response;
     }
 
-    public EquipementTreeResponse mapToTreeResponse(Equipement entity) {
+    public EquipementTreeResponse mapToTreeResponse(Equipement equipement) {
+        if (equipement == null) {
+            return null;
+        }
+
         EquipementTreeResponse response = new EquipementTreeResponse();
-        response.setId(entity.getId());
-        response.setCode(entity.getCode());
-        response.setDescription(entity.getDescription());
-        response.setType(entity.getType());
-        response.setStatut(entity.getStatut());
+        response.setId(equipement.getId());
+        response.setCode(equipement.getCode());
+        response.setDescription(equipement.getDescription());
+        response.setType(equipement.getType());
+        response.setStatut(equipement.getStatut());
+        response.setLocalisation(equipement.getLocalisation());
+        response.setParentId(equipement.getParent() != null ? equipement.getParent().getId() : null);
 
-        List<EquipementTreeResponse> children = entity.getChildren() == null
-                ? Collections.emptyList()
-                : entity.getChildren().stream()
-                        .map(this::mapToTreeResponse)
-                        .collect(Collectors.toList());
+        if (equipement.getChildren() != null) {
+            response.setChildren(
+                    equipement.getChildren()
+                            .stream()
+                            .map(this::mapToTreeResponse)
+                            .toList()
+            );
+        }
 
-        response.setChildren(children);
         return response;
     }
 }

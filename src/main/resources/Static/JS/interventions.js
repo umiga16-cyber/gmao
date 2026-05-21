@@ -16,6 +16,16 @@ let usersMap = new Map();
 let prsCatalog = [];
 let currentPrsLines = [];
 
+function normalizeInterventionStatus(status) {
+    const value = (status || '').trim().toUpperCase();
+
+    if (value === 'OPEN') return 'PLANIFIEE';
+    if (value === 'IN_PROGRESS') return 'EN_COURS';
+    if (value === 'CLOSED' || value === 'DONE' || value === 'COMPLETED') return 'TERMINEE';
+    if (value === 'CANCELED' || value === 'CANCELLED') return 'ANNULEE';
+
+    return value;
+}
 function truncateText(text, maxLen) {
     if (!text) return '—';
     if (text.length <= maxLen) return text;
@@ -192,9 +202,12 @@ async function loadStats() {
     const interventions = Array.isArray(data) ? data : [];
 
     document.getElementById('totalInterventions').textContent = interventions.length;
-    document.getElementById('interventionsTerminees').textContent = interventions.filter(i => i.statut === 'TERMINEE').length;
-    document.getElementById('interventionsEnCours').textContent = interventions.filter(i => i.statut === 'EN_COURS').length;
-    document.getElementById('interventionsPlanifiees').textContent = interventions.filter(i => i.statut === 'PLANIFIEE').length;
+    document.getElementById('interventionsTerminees').textContent =
+        interventions.filter(i => normalizeInterventionStatus(i.statut) === 'TERMINEE').length;
+    document.getElementById('interventionsEnCours').textContent =
+        interventions.filter(i => normalizeInterventionStatus(i.statut) === 'EN_COURS').length;
+    document.getElementById('interventionsPlanifiees').textContent =
+        interventions.filter(i => normalizeInterventionStatus(i.statut) === 'PLANIFIEE').length;
 }
 
 async function loadInterventions() {
@@ -209,7 +222,7 @@ function applyFilters() {
     const equipementKeyword = document.getElementById('equipementFilter').value.trim().toLowerCase();
 
     const filtered = allInterventions.filter(i => {
-        const statusOk = !status || (i.statut || '').toUpperCase() === status.toUpperCase();
+        const statusOk = !status || normalizeInterventionStatus(i.statut) === status.toUpperCase();
         const typeOk = !type || (i.type || '').toUpperCase() === type.toUpperCase();
         const equipementText = (i.equipementDescription || '').toLowerCase();
         const equipOk = !equipementKeyword || equipementText.includes(equipementKeyword);
@@ -281,17 +294,19 @@ function renderTable(data) {
 }
 
 function renderStatusBadge(status) {
+    const normalized = normalizeInterventionStatus(status);
+
     let cls = 'status-badge ';
-    if (status === 'PLANIFIEE') cls += 'status-PLANIFIEE';
-    else if (status === 'EN_COURS') cls += 'status-EN_COURS';
-    else if (status === 'TERMINEE') cls += 'status-TERMINEE';
-    else if (status === 'ANNULEE') cls += 'status-ANNULEE';
+    if (normalized === 'PLANIFIEE') cls += 'status-PLANIFIEE';
+    else if (normalized === 'EN_COURS') cls += 'status-EN_COURS';
+    else if (normalized === 'TERMINEE') cls += 'status-TERMINEE';
+    else if (normalized === 'ANNULEE') cls += 'status-ANNULEE';
     else cls += 'status-PLANIFIEE';
 
-    let label = status === 'PLANIFIEE' ? 'Planifiée'
-        : status === 'EN_COURS' ? 'En cours'
-        : status === 'TERMINEE' ? 'Terminée'
-        : status === 'ANNULEE' ? 'Annulée'
+    let label = normalized === 'PLANIFIEE' ? 'Planifiée'
+        : normalized === 'EN_COURS' ? 'En cours'
+        : normalized === 'TERMINEE' ? 'Terminée'
+        : normalized === 'ANNULEE' ? 'Annulée'
         : escapeHtml(status);
 
     return `<span class="${cls}">${label}</span>`;
@@ -512,7 +527,7 @@ async function openEditCanvas(id) {
         document.getElementById('interventionIdCanvas').value = i.id ?? '';
         document.getElementById('libelleCanvas').value = i.libele ?? '';
         document.getElementById('typeCanvas').value = i.type ?? '';
-        document.getElementById('statutCanvas').value = i.statut ?? '';
+        document.getElementById('statutCanvas').value = normalizeInterventionStatus(i.statut);
         await loadEquipmentsSelect(i.equipementId);
         await loadUsersSelect(i.createdById);
         await loadPrsSelect();
@@ -546,7 +561,7 @@ async function saveInterventionCanvas() {
     const payload = {
         libele: getVal('libelleCanvas'),
         type: getVal('typeCanvas'),
-        statut: getVal('statutCanvas'),
+        statut: normalizeInterventionStatus(getVal('statutCanvas')),
         equipementId: getNumberVal('equipementIdCanvas'),
         createdById: getNumberVal('createdByIdCanvas'),
         dateDebut: toIsoDateTime(getVal('dateDebutCanvas')),
@@ -598,7 +613,8 @@ function openStatusModal(id) {
 
 async function changeStatus(id, newStatus) {
     try {
-        await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(newStatus)}`, { method: 'PATCH' });
+		const normalizedStatus = normalizeInterventionStatus(newStatus);
+		await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(normalizedStatus)}`, { method: 'PATCH' });
         await refreshPage();
     } catch (err) {
         showWarning(err.message);
