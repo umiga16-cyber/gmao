@@ -49,7 +49,8 @@ public class EquipementServiceImpl implements EquipementService {
 		checkCodeUniqueness(request.getCode());
 
 		Equipement equipement = equipementMapper.mapToEntity(request);
-
+		// INC 6: à la création, seul ACTIF est autorisé
+		applyEquipmentStatus(equipement, ACTIF);
 		if (request.getParentId() != null) {
 			Equipement parent = getEquipementOrThrow(request.getParentId());
 			validateParentRelation(equipement, parent);
@@ -66,42 +67,51 @@ public class EquipementServiceImpl implements EquipementService {
 
 	@Override
 	public EquipementResponse update(Long id, EquipementUpdateRequest request) {
-		validateUpdateRequest(request);
+	    validateUpdateRequest(request);
 
-		Equipement equipement = getEquipementOrThrow(id);
+	    Equipement equipement = getEquipementOrThrow(id);
 
-		String oldStatus = equipement.getStatut() == null || equipement.getStatut().isBlank() ? ACTIF
-				: normalizeStatus(equipement.getStatut());
+	    /*
+	     * INC 6:
+	     * The classic edit form must not change the equipment status.
+	     * Status is managed only by:
+	     * - intervention EN_COURS  -> MAINTENANCE
+	     * - intervention TERMINEE  -> ACTIF
+	     * - manual status button   -> HS / ARCHIVED / ACTIF according to workflow
+	     */
+	    String oldStatus = equipement.getStatut() == null || equipement.getStatut().isBlank()
+	            ? ACTIF
+	            : normalizeStatus(equipement.getStatut());
 
-		String requestedStatus = request.getStatut() == null || request.getStatut().isBlank() ? oldStatus
-				: normalizeStatus(request.getStatut());
+	    equipementMapper.mapToEntity(request, equipement);
 
-		if (request.getStatut() != null && !oldStatus.equals(requestedStatus)) {
-			validateManualStatusTransition(equipement, requestedStatus);
-		}
+	    /*
+	     * Important:
+	     * The mapper can overwrite statut with request.getStatut().
+	     * We restore the original status to prevent status change from edit form.
+	     */
+	    applyEquipmentStatus(equipement, oldStatus);
 
-		equipementMapper.mapToEntity(request, equipement);
+	    validateInstallationDates(equipement.getDateInstallation(), equipement.getDateMiseEnService());
 
-		validateInstallationDates(equipement.getDateInstallation(), equipement.getDateMiseEnService());
+	    if (request.getParentId() != null) {
+	        Equipement parent = getEquipementOrThrow(request.getParentId());
+	        validateParentRelation(equipement, parent);
+	        equipement.setParent(parent);
+	    } else {
+	        equipement.setParent(null);
+	    }
 
-		if (request.getParentId() != null) {
-			Equipement parent = getEquipementOrThrow(request.getParentId());
-			validateParentRelation(equipement, parent);
-			equipement.setParent(parent);
-		} else {
-			equipement.setParent(null);
-		}
+	    if (request.getCompanyId() != null) {
+	        Company company = companyRepository.findById(request.getCompanyId())
+	                .orElseThrow(() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
+	        equipement.setCompany(company);
+	    } else {
+	        equipement.setCompany(null);
+	    }
 
-		if (request.getCompanyId() != null) {
-			Company company = companyRepository.findById(request.getCompanyId()).orElseThrow(
-					() -> new RuntimeException("Société introuvable avec l'id : " + request.getCompanyId()));
-			equipement.setCompany(company);
-		} else {
-			equipement.setCompany(null);
-		}
-
-		Equipement saved = equipementRepository.save(equipement);
-		return equipementMapper.mapToResponse(saved);
+	    Equipement saved = equipementRepository.save(equipement);
+	    return equipementMapper.mapToResponse(saved);
 	}
 
 	@Override

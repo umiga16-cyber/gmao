@@ -362,6 +362,8 @@
             <table class="table mb-0">
                 <thead>
                 <tr>
+					<th>Code intervention</th>
+					<th>Code matériel</th>
                     <th>Libellé</th>
                     <th>Type</th>
                     <th>Équipement</th>
@@ -394,13 +396,23 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-        <form id="interventionFormCanvas">
+      <form id="interventionFormCanvas" novalidate>
             <input type="hidden" id="interventionIdCanvas">
             <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label">Libellé *</label>
-                    <input type="text" id="libelleCanvas" class="form-control" required maxlength="200">
-                </div>
+				<div class="col-md-6">
+				    <label class="form-label">Code intervention *</label>
+				    <input type="text" id="codeInterventionCanvas" class="form-control" maxlength="50">
+				</div>
+
+				<div class="col-md-6">
+				    <label class="form-label">Code matériel *</label>
+				    <input type="text" id="codeMaterielCanvas" class="form-control" maxlength="50">
+				</div>
+
+				<div class="col-12">
+				    <label class="form-label">Libellé *</label>
+				    <input type="text" id="libelleCanvas" class="form-control" maxlength="200">
+				</div>
                 <div class="col-md-6">
                     <label class="form-label">Type *</label>
                     <select id="typeCanvas" class="form-select" required>
@@ -426,12 +438,7 @@
                         <option value="">Sélectionner un équipement</option>
                     </select>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Créé par *</label>
-                    <select id="createdByIdCanvas" class="form-select" required>
-                        <option value="">Sélectionner un utilisateur</option>
-                    </select>
-                </div>
+                
                 <div class="col-md-6">
                     <label class="form-label">Date début *</label>
                     <input type="datetime-local" id="dateDebutCanvas" class="form-control" required>
@@ -560,6 +567,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/JS/interventions.js"></script>
+<script src="/JS/interventions.js?v=2"></script>
 </body>
 </html>

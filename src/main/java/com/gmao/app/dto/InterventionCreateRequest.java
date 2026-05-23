@@ -29,12 +29,29 @@ public class InterventionCreateRequest {
     private String commentaire;
     private Long preventifId;
 
-    @NotNull(message = "L'id du créateur est obligatoire.")
+     
     private Long createdById;
 
     @Valid
     private List<PrsUsageRequest> prsItems = new ArrayList<>();
+    private String codeIntervention;
+    private String codeMateriel;
 
+    public String getCodeIntervention() {
+        return codeIntervention;
+    }
+
+    public void setCodeIntervention(String codeIntervention) {
+        this.codeIntervention = codeIntervention;
+    }
+
+    public String getCodeMateriel() {
+        return codeMateriel;
+    }
+
+    public void setCodeMateriel(String codeMateriel) {
+        this.codeMateriel = codeMateriel;
+    }
     public String getLibele() {
         return libele;
     }

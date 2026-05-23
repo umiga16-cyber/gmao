@@ -69,7 +69,11 @@ public class Intervention {
     @JsonIgnore
     @OneToMany(mappedBy = "intervention", fetch = FetchType.LAZY)
     private Set<PrsMouvement> mouvements = new HashSet<>();
+    @Column(name = "code_intervention", nullable = false, unique = true, length = 50)
+    private String codeIntervention;
 
+    @Column(name = "code_materiel", nullable = false, length = 50)
+    private String codeMateriel;
 	public Long getId() {
 		return id;
 	}
@@ -198,5 +202,19 @@ public class Intervention {
 		this.mouvements = mouvements;
 	}
     
-    
+	public String getCodeIntervention() {
+	    return codeIntervention;
+	}
+
+	public void setCodeIntervention(String codeIntervention) {
+	    this.codeIntervention = codeIntervention;
+	}
+
+	public String getCodeMateriel() {
+	    return codeMateriel;
+	}
+
+	public void setCodeMateriel(String codeMateriel) {
+	    this.codeMateriel = codeMateriel;
+	}
 }

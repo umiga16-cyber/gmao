@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -126,14 +128,16 @@ public class InterventionServiceImpl implements InterventionService {
         getInterventionOrThrow(id);
         return true;
     }
-
+    
     @Override
     public InterventionResponse create(InterventionCreateRequest request) {
         validateCreateRequest(request);
         validateDates(request.getDateDebut(), request.getDateFin());
 
+        checkCodeInterventionUniqueness(request.getCodeIntervention(), null);
+
         Equipement equipement = getEquipementOrThrow(request.getEquipementId());
-        User createdBy = getUserOrThrow(request.getCreatedById());
+        User createdBy = getCurrentAuthenticatedUser();
         Preventif preventif = getPreventifOrNull(request.getPreventifId());
 
         Intervention intervention = interventionMapper.mapToEntity(request);
@@ -154,21 +158,40 @@ public class InterventionServiceImpl implements InterventionService {
 
         return interventionMapper.mapToResponse(saved);
     }
+    private User getCurrentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("Utilisateur connecté introuvable.");
+        }
+
+        String email = authentication.getName();
+
+        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
+            throw new IllegalStateException("Utilisateur connecté introuvable.");
+        }
+
+        return appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Utilisateur connecté introuvable en base : " + email));
+    }
     @Override
     public InterventionResponse update(Long id, InterventionUpdateRequest request) {
         validateUpdateRequest(request);
         validateDates(request.getDateDebut(), request.getDateFin());
 
+        checkCodeInterventionUniqueness(request.getCodeIntervention(), id);
+
         Intervention intervention = getInterventionOrThrow(id);
+
+        User originalCreatedBy = intervention.getCreatedBy();
+
         interventionMapper.mapToEntity(request, intervention);
+
+        
+        intervention.setCreatedBy(originalCreatedBy);
 
         if (request.getEquipementId() != null) {
             intervention.setEquipement(getEquipementOrThrow(request.getEquipementId()));
-        }
-
-        if (request.getCreatedById() != null) {
-            intervention.setCreatedBy(getUserOrThrow(request.getCreatedById()));
         }
 
         if (request.getPreventifId() != null) {
@@ -356,14 +379,21 @@ public class InterventionServiceImpl implements InterventionService {
         if (request == null) {
             throw new IllegalArgumentException("La requête de création est obligatoire.");
         }
+
+        if (request.getCodeIntervention() == null || request.getCodeIntervention().isBlank()) {
+            throw new IllegalArgumentException("Le code intervention est obligatoire.");
+        }
+
+        if (request.getCodeMateriel() == null || request.getCodeMateriel().isBlank()) {
+            throw new IllegalArgumentException("Le code matériel est obligatoire.");
+        }
+
         if (request.getLibele() == null || request.getLibele().isBlank()) {
             throw new IllegalArgumentException("Le libellé est obligatoire.");
         }
+
         if (request.getEquipementId() == null) {
             throw new IllegalArgumentException("L'id équipement est obligatoire.");
-        }
-        if (request.getCreatedById() == null) {
-            throw new IllegalArgumentException("L'id du créateur est obligatoire.");
         }
     }
 
@@ -371,14 +401,38 @@ public class InterventionServiceImpl implements InterventionService {
         if (request == null) {
             throw new IllegalArgumentException("La requête de mise à jour est obligatoire.");
         }
+
+        if (request.getCodeIntervention() != null && request.getCodeIntervention().isBlank()) {
+            throw new IllegalArgumentException("Le code intervention ne peut pas être vide.");
+        }
+
+        if (request.getCodeMateriel() != null && request.getCodeMateriel().isBlank()) {
+            throw new IllegalArgumentException("Le code matériel ne peut pas être vide.");
+        }
+
         if (request.getLibele() != null && request.getLibele().isBlank()) {
             throw new IllegalArgumentException("Le libellé ne peut pas être vide.");
         }
+
         if (request.getStatut() != null && request.getStatut().isBlank()) {
             throw new IllegalArgumentException("Le statut ne peut pas être vide.");
         }
     }
+    private void checkCodeInterventionUniqueness(String codeIntervention, Long currentId) {
+        if (codeIntervention == null || codeIntervention.isBlank()) {
+            return;
+        }
 
+        String value = codeIntervention.trim();
+
+        boolean exists = currentId == null
+                ? interventionRepository.existsByCodeInterventionIgnoreCase(value)
+                : interventionRepository.existsByCodeInterventionIgnoreCaseAndIdNot(value, currentId);
+
+        if (exists) {
+            throw new IllegalArgumentException("Le code intervention existe déjà : " + value);
+        }
+    }
     private void validateDates(java.time.LocalDateTime dateDebut, java.time.LocalDateTime dateFin) {
         if (dateDebut != null && dateFin != null && dateFin.isBefore(dateDebut)) {
             throw new IllegalArgumentException("La date de fin ne peut pas être antérieure à la date de début.");

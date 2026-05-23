@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+
 import com.gmao.app.Repository.UserRepository;
 
 @ControllerAdvice
@@ -17,12 +18,20 @@ public class ObtUserName {
 
     @ModelAttribute("username")
     public String username() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return "";
+        }
 
         String email = auth.getName();
-        
-        return userRepository.findRoleNameByEmail(email);
+
+        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
+            return "";
+        }
+
+        String roleName = userRepository.findRoleNameByEmail(email);
+
+        return roleName != null ? roleName : email;
     }
 }

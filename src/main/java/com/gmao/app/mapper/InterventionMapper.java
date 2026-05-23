@@ -18,6 +18,8 @@ public class InterventionMapper {
         intervention.setStatut(request.getStatut());
         intervention.setDateDebut(request.getDateDebut());
         intervention.setDateFin(request.getDateFin());
+        intervention.setCodeIntervention(request.getCodeIntervention());
+        intervention.setCodeMateriel(request.getCodeMateriel());
         intervention.setCommentaire(request.getCommentaire());
         return intervention;
     }
@@ -35,6 +37,13 @@ public class InterventionMapper {
         if (request.getDateDebut() != null) {
             intervention.setDateDebut(request.getDateDebut());
         }
+        if (request.getCodeIntervention() != null) {
+        	intervention.setCodeIntervention(request.getCodeIntervention());
+        }
+
+        if (request.getCodeMateriel() != null) {
+        	intervention.setCodeMateriel(request.getCodeMateriel());
+        }
         intervention.setDateFin(request.getDateFin());
         intervention.setCommentaire(request.getCommentaire());
     }
@@ -49,7 +58,8 @@ public class InterventionMapper {
         response.setDateFin(intervention.getDateFin());
         response.setPreventifId(intervention.getPreventif() != null ? intervention.getPreventif().getId() : null);
         response.setCreatedById(intervention.getCreatedBy() != null ? intervention.getCreatedBy().getId() : null);
-
+        response.setCodeIntervention(intervention.getCodeIntervention());
+        response.setCodeMateriel(intervention.getCodeMateriel());
         if (intervention.getEquipement() != null) {
             response.setEquipementId(intervention.getEquipement().getId());
             response.setEquipementDescription(intervention.getEquipement().getDescription());
@@ -69,7 +79,8 @@ public class InterventionMapper {
         response.setCommentaire(intervention.getCommentaire());
         response.setPreventifId(intervention.getPreventif() != null ? intervention.getPreventif().getId() : null);
         response.setCreatedById(intervention.getCreatedBy() != null ? intervention.getCreatedBy().getId() : null);
-
+        response.setCodeIntervention(intervention.getCodeIntervention());
+        response.setCodeMateriel(intervention.getCodeMateriel());
         if (intervention.getEquipement() != null) {
             response.setEquipementId(intervention.getEquipement().getId());
             response.setEquipementDescription(intervention.getEquipement().getDescription());

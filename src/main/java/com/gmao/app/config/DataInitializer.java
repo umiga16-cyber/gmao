@@ -362,10 +362,12 @@ public class DataInitializer {
 			// INTERVENTIONS
 			// =========================
 			Intervention i1 = new Intervention();
+			i1.setCodeIntervention("INT-001");
+			i1.setCodeMateriel("MAT-EQ-AT-001");
 			i1.setLibele("Remplacement filtre compresseur");
 			i1.setType("CORRECTIVE");
 			i1.setEquipement(eq1);
-			i1.setStatut("OPEN");
+			i1.setStatut("PLANIFIEE");
 			i1.setDateDebut(LocalDateTime.now().minusDays(1));
 			i1.setDateFin(LocalDateTime.now().plusDays(1));
 			i1.setCommentaire("Intervention prioritaire.");
@@ -373,10 +375,12 @@ public class DataInitializer {
 			i1.setCreatedBy(admin);
 
 			Intervention i2 = new Intervention();
+			i2.setCodeIntervention("INT-002");
+			i2.setCodeMateriel("MAT-EQ-NV-002");
 			i2.setLibele("Inspection tableau électrique");
 			i2.setType("PREVENTIVE");
 			i2.setEquipement(eq4);
-			i2.setStatut("IN_PROGRESS");
+			i2.setStatut("EN_COURS");
 			i2.setDateDebut(LocalDateTime.now());
 			i2.setDateFin(LocalDateTime.now().plusHours(4));
 			i2.setCommentaire("Prévoir arrêt électrique partiel.");
@@ -384,10 +388,12 @@ public class DataInitializer {
 			i2.setCreatedBy(supervisor);
 
 			Intervention i3 = new Intervention();
+			i3.setCodeIntervention("INT-003");
+			i3.setCodeMateriel("MAT-EQ-NV-001");
 			i3.setLibele("Diagnostic groupe électrogène");
-			i3.setType("DIAGNOSTIC");
+			i3.setType("CORRECTIVE");
 			i3.setEquipement(eq3);
-			i3.setStatut("OPEN");
+			i3.setStatut("PLANIFIEE");
 			i3.setDateDebut(LocalDateTime.now().plusDays(2));
 			i3.setDateFin(LocalDateTime.now().plusDays(2).plusHours(2));
 			i3.setCommentaire("Identifier la cause de la panne.");
@@ -396,7 +402,6 @@ public class DataInitializer {
 			interventionRepository.save(i1);
 			interventionRepository.save(i2);
 			interventionRepository.save(i3);
-
 			System.out.println("==================================================");
 			System.out.println("FAKE DATA INSERTED SUCCESSFULLY");
 			System.out.println("Admin login    : admin@gmao.test / admin123");

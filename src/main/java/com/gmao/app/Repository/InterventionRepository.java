@@ -17,4 +17,8 @@ public interface InterventionRepository extends JpaRepository<Intervention, Long
     List<Intervention> findByPreventifId(Long preventifId);
 
     List<Intervention> findByTypeIgnoreCase(String type);
+    
+    boolean existsByCodeInterventionIgnoreCase(String codeIntervention);
+    
+    boolean existsByCodeInterventionIgnoreCaseAndIdNot(String codeIntervention, Long id);
 }

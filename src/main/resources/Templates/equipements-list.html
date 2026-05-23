@@ -315,47 +315,44 @@
         </div>
     </div>
 
-    <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Recherche</label>
-                <input type="text" id="searchKeyword" class="form-control" placeholder="Code, description, société">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Statut</label>
-                <select id="statusFilter" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="ACTIF">ACTIF</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                    <option value="HS">HS</option>
-                    <option value="ARCHIVED">ARCHIVED</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Société</label>
-                <select id="companyFilter" class="form-select">
-                    <option value="">Toutes</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end gap-2">
-                <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
-                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
-            </div>
-        </div>
-    </div>
+	<div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
+	    <div class="row g-3">
+	        <div class="col-md-6">
+	            <label class="form-label">Recherche</label>
+	            <input type="text" id="searchKeyword" class="form-control" placeholder="Code, description, localisation, modèle">
+	        </div>
+
+	        <div class="col-md-3">
+	            <label class="form-label">Statut</label>
+	            <select id="statusFilter" class="form-select">
+	                <option value="">Tous</option>
+	                <option value="ACTIF">ACTIF</option>
+	                <option value="MAINTENANCE">MAINTENANCE</option>
+	                <option value="HS">HS</option>
+	                <option value="ARCHIVED">ARCHIVED</option>
+	            </select>
+	        </div>
+
+	        <div class="col-md-3 d-flex align-items-end gap-2">
+	            <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
+	            <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
+	        </div>
+	    </div>
+	</div>
 
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
-                <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th>Société</th>
-                    <th>Statut</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-                </thead>
+				<thead>
+				<tr>
+				    <th>Code</th>
+				    <th>Description</th>
+				    <th>Localisation</th>
+				    <th>Modèle</th>
+				    <th>Statut</th>
+				    <th class="text-center">Actions</th>
+				</tr>
+				</thead>
                 <tbody id="equipementsTableBody"></tbody>
             </table>
         </div>
@@ -415,16 +412,13 @@
                     <label class="form-label">Localisation</label>
                     <input type="text" id="localisationCanvas" class="form-control" maxlength="100">
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Statut *</label>
-                    <select id="statutCanvas" class="form-select" required>
-                        <option value="">Sélectionner</option>
-                        <option value="ACTIF">ACTIF</option>
-                        <option value="MAINTENANCE">MAINTENANCE</option>
-                        <option value="HS">HS</option>
-                        <option value="ARCHIVED">ARCHIVED</option>
-                    </select>
-                </div>
+				<div class="col-md-6">
+				    <label class="form-label">Statut</label>
+				    <input type="text" id="statutCanvas" class="form-control" value="ACTIF" readonly>
+				    <small class="text-muted">
+				        Le statut est ACTIF à la création. Les autres états sont gérés via intervention ou bouton statut.
+				    </small>
+				</div>
                 <div class="col-md-6">
                     <label class="form-label">Criticité</label>
                     <select id="criticiteCanvas" class="form-select">

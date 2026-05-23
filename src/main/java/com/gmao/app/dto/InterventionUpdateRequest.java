@@ -28,7 +28,24 @@ public class InterventionUpdateRequest {
 
     @Valid
     private List<PrsUsageRequest> prsItems = new ArrayList<>();
+    private String codeIntervention;
+    private String codeMateriel;
 
+    public String getCodeIntervention() {
+        return codeIntervention;
+    }
+
+    public void setCodeIntervention(String codeIntervention) {
+        this.codeIntervention = codeIntervention;
+    }
+
+    public String getCodeMateriel() {
+        return codeMateriel;
+    }
+
+    public void setCodeMateriel(String codeMateriel) {
+        this.codeMateriel = codeMateriel;
+    }
     public String getLibele() {
         return libele;
     }

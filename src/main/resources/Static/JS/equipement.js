@@ -52,7 +52,7 @@
     }
 
     function setupRealtimeValidation() {
-        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas', 'statutCanvas'];
+        const requiredFields = ['codeCanvas', 'descriptionCanvas', 'typeCanvas'];
         requiredFields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) {
@@ -92,8 +92,8 @@
             const code = document.getElementById('codeCanvas').value.trim();
             const description = document.getElementById('descriptionCanvas').value.trim();
             const type = document.getElementById('typeCanvas').value.trim();
-            const statut = document.getElementById('statutCanvas').value;
-            if (!code || !description || !type || !statut) {
+            
+            if (!code || !description || !type  ) {
                 showWarning('Veuillez remplir tous les champs obligatoires (Code, Description, Type, Statut).');
                 applyRequiredErrorOnEmpty();
                 return;
@@ -150,26 +150,25 @@
         try { return JSON.parse(rawText); } catch (_) { return rawText; }
     }
 
-    async function loadCompanyOptions(selectedId = null) {
-        try {
-            const companies = await fetchJson(COMPANY_API_URL);
-            cachedCompanies = Array.isArray(companies) ? companies : [];
+	async function loadCompanyOptions(selectedId = null) {
+	    try {
+	        const companies = await fetchJson(COMPANY_API_URL);
+	        cachedCompanies = Array.isArray(companies) ? companies : [];
 
-            const formSelect = document.getElementById('companyIdCanvas');
-            const filterSelect = document.getElementById('companyFilter');
+	        const formSelect = document.getElementById('companyIdCanvas');
 
-            formSelect.innerHTML = '<option value="">Sélectionner</option>' +
-                cachedCompanies.map(c => `<option value="${c.id}" ${selectedId && Number(selectedId) === Number(c.id) ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
-
-            const currentFilter = filterSelect.value;
-            filterSelect.innerHTML = '<option value="">Toutes</option>' +
-                cachedCompanies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-
-            if (currentFilter) filterSelect.value = currentFilter;
-        } catch (err) {
-            console.warn('Impossible de charger les sociétés:', err.message);
-        }
-    }
+	        if (formSelect) {
+	            formSelect.innerHTML = '<option value="">Sélectionner</option>' +
+	                cachedCompanies.map(c =>
+	                    `<option value="${c.id}" ${selectedId && Number(selectedId) === Number(c.id) ? 'selected' : ''}>
+	                        ${escapeHtml(c.name)}
+	                    </option>`
+	                ).join('');
+	        }
+	    } catch (err) {
+	        console.warn('Impossible de charger les sociétés:', err.message);
+	    }
+	}
 
     async function refreshPage() {
         try {
@@ -265,81 +264,132 @@
 	        </div>
 	    `;
 	}
-    async function applyFilters() {
-        const kw = document.getElementById('searchKeyword').value.trim().toLowerCase();
-        const st = document.getElementById('statusFilter').value.trim();
-        const companyId = document.getElementById('companyFilter').value.trim();
+	async function applyFilters() {
+	    const kw = document.getElementById('searchKeyword').value.trim().toLowerCase();
+	    const st = document.getElementById('statusFilter').value.trim();
 
-        let data = await fetchJson(API_URL);
-        let equipments = Array.isArray(data) ? data : [];
+	    let data = await fetchJson(API_URL);
+	    let equipments = Array.isArray(data) ? data : [];
 
-        if (st) {
-            equipments = equipments.filter(e => (e.statut || '').toUpperCase() === st.toUpperCase());
-        }
-        if (companyId) {
-            equipments = equipments.filter(e => String(e.companyId || '') === companyId);
-        }
-        if (kw) {
-            equipments = equipments.filter(e =>
-                (e.code || '').toLowerCase().includes(kw) ||
-                (e.description || '').toLowerCase().includes(kw) ||
-                (e.companyName || '').toLowerCase().includes(kw)
-            );
-        }
+	    if (st) {
+	        equipments = equipments.filter(e => (e.statut || '').toUpperCase() === st.toUpperCase());
+	    }
 
-        currentEquipements = equipments;
-        renderTable(currentEquipements);
-    }
+	    if (kw) {
+	        equipments = equipments.filter(e =>
+	            (e.code || '').toLowerCase().includes(kw) ||
+	            (e.description || '').toLowerCase().includes(kw) ||
+	            (e.localisation || '').toLowerCase().includes(kw) ||
+	            (e.modele || '').toLowerCase().includes(kw)
+	        );
+	    }
+
+	    currentEquipements = equipments;
+	    renderTable(currentEquipements);
+	}
 
     function resetFilters() {
         document.getElementById('searchKeyword').value = '';
         document.getElementById('statusFilter').value = '';
-        document.getElementById('companyFilter').value = '';
+ 
         loadEquipments();
     }
 
-    function renderTable(data) {
-        const tbody = document.getElementById('equipementsTableBody');
-        if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><i class="fas fa-tools fa-3x mb-3"></i><h5>Aucun équipement</h5></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = data.map(e => {
-            const codeFull = escapeHtml(e.code);
-            const descFull = escapeHtml(e.description);
-            const companyFull = escapeHtml(e.companyName || '—');
-            const codeTrunc = truncateText(codeFull, 40);
-            const descTrunc = truncateText(descFull, 80);
-            return `
-                <tr>
-                    <td title="${codeFull}">${codeTrunc}</td>
-                    <td title="${descFull}">${descTrunc}</td>
-                    <td title="${companyFull}">${e.companyName ? `<span class="company-badge">${truncateText(companyFull, 30)}</span>` : '—'}</td>
-                    <td>${renderStatusBadge(e.statut)}</td>
-                    <td class="text-center action-buttons">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${e.id})" title="Détail" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchivez d\'abord' : 'Changer statut'}" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-repeat"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${e.statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer" style="padding: 4px 6px; font-size: 0.75rem;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
+	function renderTable(data) {
+	    const tbody = document.getElementById('equipementsTableBody');
 
+	    if (!Array.isArray(data) || data.length === 0) {
+	        tbody.innerHTML = `
+	            <tr>
+	                <td colspan="6" class="empty-state">
+	                    <i class="fas fa-tools fa-3x mb-3"></i>
+	                    <h5>Aucun équipement</h5>
+	                </td>
+	            </tr>
+	        `;
+	        return;
+	    }
+
+	    tbody.innerHTML = data.map(e => {
+	        const codeFull = escapeHtml(e.code);
+	        const descFull = escapeHtml(e.description);
+	        const localisationFull = escapeHtml(e.localisation || '—');
+	        const modeleFull = escapeHtml(e.modele || '—');
+
+	        const codeTrunc = truncateText(codeFull, 40);
+	        const descTrunc = truncateText(descFull, 80);
+	        const localisationTrunc = truncateText(localisationFull, 40);
+	        const modeleTrunc = truncateText(modeleFull, 35);
+
+	        const statut = escapeHtml(e.statut || '');
+
+	        return `
+	            <tr>
+	                <td title="${codeFull}">${codeTrunc}</td>
+	                <td title="${descFull}">${descTrunc}</td>
+	                <td title="${localisationFull}">
+	                    <i class="fas fa-map-marker-alt me-1 text-primary"></i>
+	                    ${localisationTrunc}
+	                </td>
+	                <td title="${modeleFull}">${modeleTrunc}</td>
+	                <td>${renderStatusBadge(e.statut)}</td>
+	                <td class="text-center action-buttons">
+	                    <div class="btn-group btn-group-sm" role="group">
+	                        <button class="btn btn-outline-primary btn-action"
+	                                onclick="showDetailCanvas(${e.id})"
+	                                title="Détail"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas fa-eye"></i>
+	                        </button>
+
+	                        <button class="btn btn-outline-success btn-action"
+	                                onclick="createInterventionFromEquipment(${e.id})"
+	                                title="Créer une intervention"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas fa-wrench"></i>
+	                        </button>
+
+	                        <button class="btn btn-outline-warning btn-action"
+	                                onclick="openEditCanvas(${e.id})"
+	                                title="Éditer"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas fa-edit"></i>
+	                        </button>
+
+	                        <button class="btn btn-outline-info btn-action"
+	                                onclick="openStatusModalWrapper(${e.id}, '${statut}')"
+	                                title="Changer statut"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas fa-repeat"></i>
+	                        </button>
+
+	                        <button class="btn btn-outline-secondary btn-action"
+	                                onclick="toggleArchive(${e.id}, '${statut}')"
+	                                title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i>
+	                        </button>
+
+	                        <button class="btn btn-outline-danger btn-action"
+	                                onclick="confirmDelete(${e.id})"
+	                                title="Supprimer"
+	                                style="padding: 4px 6px; font-size: 0.75rem;">
+	                            <i class="fas fa-trash"></i>
+	                        </button>
+	                    </div>
+	                </td>
+	            </tr>
+	        `;
+	    }).join('');
+	}
+	function createInterventionFromEquipment(equipementId) {
+	    if (!equipementId) {
+	        showWarning("Équipement introuvable pour créer une intervention.");
+	        return;
+	    }
+
+	    window.location.href = `/interventions?equipementId=${encodeURIComponent(equipementId)}`;
+	}
     function renderStatusBadge(status) {
         const val = (status || '').toUpperCase();
         let cls = 'status-actif';
@@ -391,15 +441,19 @@
         }
     }
 
-    async function openCreateOffcanvas() {
-        document.getElementById('formOffcanvasLabel').innerText = 'Nouvel équipement';
-        document.getElementById('equipementFormCanvas').reset();
-        document.getElementById('equipementIdCanvas').value = '';
-        document.getElementById('formErrorCanvas').classList.add('d-none');
-        await loadCompanyOptions();
-        applyRequiredErrorOnEmpty();
-        formOffcanvas.show();
-    }
+	async function openCreateOffcanvas() {
+	    document.getElementById('formOffcanvasLabel').innerText = 'Nouvel équipement';
+	    document.getElementById('equipementFormCanvas').reset();
+	    document.getElementById('equipementIdCanvas').value = '';
+	    document.getElementById('formErrorCanvas').classList.add('d-none');
+
+	    // INC 6: à la création, seul ACTIF est autorisé
+	    document.getElementById('statutCanvas').value = 'ACTIF';
+
+	    await loadCompanyOptions();
+	    applyRequiredErrorOnEmpty();
+	    formOffcanvas.show();
+	}
 
     async function openEditCanvas(id) {
         try {
@@ -413,7 +467,7 @@
             document.getElementById('modeleCanvas').value = e.modele ?? '';
             document.getElementById('numeroSerieCanvas').value = e.numeroSerie ?? '';
             document.getElementById('localisationCanvas').value = e.localisation ?? '';
-            document.getElementById('statutCanvas').value = e.statut ?? '';
+            document.getElementById('statutCanvas').value = e.statut ?? 'ACTIF';
             document.getElementById('criticiteCanvas').value = e.criticite ?? '';
             document.getElementById('dateInstallationCanvas').value = e.dateInstallation ?? '';
             document.getElementById('dateMiseEnServiceCanvas').value = e.dateMiseEnService ?? '';
@@ -426,43 +480,56 @@
         } catch (err) { showWarning(err.message); }
     }
 
-    async function saveEquipementCanvas() {
-        const id = document.getElementById('equipementIdCanvas').value;
-        const isUpdate = !!id;
-        const basePayload = {
-            description: getVal('descriptionCanvas'),
-            type: getVal('typeCanvas'),
-            marque: getVal('marqueCanvas'),
-            modele: getVal('modeleCanvas'),
-            numeroSerie: getVal('numeroSerieCanvas'),
-            localisation: getVal('localisationCanvas'),
-            statut: getVal('statutCanvas'),
-            dateInstallation: getVal('dateInstallationCanvas') || null,
-            dateMiseEnService: getVal('dateMiseEnServiceCanvas') || null,
-            criticite: getVal('criticiteCanvas'),
-            commentaire: getVal('commentaireCanvas'),
-            parentId: getNumberVal('parentIdCanvas'),
-            companyId: getNumberVal('companyIdCanvas')
-        };
-        const payload = isUpdate ? basePayload : {
-            code: getVal('codeCanvas'),
-            ...basePayload
-        };
-        try {
-            if (!isUpdate && payload.code) {
-                const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
-                if (exists) throw new Error('Code déjà existant');
-            }
-            await fetchJson(isUpdate ? `${API_URL}/${id}` : API_URL, { method: isUpdate ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-            formOffcanvas.hide();
-            await refreshPage();
-        } catch (err) {
-            const errBox = document.getElementById('formErrorCanvas');
-            errBox.textContent = err.message;
-            errBox.classList.remove('d-none');
-        }
-    }
+	async function saveEquipementCanvas() {
+	    const id = document.getElementById('equipementIdCanvas').value;
+	    const isUpdate = !!id;
 
+	    const basePayload = {
+	        description: getVal('descriptionCanvas'),
+	        type: getVal('typeCanvas'),
+	        marque: getVal('marqueCanvas'),
+	        modele: getVal('modeleCanvas'),
+	        numeroSerie: getVal('numeroSerieCanvas'),
+	        localisation: getVal('localisationCanvas'),
+
+	        // INC 6:
+	        // - création : ACTIF obligatoire
+	        // - modification classique : on garde le statut affiché, mais il ne doit pas servir à faire une transition métier
+	        statut: isUpdate ? getVal('statutCanvas') : 'ACTIF',
+
+	        dateInstallation: getVal('dateInstallationCanvas') || null,
+	        dateMiseEnService: getVal('dateMiseEnServiceCanvas') || null,
+	        criticite: getVal('criticiteCanvas'),
+	        commentaire: getVal('commentaireCanvas'),
+	        parentId: getNumberVal('parentIdCanvas'),
+	        companyId: getNumberVal('companyIdCanvas')
+	    };
+
+	    const payload = isUpdate ? basePayload : {
+	        code: getVal('codeCanvas'),
+	        ...basePayload,
+	        statut: 'ACTIF'
+	    };
+
+	    try {
+	        if (!isUpdate && payload.code) {
+	            const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
+	            if (exists) throw new Error('Code déjà existant');
+	        }
+
+	        await fetchJson(isUpdate ? `${API_URL}/${id}` : API_URL, {
+	            method: isUpdate ? 'PUT' : 'POST',
+	            body: JSON.stringify(payload)
+	        });
+
+	        formOffcanvas.hide();
+	        await refreshPage();
+	    } catch (err) {
+	        const errBox = document.getElementById('formErrorCanvas');
+	        errBox.textContent = err.message;
+	        errBox.classList.remove('d-none');
+	    }
+	}
     function confirmDelete(id) { pendingDeleteId = id; deleteModal.show(); }
 
     async function executeDelete(id) {
@@ -492,15 +559,15 @@
 	    const status = (currentStatus || '').toUpperCase();
 
 	    if (status === 'ACTIF') {
-	        return ['ARCHIVED'];
+	        return ['HS', 'ARCHIVED'];
 	    }
 
 	    if (status === 'MAINTENANCE') {
-	        return ['HS'];
+	        return ['HS', 'ARCHIVED'];
 	    }
 
 	    if (status === 'HS') {
-	        return ['MAINTENANCE', 'ARCHIVED'];
+	        return ['ARCHIVED'];
 	    }
 
 	    if (status === 'ARCHIVED') {
