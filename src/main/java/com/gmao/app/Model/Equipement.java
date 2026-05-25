@@ -21,50 +21,50 @@ import jakarta.persistence.Table;
 @Table(name = "equipement")
 public class Equipement {
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "equipement_id")
-    private Long id;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "equipement_id")
+	private Long id;
 
-    @Column(name = "description", nullable = false, length = 200)
-    private String description;
+	@Column(name = "description", nullable = false, length = 200)
+	private String description;
 
-    @Column(name = "type", length = 80)
-    private String type;
+	@Column(name = "type", length = 80)
+	private String type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Equipement parent;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "parent_id")
+	private Equipement parent;
 
-    @Column(name = "statut", length = 30)
-    private String statut;
-    
-    private String code;
-    private String marque;
-    private String modele;
-    private String numeroSerie;
-    private String localisation;
-    private LocalDate dateInstallation;
-    private LocalDate dateMiseEnService;
-    private String criticite;
-    private Boolean actif;
-    private String commentaire;
+	@Column(name = "statut", length = 30)
+	private String statut;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
-    private Set<Equipement> children = new HashSet<>();
+	private String code;
+	private String marque;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "equipement", fetch = FetchType.LAZY)
-    private Set<Intervention> interventions = new HashSet<>();
+	private String numeroSerie;
+	private String localisation;
+	private LocalDate dateInstallation;
+	private LocalDate dateMiseEnService;
+	private String criticite;
+	private Boolean actif;
+	private String commentaire;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "equipement", fetch = FetchType.LAZY)
-    private Set<Preventif> preventifs = new HashSet<>();
+	@JsonIgnore
+	@OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+	private Set<Equipement> children = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
-    private Company company;
-    
+	@JsonIgnore
+	@OneToMany(mappedBy = "equipement", fetch = FetchType.LAZY)
+	private Set<Intervention> interventions = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "equipement", fetch = FetchType.LAZY)
+	private Set<Preventif> preventifs = new HashSet<>();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "company_id")
+	private Company company;
+
 	public Company getCompany() {
 		return company;
 	}
@@ -153,14 +153,6 @@ public class Equipement {
 		this.marque = marque;
 	}
 
-	public String getModele() {
-		return modele;
-	}
-
-	public void setModele(String modele) {
-		this.modele = modele;
-	}
-
 	public String getNumeroSerie() {
 		return numeroSerie;
 	}
@@ -217,15 +209,13 @@ public class Equipement {
 		this.commentaire = commentaire;
 	}
 
-	 
-
 	public Equipement() {
 		super();
-	 
+
 	}
 
 	public Equipement(Long id, String description, String type, Equipement parent, String statut, String code,
-			String marque, String modele, String numeroSerie, String localisation, LocalDate dateInstallation,
+			String marque, String numeroSerie, String localisation, LocalDate dateInstallation,
 			LocalDate dateMiseEnService, String criticite, Boolean actif, String commentaire, Set<Equipement> children,
 			Set<Intervention> interventions, Set<Preventif> preventifs) {
 		super();
@@ -236,7 +226,7 @@ public class Equipement {
 		this.statut = statut;
 		this.code = code;
 		this.marque = marque;
-		this.modele = modele;
+
 		this.numeroSerie = numeroSerie;
 		this.localisation = localisation;
 		this.dateMiseEnService = dateMiseEnService;
@@ -249,8 +239,8 @@ public class Equipement {
 	}
 
 	public Equipement(String description, String type, Equipement parent, String statut, String code, String marque,
-			String modele, String numeroSerie, String localisation, LocalDate dateInstallation,
-			LocalDate dateMiseEnService, String criticite, Boolean actif, String commentaire, Set<Equipement> children,
+			String numeroSerie, String localisation, LocalDate dateInstallation, LocalDate dateMiseEnService,
+			String criticite, Boolean actif, String commentaire, Set<Equipement> children,
 			Set<Intervention> interventions, Set<Preventif> preventifs, Company company) {
 		super();
 		this.description = description;
@@ -259,7 +249,7 @@ public class Equipement {
 		this.statut = statut;
 		this.code = code;
 		this.marque = marque;
-		this.modele = modele;
+
 		this.numeroSerie = numeroSerie;
 		this.localisation = localisation;
 		this.dateInstallation = dateInstallation;
@@ -272,6 +262,5 @@ public class Equipement {
 		this.preventifs = preventifs;
 		this.company = company;
 	}
-    
-    
+
 }

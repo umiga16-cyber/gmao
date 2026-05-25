@@ -6,7 +6,7 @@ public class EquipementUpdateRequest {
     private String description;
     private String type;
     private String marque;
-    private String modele;
+ 
     private String numeroSerie;
     private String localisation;
     private String statut;
@@ -35,12 +35,7 @@ public class EquipementUpdateRequest {
 	public void setMarque(String marque) {
 		this.marque = marque;
 	}
-	public String getModele() {
-		return modele;
-	}
-	public void setModele(String modele) {
-		this.modele = modele;
-	}
+ 
 	public String getNumeroSerie() {
 		return numeroSerie;
 	}

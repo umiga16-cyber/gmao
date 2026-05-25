@@ -263,7 +263,7 @@ public class DataInitializer {
 			eq1.setDescription("Compresseur principal");
 			eq1.setType("COMPRESSOR");
 			eq1.setMarque("Atlas Copco");
-			eq1.setModele("GA75");
+			 
 			eq1.setNumeroSerie("ATL-001-2026");
 			eq1.setLocalisation("Usine A - Zone 1");
 			eq1.setStatut("ACTIF");
@@ -280,7 +280,7 @@ public class DataInitializer {
 			eq2.setDescription("Pompe de refroidissement");
 			eq2.setType("PUMP");
 			eq2.setMarque("Grundfos");
-			eq2.setModele("CRN 10");
+			 
 			eq2.setNumeroSerie("PMP-8821");
 			eq2.setLocalisation("Usine A - Zone 2");
 			eq2.setStatut("MAINTENANCE");
@@ -296,7 +296,7 @@ public class DataInitializer {
 			eq3.setDescription("Groupe électrogène secondaire");
 			eq3.setType("GENERATOR");
 			eq3.setMarque("Caterpillar");
-			eq3.setModele("CAT 320");
+			 
 			eq3.setNumeroSerie("GEN-2045");
 			eq3.setLocalisation("Bâtiment B - Sous-sol");
 			eq3.setStatut("HS");
@@ -312,7 +312,7 @@ public class DataInitializer {
 			eq4.setDescription("Tableau électrique principal");
 			eq4.setType("ELECTRICAL_PANEL");
 			eq4.setMarque("Schneider");
-			eq4.setModele("MasterPact");
+		 
 			eq4.setNumeroSerie("EL-7788");
 			eq4.setLocalisation("Bâtiment B - RDC");
 			eq4.setStatut("ACTIF");

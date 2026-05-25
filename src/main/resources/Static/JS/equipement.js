@@ -8,10 +8,12 @@
     const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
     const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
 
-    let pendingDeleteId = null;
-    let pendingStatusId = null;
-    let cachedCompanies = [];
-    let currentEquipements = [];
+	let pendingDeleteId = null;
+	let pendingStatusId = null;
+	let cachedCompanies = [];
+	let currentEquipements = [];
+	let allEquipements = [];
+	let currentQuickFilter = 'TOTAL';
 
     function truncateText(text, maxLen) {
         if (!text) return '—';
@@ -35,7 +37,6 @@
             { id: 'descriptionCanvas', max: 200, name: 'Description' },
             { id: 'typeCanvas', max: 50, name: 'Type' },
             { id: 'marqueCanvas', max: 50, name: 'Marque' },
-            { id: 'modeleCanvas', max: 50, name: 'Modèle' },
             { id: 'numeroSerieCanvas', max: 50, name: 'Numéro de série' },
             { id: 'localisationCanvas', max: 100, name: 'Localisation' },
             { id: 'commentaireCanvas', max: 500, name: 'Commentaire' }
@@ -170,31 +171,130 @@
 	    }
 	}
 
-    async function refreshPage() {
-        try {
-            await loadStats();
-            await loadEquipments();
-        } catch (err) {
-            showWarning('Erreur: ' + err.message);
-        }
-    }
+	async function refreshPage() {
+	    try {
+	        const data = await fetchJson(API_URL);
+	        allEquipements = Array.isArray(data) ? data : [];
 
-    async function loadStats() {
-        const data = await fetchJson(API_URL);
-        const equipments = Array.isArray(data) ? data : [];
-        const getStatus = (e) => (e.statut || '').toUpperCase();
-        document.getElementById('totalEquipments').textContent = equipments.length;
-        document.getElementById('equipmentsActifs').textContent = equipments.filter(e => getStatus(e) === 'ACTIF').length;
-        document.getElementById('equipmentsMaintenance').textContent = equipments.filter(e => getStatus(e) === 'MAINTENANCE').length;
-        document.getElementById('equipmentsWithCompany').textContent = equipments.filter(e => e.companyId != null).length;
-    }
+	        applyCurrentFiltersAndQuickAccess();
+	    } catch (err) {
+	        showWarning('Erreur: ' + err.message);
+	    }
+	}
 
-    async function loadEquipments() {
-        const data = await fetchJson(API_URL);
-        currentEquipements = Array.isArray(data) ? data : [];
-        renderTable(currentEquipements);
-    }
+	async function loadStats() {
+	    const data = await fetchJson(API_URL);
+	    allEquipements = Array.isArray(data) ? data : [];
 
+	    updateStatsFromData(getBaseFilteredEquipments());
+	}
+	async function loadEquipments() {
+	    const data = await fetchJson(API_URL);
+	    allEquipements = Array.isArray(data) ? data : [];
+
+	    applyCurrentFiltersAndQuickAccess();
+	}
+	function getBaseFilteredEquipments() {
+	    const kw = document.getElementById('searchKeyword')?.value.trim().toLowerCase() || '';
+	    const st = document.getElementById('statusFilter')?.value.trim() || '';
+	    const localisation = document.getElementById('localisationFilter')?.value.trim().toLowerCase() || '';
+	   
+	    const parentId = document.getElementById('parentIdFilter')?.value.trim() || '';
+
+	    let equipments = Array.isArray(allEquipements) ? [...allEquipements] : [];
+
+	    if (st) {
+	        equipments = equipments.filter(e =>
+	            (e.statut || '').toUpperCase() === st.toUpperCase()
+	        );
+	    }
+
+	    if (kw) {
+	        equipments = equipments.filter(e =>
+	            (e.code || '').toLowerCase().includes(kw) ||
+	            (e.description || '').toLowerCase().includes(kw)
+	        );
+	    }
+
+	    if (localisation) {
+	        equipments = equipments.filter(e =>
+	            (e.localisation || '').toLowerCase().includes(localisation)
+	        );
+	    }
+
+	  
+
+	    if (parentId) {
+	        equipments = equipments.filter(e =>
+	            String(e.parentId || '') === parentId
+	        );
+	    }
+
+	    return equipments;
+	}
+	function applyCurrentFiltersAndQuickAccess() {
+	    const baseFiltered = getBaseFilteredEquipments();
+
+	    updateStatsFromData(baseFiltered);
+
+	    let result = [...baseFiltered];
+
+	    if (currentQuickFilter === 'ACTIF') {
+	        result = result.filter(e => (e.statut || '').toUpperCase() === 'ACTIF');
+	    }
+
+	    if (currentQuickFilter === 'MAINTENANCE') {
+	        result = result.filter(e => (e.statut || '').toUpperCase() === 'MAINTENANCE');
+	    }
+
+	    if (currentQuickFilter === 'HS') {
+	        result = result.filter(e => (e.statut || '').toUpperCase() === 'HS');
+	    }
+
+	    currentEquipements = result;
+	    renderTable(currentEquipements);
+	    updateQuickCardsStyle();
+	}
+	function updateStatsFromData(equipments) {
+	    const data = Array.isArray(equipments) ? equipments : [];
+	    const getStatus = (e) => (e.statut || '').toUpperCase();
+
+	    document.getElementById('totalEquipments').textContent = data.length;
+
+	    document.getElementById('equipmentsActifs').textContent =
+	        data.filter(e => getStatus(e) === 'ACTIF').length;
+
+	    document.getElementById('equipmentsMaintenance').textContent =
+	        data.filter(e => getStatus(e) === 'MAINTENANCE').length;
+
+	    document.getElementById('equipmentsHs').textContent =
+	        data.filter(e => getStatus(e) === 'HS').length;
+	}
+	function applyQuickAccessFilter(filter) {
+	    currentQuickFilter = filter || 'TOTAL';
+	    applyCurrentFiltersAndQuickAccess();
+	}
+	function updateQuickCardsStyle() {
+	    const cards = {
+	        TOTAL: document.getElementById('quickCardTotal'),
+	        ACTIF: document.getElementById('quickCardActif'),
+	        MAINTENANCE: document.getElementById('quickCardMaintenance'),
+	        HS: document.getElementById('quickCardHs')
+	    };
+
+	    Object.values(cards).forEach(card => {
+	        if (card) {
+	            card.classList.remove('active-quick-filter');
+	        }
+	    });
+
+	    const activeCard = cards[currentQuickFilter];
+
+	    if (activeCard) {
+	        activeCard.classList.add('active-quick-filter');
+	    }
+	}
+	
 	const rootsModal = new bootstrap.Modal(document.getElementById('rootsModal'));
 
 	async function loadRoots() {
@@ -265,35 +365,25 @@
 	    `;
 	}
 	async function applyFilters() {
-	    const kw = document.getElementById('searchKeyword').value.trim().toLowerCase();
-	    const st = document.getElementById('statusFilter').value.trim();
-
-	    let data = await fetchJson(API_URL);
-	    let equipments = Array.isArray(data) ? data : [];
-
-	    if (st) {
-	        equipments = equipments.filter(e => (e.statut || '').toUpperCase() === st.toUpperCase());
+	    if (!Array.isArray(allEquipements) || allEquipements.length === 0) {
+	        const data = await fetchJson(API_URL);
+	        allEquipements = Array.isArray(data) ? data : [];
 	    }
 
-	    if (kw) {
-	        equipments = equipments.filter(e =>
-	            (e.code || '').toLowerCase().includes(kw) ||
-	            (e.description || '').toLowerCase().includes(kw) ||
-	            (e.localisation || '').toLowerCase().includes(kw) ||
-	            (e.modele || '').toLowerCase().includes(kw)
-	        );
-	    }
-
-	    currentEquipements = equipments;
-	    renderTable(currentEquipements);
+	    applyCurrentFiltersAndQuickAccess();
 	}
 
-    function resetFilters() {
-        document.getElementById('searchKeyword').value = '';
-        document.getElementById('statusFilter').value = '';
- 
-        loadEquipments();
-    }
+	function resetFilters() {
+	    document.getElementById('searchKeyword').value = '';
+	    document.getElementById('statusFilter').value = '';
+	    document.getElementById('localisationFilter').value = '';
+	   
+	    document.getElementById('parentIdFilter').value = '';
+
+	    currentQuickFilter = 'TOTAL';
+
+	    applyCurrentFiltersAndQuickAccess();
+	}
 
 	function renderTable(data) {
 	    const tbody = document.getElementById('equipementsTableBody');
@@ -301,7 +391,7 @@
 	    if (!Array.isArray(data) || data.length === 0) {
 	        tbody.innerHTML = `
 	            <tr>
-	                <td colspan="6" class="empty-state">
+	                <td colspan="5" class="empty-state">
 	                    <i class="fas fa-tools fa-3x mb-3"></i>
 	                    <h5>Aucun équipement</h5>
 	                </td>
@@ -314,12 +404,10 @@
 	        const codeFull = escapeHtml(e.code);
 	        const descFull = escapeHtml(e.description);
 	        const localisationFull = escapeHtml(e.localisation || '—');
-	        const modeleFull = escapeHtml(e.modele || '—');
 
 	        const codeTrunc = truncateText(codeFull, 40);
 	        const descTrunc = truncateText(descFull, 80);
 	        const localisationTrunc = truncateText(localisationFull, 40);
-	        const modeleTrunc = truncateText(modeleFull, 35);
 
 	        const statut = escapeHtml(e.statut || '');
 
@@ -331,7 +419,6 @@
 	                    <i class="fas fa-map-marker-alt me-1 text-primary"></i>
 	                    ${localisationTrunc}
 	                </td>
-	                <td title="${modeleFull}">${modeleTrunc}</td>
 	                <td>${renderStatusBadge(e.statut)}</td>
 	                <td class="text-center action-buttons">
 	                    <div class="btn-group btn-group-sm" role="group">
@@ -464,7 +551,7 @@
             document.getElementById('descriptionCanvas').value = e.description ?? '';
             document.getElementById('typeCanvas').value = e.type ?? '';
             document.getElementById('marqueCanvas').value = e.marque ?? '';
-            document.getElementById('modeleCanvas').value = e.modele ?? '';
+             
             document.getElementById('numeroSerieCanvas').value = e.numeroSerie ?? '';
             document.getElementById('localisationCanvas').value = e.localisation ?? '';
             document.getElementById('statutCanvas').value = e.statut ?? 'ACTIF';
@@ -488,13 +575,11 @@
 	        description: getVal('descriptionCanvas'),
 	        type: getVal('typeCanvas'),
 	        marque: getVal('marqueCanvas'),
-	        modele: getVal('modeleCanvas'),
+	       
 	        numeroSerie: getVal('numeroSerieCanvas'),
 	        localisation: getVal('localisationCanvas'),
 
-	        // INC 6:
-	        // - création : ACTIF obligatoire
-	        // - modification classique : on garde le statut affiché, mais il ne doit pas servir à faire une transition métier
+	     
 	        statut: isUpdate ? getVal('statutCanvas') : 'ACTIF',
 
 	        dateInstallation: getVal('dateInstallationCanvas') || null,
