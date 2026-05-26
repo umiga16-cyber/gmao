@@ -279,19 +279,45 @@ async function loadInterventions() {
     allInterventions = Array.isArray(data) ? data : [];
     renderTable(allInterventions);
 }
+function isInsidePeriod(dateValue, period) {
+    if (!period || !dateValue) {
+        return true;
+    }
 
+    const date = new Date(dateValue);
+    const now = new Date();
+    const start = new Date(now);
+
+    if (period === 'MONTH') {
+        start.setMonth(now.getMonth() - 1);
+    } else if (period === 'QUARTER') {
+        start.setMonth(now.getMonth() - 3);
+    } else if (period === 'YEAR') {
+        start.setFullYear(now.getFullYear() - 1);
+    } else {
+        return true;
+    }
+
+    start.setHours(0, 0, 0, 0);
+
+    return date >= start && date <= now;
+}
 function applyFilters() {
     const status = document.getElementById('statusFilter')?.value.trim() || '';
     const type = document.getElementById('typeFilter')?.value.trim() || '';
     const equipementKeyword = document.getElementById('equipementFilter')?.value.trim().toLowerCase() || '';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const period = urlParams.get('period');
 
     const filtered = allInterventions.filter(i => {
         const statusOk = !status || normalizeInterventionStatus(i.statut) === status.toUpperCase();
         const typeOk = !type || (i.type || '').toUpperCase() === type.toUpperCase();
         const equipementText = (i.equipementDescription || '').toLowerCase();
         const equipOk = !equipementKeyword || equipementText.includes(equipementKeyword);
+        const periodOk = isInsidePeriod(i.dateDebut, period);
 
-        return statusOk && typeOk && equipOk;
+        return statusOk && typeOk && equipOk && periodOk;
     });
 
     renderTable(filtered);
@@ -846,11 +872,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await refreshPage();
 
+    /*
+     * URL parameters:
+     * - /interventions?status=EN_COURS
+     * - /interventions?type=CORRECTIVE
+     * - /interventions?equipementId=3
+     */
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const statusFromUrl = urlParams.get('status');
+    const typeFromUrl = urlParams.get('type');
+    const equipementIdFromUrl = urlParams.get('equipementId');
+	const periodFromUrl = urlParams.get('period');
+    if (statusFromUrl) {
+        const statusFilter = document.getElementById('statusFilter');
+
+        if (statusFilter) {
+            statusFilter.value = statusFromUrl;
+        }
+    }
+
+    if (typeFromUrl) {
+        const typeFilter = document.getElementById('typeFilter');
+
+        if (typeFilter) {
+            typeFilter.value = typeFromUrl;
+        }
+    }
+
+	if (statusFromUrl || typeFromUrl || periodFromUrl) {
+	    applyFilters();
+	}
+
+    if (equipementIdFromUrl) {
+        await openCreateOffcanvas(equipementIdFromUrl);
+    }
+
+	if (statusFromUrl || typeFromUrl || periodFromUrl || equipementIdFromUrl) {
+	    window.history.replaceState({}, document.title, '/interventions');
+	}
+
     const interventionForm = document.getElementById('interventionFormCanvas');
 
     if (!interventionForm) {
         console.error("Formulaire intervention introuvable: interventionFormCanvas");
-        showWarning("Erreur technique : formulaire intervention introuvable.");
         return;
     }
 
@@ -941,20 +1006,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupRealtimeValidation();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const equipementIdFromUrl = urlParams.get('equipementId');
-
-    if (equipementIdFromUrl) {
-        await openCreateOffcanvas(equipementIdFromUrl);
-        window.history.replaceState({}, document.title, '/interventions');
-    }
 });
 
 if (window.innerWidth <= 768) {
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
 
-    if (sidebar) sidebar.classList.add('collapsed');
-    if (mainContent) mainContent.classList.add('expanded');
+    if (sidebar) {
+        sidebar.classList.add('collapsed');
+    }
+
+    if (mainContent) {
+        mainContent.classList.add('expanded');
+    }
 }

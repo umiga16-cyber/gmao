@@ -85,45 +85,68 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadCompanyOptions();
-        await refreshPage();
-        document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const code = document.getElementById('codeCanvas').value.trim();
-            const description = document.getElementById('descriptionCanvas').value.trim();
-            const type = document.getElementById('typeCanvas').value.trim();
-            
-            if (!code || !description || !type  ) {
-                showWarning('Veuillez remplir tous les champs obligatoires (Code, Description, Type, Statut).');
-                applyRequiredErrorOnEmpty();
-                return;
-            }
-			if (!validateFieldLengths()) return;
-			if (!validateInstallationDatesCanvas()) return;
+	document.addEventListener('DOMContentLoaded', async () => {
+	    await loadCompanyOptions();
 
-			await saveEquipementCanvas();
-        });
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (pendingDeleteId !== null) {
-                await executeDelete(pendingDeleteId);
-                deleteModal.hide();
-                pendingDeleteId = null;
-            }
-        });
-        document.querySelectorAll('.status-option-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const newStatus = btn.getAttribute('data-status');
-                if (pendingStatusId && newStatus) {
-                    await changeStatus(pendingStatusId, newStatus);
-                    statusModal.hide();
-                    pendingStatusId = null;
-                }
-            });
-        });
-        setupRealtimeValidation();
-    });
+	    const params = new URLSearchParams(window.location.search);
+	    const status = params.get('status');
 
+	    await refreshPage();
+
+	    if (status) {
+	        const statusFilter = document.getElementById('statusFilter');
+
+	        if (statusFilter) {
+	            statusFilter.value = status;
+	        }
+
+	        currentQuickFilter = 'TOTAL';
+	        applyCurrentFiltersAndQuickAccess();
+
+	        window.history.replaceState({}, document.title, '/equipements-list');
+	    }
+
+	    document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
+	        e.preventDefault();
+
+	        const code = document.getElementById('codeCanvas').value.trim();
+	        const description = document.getElementById('descriptionCanvas').value.trim();
+	        const type = document.getElementById('typeCanvas').value.trim();
+
+	        if (!code || !description || !type) {
+	            showWarning('Veuillez remplir tous les champs obligatoires (Code, Description, Type).');
+	            applyRequiredErrorOnEmpty();
+	            return;
+	        }
+
+	        if (!validateFieldLengths()) return;
+	        if (!validateInstallationDatesCanvas()) return;
+
+	        await saveEquipementCanvas();
+	    });
+
+	    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+	        if (pendingDeleteId !== null) {
+	            await executeDelete(pendingDeleteId);
+	            deleteModal.hide();
+	            pendingDeleteId = null;
+	        }
+	    });
+
+	    document.querySelectorAll('.status-option-btn').forEach(btn => {
+	        btn.addEventListener('click', async () => {
+	            const newStatus = btn.getAttribute('data-status');
+
+	            if (pendingStatusId && newStatus) {
+	                await changeStatus(pendingStatusId, newStatus);
+	                statusModal.hide();
+	                pendingStatusId = null;
+	            }
+	        });
+	    });
+
+	    setupRealtimeValidation();
+	});
     function showWarning(message) {
         document.getElementById('warningMessage').textContent = message;
         warningModal.show();
@@ -384,7 +407,20 @@
 
 	    applyCurrentFiltersAndQuickAccess();
 	}
+	function applyUrlFilters() {
+	    const params = new URLSearchParams(window.location.search);
+	    const status = params.get('status');
 
+	    if (status) {
+	        const statusFilter = document.getElementById('statusFilter');
+
+	        if (statusFilter) {
+	            statusFilter.value = status;
+	        }
+
+	        currentQuickFilter = 'TOTAL';
+	    }
+	}
 	function renderTable(data) {
 	    const tbody = document.getElementById('equipementsTableBody');
 

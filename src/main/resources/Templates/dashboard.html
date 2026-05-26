@@ -131,6 +131,24 @@
             .chart-wrap { min-height: 260px; }
             .chart-wrap.small { min-height: 220px; }
         }
+		.dashboard-clickable-item {
+		    cursor: pointer;
+		    transition: all 0.2s ease;
+		}
+
+		.dashboard-clickable-item:hover {
+		    background: #eef2ff;
+		    transform: translateX(4px);
+		}
+
+		.dashboard-clickable-card {
+		    cursor: pointer;
+		}
+
+		.dashboard-clickable-card:hover {
+		    transform: translateY(-5px);
+		    box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+		}
     </style>
 </head>
 <body>
@@ -202,6 +220,11 @@
             <p class="text-muted mb-0">Vue globale des données GMAO en temps réel</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+			<select id="dashboardPeriodFilter" class="form-select" style="width: 180px;" onchange="loadDashboard()">
+			        <option value="MONTH">Mensuel</option>
+			        <option value="QUARTER">Trimestriel</option>
+			        <option value="YEAR">Annuel</option>
+			    </select>
             <button class="btn btn-outline-secondary" onclick="loadDashboard()">
                 <i class="fas fa-rotate me-1"></i> Refresh
             </button>
@@ -210,7 +233,7 @@
 
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card dashboard-clickable-card" onclick="goToEquipements()">
                 <div class="stat-icon bg-primary text-white">
                     <i class="fas fa-tools"></i>
                 </div>
@@ -220,8 +243,8 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="stat-icon bg-success text-white">
+           <div class="stat-card dashboard-clickable-card" onclick="goToInterventions()">
+                <div class="stat-icon bg-primary text-white">
                     <i class="fas fa-wrench"></i>
                 </div>
                 <h3 class="text-success mb-1" id="statInterventions">0</h3>
@@ -230,7 +253,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card dashboard-clickable-card" onclick="goToPreventifs()">
                 <div class="stat-icon bg-warning text-white">
                     <i class="fas fa-calendar-check"></i>
                 </div>
@@ -240,7 +263,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+          <div class="stat-card dashboard-clickable-card" onclick="goToUsers()">
                 <div class="stat-icon bg-info text-white">
                     <i class="fas fa-users"></i>
                 </div>

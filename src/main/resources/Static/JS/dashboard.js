@@ -49,29 +49,57 @@ const API = {
         }
     }
 
-    async function loadDashboard() {
-        try {
-            const [equipements, interventions, preventifs, users] = await Promise.all([
-                fetchJson(API.equipements).catch(() => []),
-                fetchJson(API.interventions).catch(() => []),
-                fetchJson(API.preventifs).catch(() => []),
-                fetchJson(API.users).catch(() => [])
-            ]);
+	async function loadDashboard() {
+	    try {
+	        const [equipements, interventions, preventifs, users] = await Promise.all([
+	            fetchJson(API.equipements).catch(() => []),
+	            fetchJson(API.interventions).catch(() => []),
+	            fetchJson(API.preventifs).catch(() => []),
+	            fetchJson(API.users).catch(() => [])
+	        ]);
 
-            const safeEquipements = Array.isArray(equipements) ? equipements : [];
-            const safeInterventions = Array.isArray(interventions) ? interventions : [];
-            const safePreventifs = Array.isArray(preventifs) ? preventifs : [];
-            const safeUsers = Array.isArray(users) ? users : [];
+	        const safeEquipements = Array.isArray(equipements) ? equipements : [];
+	        const safeInterventions = Array.isArray(interventions) ? interventions : [];
+	        const safePreventifs = Array.isArray(preventifs) ? preventifs : [];
+	        const safeUsers = Array.isArray(users) ? users : [];
 
-            renderStats(safeEquipements, safeInterventions, safePreventifs, safeUsers);
-            renderCharts(safeEquipements, safeInterventions);
-            renderRecentActivity(safeInterventions, safeUsers);
-            renderUpcomingPreventifs(safePreventifs);
-        } catch (err) {
-            document.getElementById('recentActivity').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
-            document.getElementById('upcomingPreventifs').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
-        }
-    }
+	        const filteredInterventions = filterByDashboardPeriod(safeInterventions, 'dateDebut');
+	        const filteredPreventifs = filterByDashboardPeriod(safePreventifs, 'prochaineDate');
+
+	        renderStats(safeEquipements, filteredInterventions, filteredPreventifs, safeUsers);
+	        renderCharts(safeEquipements, filteredInterventions);
+	        renderRecentActivity(safeInterventions, safeUsers);
+	        renderUpcomingPreventifs(filteredPreventifs);
+	    } catch (err) {
+	        document.getElementById('recentActivity').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+	        document.getElementById('upcomingPreventifs').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+	    }
+	}
+	function filterByDashboardPeriod(items, dateField) {
+	    const period = document.getElementById('dashboardPeriodFilter')?.value || 'MONTH';
+
+	    const now = new Date();
+	    const start = new Date(now);
+
+	    if (period === 'MONTH') {
+	        start.setMonth(now.getMonth() - 1);
+	    } else if (period === 'QUARTER') {
+	        start.setMonth(now.getMonth() - 3);
+	    } else if (period === 'YEAR') {
+	        start.setFullYear(now.getFullYear() - 1);
+	    }
+
+	    start.setHours(0, 0, 0, 0);
+
+	    return items.filter(item => {
+	        if (!item[dateField]) {
+	            return false;
+	        }
+
+	        const itemDate = new Date(item[dateField]);
+	        return itemDate >= start && itemDate <= now;
+	    });
+	}
 
     function renderStats(equipements, interventions, preventifs, users) {
         const equipActifs = equipements.filter(e => ['ACTIF', 'ACTIVE'].includes((e.statut || '').toUpperCase())).length;
@@ -101,128 +129,347 @@ const API = {
         document.getElementById('statUsersSub').textContent = `${usersActifs} actifs`;
     }
 
-    function renderCharts(equipements, interventions) {
-        const interventionStatusCounts = countBy(interventions, i => normalizeStatus(i.statut), ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE']);
-        const equipementStatusCounts = countBy(equipements, e => normalizeEquipStatus(e.statut), ['ACTIF', 'MAINTENANCE', 'HS', 'ARCHIVED']);
-        const interventionTypeCounts = countBy(interventions, i => normalizeType(i.type), ['CORRECTIVE', 'PREVENTIVE', 'PREDICTIVE']);
+	function renderCharts(equipements, interventions) {
+	    const interventionStatusKeys = ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE'];
+	    const equipementStatusKeys = ['ACTIF', 'MAINTENANCE', 'HS', 'ARCHIVED'];
+	    const interventionTypeKeys = ['CORRECTIVE', 'PREVENTIVE', 'PREDICTIVE'];
 
-        destroyChart('interventionsStatus');
-        charts.interventionsStatus = new Chart(document.getElementById('interventionsStatusChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Planifiée', 'En cours', 'Terminée', 'Annulée'],
-                datasets: [{
-                    data: [
-                        interventionStatusCounts.PLANIFIEE,
-                        interventionStatusCounts.EN_COURS,
-                        interventionStatusCounts.TERMINEE,
-                        interventionStatusCounts.ANNULEE
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
+	    const interventionStatusCounts = countBy(
+	        interventions,
+	        i => normalizeStatus(i.statut),
+	        interventionStatusKeys
+	    );
 
-        destroyChart('equipementsStatus');
-        charts.equipementsStatus = new Chart(document.getElementById('equipementsStatusChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Actif', 'Maintenance', 'HS', 'Archivé'],
-                datasets: [{
-                    label: 'Équipements',
-                    data: [
-                        equipementStatusCounts.ACTIF,
-                        equipementStatusCounts.MAINTENANCE,
-                        equipementStatusCounts.HS,
-                        equipementStatusCounts.ARCHIVED
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
+	    const equipementStatusCounts = countBy(
+	        equipements,
+	        e => normalizeEquipStatus(e.statut),
+	        equipementStatusKeys
+	    );
 
-        destroyChart('interventionsType');
-        charts.interventionsType = new Chart(document.getElementById('interventionsTypeChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Corrective', 'Préventive', 'Prédictive'],
-                datasets: [{
-                    label: 'Interventions',
-                    data: [
-                        interventionTypeCounts.CORRECTIVE,
-                        interventionTypeCounts.PREVENTIVE,
-                        interventionTypeCounts.PREDICTIVE
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
+	    const interventionTypeCounts = countBy(
+	        interventions,
+	        i => normalizeType(i.type),
+	        interventionTypeKeys
+	    );
 
-    function renderRecentActivity(interventions, users) {
-        const container = document.getElementById('recentActivity');
+	    destroyChart('interventionsStatus');
 
-        if (!interventions.length) {
-            container.innerHTML = '<div class="empty-state">Aucune intervention disponible</div>';
-            return;
-        }
+	    charts.interventionsStatus = new Chart(document.getElementById('interventionsStatusChart'), {
+	        type: 'doughnut',
+	        data: {
+	            labels: [
+	                `Planifiée (${interventionStatusCounts.PLANIFIEE})`,
+	                `En cours (${interventionStatusCounts.EN_COURS})`,
+	                `Terminée (${interventionStatusCounts.TERMINEE})`,
+	                `Annulée (${interventionStatusCounts.ANNULEE})`
+	            ],
+	            datasets: [{
+	                data: [
+	                    interventionStatusCounts.PLANIFIEE,
+	                    interventionStatusCounts.EN_COURS,
+	                    interventionStatusCounts.TERMINEE,
+	                    interventionStatusCounts.ANNULEE
+	                ]
+	            }]
+	        },
+	        options: {
+	            responsive: true,
+	            maintainAspectRatio: false,
+	            onClick: (evt, elements) => {
+	                if (!elements || elements.length === 0) {
+	                    return;
+	                }
 
-        const userMap = new Map((users || []).map(u => [Number(u.id), u.nom]));
+	                const index = elements[0].index;
+	                const selectedStatus = interventionStatusKeys[index];
 
-        const sorted = [...interventions].sort((a, b) => {
-            const aDate = new Date(a.dateDebut || 0).getTime();
-            const bDate = new Date(b.dateDebut || 0).getTime();
-            return bDate - aDate;
-        }).slice(0, 5);
+	                goToInterventions(selectedStatus, null);
+	            },
+	            plugins: {
+	                legend: {
+	                    position: 'bottom'
+	                },
+	                tooltip: {
+	                    callbacks: {
+	                        label: function (context) {
+	                            return `${context.label}: ${context.raw}`;
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    });
 
-        container.innerHTML = sorted.map(item => {
-            const creator = userMap.get(Number(item.createdById)) || `User #${item.createdById ?? ''}`;
-            return `
-                <div class="list-item">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <div class="fw-semibold">${escapeHtml(item.libele || 'Sans libellé')}</div>
-                            <small class="text-muted d-block">${escapeHtml(item.equipementDescription || 'Équipement non renseigné')}</small>
-                            <small class="text-muted d-block">Créé par ${escapeHtml(creator)}</small>
-                        </div>
-                        <span class="mini-badge ${statusBadgeClass(item.statut)}">${escapeHtml(prettyStatus(item.statut))}</span>
-                    </div>
-                    <small class="text-muted d-block mt-2">${formatDate(item.dateDebut)}</small>
-                </div>
-            `;
-        }).join('');
-    }
+	    destroyChart('equipementsStatus');
 
+	    charts.equipementsStatus = new Chart(document.getElementById('equipementsStatusChart'), {
+	        type: 'bar',
+	        data: {
+	            labels: [
+	                `Actif (${equipementStatusCounts.ACTIF})`,
+	                `Maintenance (${equipementStatusCounts.MAINTENANCE})`,
+	                `HS (${equipementStatusCounts.HS})`,
+	                `Archivé (${equipementStatusCounts.ARCHIVED})`
+	            ],
+	            datasets: [{
+	                label: 'Équipements',
+	                data: [
+	                    equipementStatusCounts.ACTIF,
+	                    equipementStatusCounts.MAINTENANCE,
+	                    equipementStatusCounts.HS,
+	                    equipementStatusCounts.ARCHIVED
+	                ]
+	            }]
+	        },
+	        options: {
+	            responsive: true,
+	            maintainAspectRatio: false,
+	            onClick: (evt, elements) => {
+	                if (!elements || elements.length === 0) {
+	                    return;
+	                }
+
+	                const index = elements[0].index;
+	                const selectedStatus = equipementStatusKeys[index];
+
+	                goToEquipements(selectedStatus);
+	            },
+	            scales: {
+	                y: {
+	                    beginAtZero: true,
+	                    ticks: {
+	                        precision: 0
+	                    }
+	                }
+	            },
+	            plugins: {
+	                legend: {
+	                    display: false
+	                },
+	                tooltip: {
+	                    callbacks: {
+	                        label: function (context) {
+	                            return `Équipements: ${context.raw}`;
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    });
+
+	    destroyChart('interventionsType');
+
+	    charts.interventionsType = new Chart(document.getElementById('interventionsTypeChart'), {
+	        type: 'bar',
+	        data: {
+	            labels: [
+	                `Corrective (${interventionTypeCounts.CORRECTIVE})`,
+	                `Préventive (${interventionTypeCounts.PREVENTIVE})`,
+	                `Prédictive (${interventionTypeCounts.PREDICTIVE})`
+	            ],
+	            datasets: [{
+	                label: 'Interventions',
+	                data: [
+	                    interventionTypeCounts.CORRECTIVE,
+	                    interventionTypeCounts.PREVENTIVE,
+	                    interventionTypeCounts.PREDICTIVE
+	                ]
+	            }]
+	        },
+	        options: {
+	            responsive: true,
+	            maintainAspectRatio: false,
+	            onClick: (evt, elements) => {
+	                if (!elements || elements.length === 0) {
+	                    return;
+	                }
+
+	                const index = elements[0].index;
+	                const selectedType = interventionTypeKeys[index];
+
+	                goToInterventions(null, selectedType);
+	            },
+	            scales: {
+	                y: {
+	                    beginAtZero: true,
+	                    ticks: {
+	                        precision: 0
+	                    }
+	                }
+	            },
+	            plugins: {
+	                legend: {
+	                    display: false
+	                },
+	                tooltip: {
+	                    callbacks: {
+	                        label: function (context) {
+	                            return `Interventions: ${context.raw}`;
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    });
+	}
+	function goToEquipements(status = null) {
+	    if (status) {
+	        window.location.href = `/equipements-list?status=${encodeURIComponent(status)}`;
+	        return;
+	    }
+
+	    window.location.href = '/equipements-list';
+	}
+	function goToInterventions(status = null, type = null) {
+	    const params = new URLSearchParams();
+
+	    const period = document.getElementById('dashboardPeriodFilter')?.value || 'MONTH';
+
+	    if (status) {
+	        params.set('status', status);
+	    }
+
+	    if (type) {
+	        params.set('type', type);
+	    }
+
+	    params.set('period', period);
+
+	    const query = params.toString();
+	    window.location.href = query ? `/interventions?${query}` : '/interventions';
+	}
+	function renderRecentActivity(interventions, users) {
+	    const container = document.getElementById('recentActivity');
+
+	    if (!container) {
+	        return;
+	    }
+
+	    if (!Array.isArray(interventions) || interventions.length === 0) {
+	        container.innerHTML = '<div class="empty-state">Aucune intervention disponible</div>';
+	        return;
+	    }
+
+	    const userMap = new Map((users || []).map(u => [Number(u.id), u.nom]));
+
+	    const today = new Date();
+	    const startWeek = startOfWeek(today);
+	    const endWeek = endOfWeek(today);
+
+	    const weeklyInterventions = interventions
+	        .filter(item => {
+	            if (!item.dateDebut) {
+	                return false;
+	            }
+
+	            const dateDebut = new Date(item.dateDebut);
+	            return dateDebut >= startWeek && dateDebut <= endWeek;
+	        })
+	        .sort((a, b) => {
+	            const aDate = new Date(a.dateDebut || 0).getTime();
+	            const bDate = new Date(b.dateDebut || 0).getTime();
+	            return bDate - aDate;
+	        });
+
+	    if (!weeklyInterventions.length) {
+	        container.innerHTML = `
+	            <div class="empty-state">
+	                Aucune intervention cette semaine
+	            </div>
+	        `;
+	        return;
+	    }
+
+	    container.innerHTML = weeklyInterventions.map(item => {
+	        const creator = userMap.get(Number(item.createdById)) || `User #${item.createdById ?? ''}`;
+	        const codeIntervention = item.codeIntervention || `INT-${item.id ?? ''}`;
+
+	        return `
+	            <div class="list-item dashboard-clickable-item"
+	                 onclick="goToInterventionDetail(${item.id})"
+	                 title="Ouvrir l’intervention">
+	                <div class="d-flex justify-content-between align-items-start gap-2">
+	                    <div>
+	                        <div class="fw-semibold">
+	                            ${escapeHtml(codeIntervention)} - ${escapeHtml(item.libele || 'Sans libellé')}
+	                        </div>
+	                        <small class="text-muted d-block">
+	                            ${escapeHtml(item.equipementDescription || 'Équipement non renseigné')}
+	                        </small>
+	                        <small class="text-muted d-block">
+	                            Créé par ${escapeHtml(creator)}
+	                        </small>
+	                    </div>
+
+	                    <span class="mini-badge ${statusBadgeClass(item.statut)}">
+	                        ${escapeHtml(prettyStatus(item.statut))}
+	                    </span>
+	                </div>
+
+	                <small class="text-muted d-block mt-2">
+	                    ${formatDate(item.dateDebut)}
+	                </small>
+	            </div>
+	        `;
+	    }).join('');
+	}
+	function startOfWeek(date) {
+	    const d = new Date(date);
+	    const day = d.getDay();
+	    const diff = day === 0 ? -6 : 1 - day;
+
+	    d.setDate(d.getDate() + diff);
+	    d.setHours(0, 0, 0, 0);
+
+	    return d;
+	}
+
+	function endOfWeek(date) {
+	    const d = startOfWeek(date);
+	    d.setDate(d.getDate() + 6);
+	    d.setHours(23, 59, 59, 999);
+
+	    return d;
+	}
+	function goToInterventionDetail(interventionId) {
+	    if (!interventionId) {
+	        window.location.href = '/interventions';
+	        return;
+	    }
+
+	    window.location.href = `/interventions?interventionId=${encodeURIComponent(interventionId)}`;
+	}
+	function goToEquipements(status = null) {
+	    if (status) {
+	        window.location.href = `/equipements-list?status=${encodeURIComponent(status)}`;
+	        return;
+	    }
+
+	    window.location.href = '/equipements-list';
+	}
+
+	function goToInterventions(status = null, type = null) {
+	    const params = new URLSearchParams();
+
+	    if (status) {
+	        params.set('status', status);
+	    }
+
+	    if (type) {
+	        params.set('type', type);
+	    }
+
+	    const query = params.toString();
+	    window.location.href = query ? `/interventions?${query}` : '/interventions';
+	}
+
+	function goToPreventifs() {
+	    window.location.href = '/preventif';
+	}
+
+	function goToUsers() {
+	    window.location.href = '/users';
+	}
     function renderUpcomingPreventifs(preventifs) {
         const container = document.getElementById('upcomingPreventifs');
 
