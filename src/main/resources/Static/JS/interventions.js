@@ -962,11 +962,9 @@ function addPendingPrsLineBeforeSave() {
     return true;
 }
 function openStatusModal(id) {
+    console.log("STATUS CLICKED intervention id =", id);
     pendingStatusId = id;
-
-    if (statusModal) {
-        statusModal.show();
-    }
+    openModalSafely('statusModal');
 }
 
 async function changeStatus(id, newStatus) {
@@ -1136,21 +1134,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    document.querySelectorAll('.status-option-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const newStatus = btn.getAttribute('data-status');
-
-            if (pendingStatusId && newStatus) {
-                await changeStatus(pendingStatusId, newStatus);
-
-                if (statusModal) {
-                    statusModal.hide();
-                }
-
-                pendingStatusId = null;
+document.querySelectorAll('.status-option-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const newStatus = btn.getAttribute('data-status');
+        if (pendingStatusId && newStatus) {
+            await changeStatus(pendingStatusId, newStatus);
+            const modalElement = document.getElementById('statusModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
             }
-        });
+            cleanupModalState();
+            pendingStatusId = null;
+        }
     });
+});
 
     setupRealtimeValidation();
 });
