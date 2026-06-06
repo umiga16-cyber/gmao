@@ -108,7 +108,7 @@ function renderTable(filteredData) {
             stockLabel = 'Stock bas';
         }
 
-        const deleteDisabled = item.canDelete === false ? 'disabled' : '';
+		const deleteDisabled = '';
 
         return `
             <tr>
@@ -275,7 +275,12 @@ function confirmDelete(id) {
     }
 
     pendingDeleteId = id;
-    deleteModal.show();
+
+    if (deleteModal) {
+        deleteModal.show();
+    } else {
+        showWarning("Erreur technique : popup de suppression introuvable.");
+    }
 }
 
 async function executeDelete(id) {

@@ -5,20 +5,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class InterventionCreateRequest {
 
-    @NotBlank(message = "Le libellé est obligatoire.")
+    @Size(max = 50, message = "Le code intervention ne doit pas dépasser 50 caractères.")
+    private String codeIntervention;
+
     @Size(max = 200, message = "Le libellé ne doit pas dépasser 200 caractères.")
     private String libele;
 
     @Size(max = 80, message = "Le type ne doit pas dépasser 80 caractères.")
     private String type;
 
-    @NotNull(message = "L'id équipement est obligatoire.")
     private Long equipementId;
 
     @Size(max = 30, message = "Le statut ne doit pas dépasser 30 caractères.")
@@ -29,12 +28,8 @@ public class InterventionCreateRequest {
     private String commentaire;
     private Long preventifId;
 
-     
-    private Long createdById;
-
     @Valid
     private List<PrsUsageRequest> prsItems = new ArrayList<>();
-    private String codeIntervention;
 
     public String getCodeIntervention() {
         return codeIntervention;
@@ -106,14 +101,6 @@ public class InterventionCreateRequest {
 
     public void setPreventifId(Long preventifId) {
         this.preventifId = preventifId;
-    }
-
-    public Long getCreatedById() {
-        return createdById;
-    }
-
-    public void setCreatedById(Long createdById) {
-        this.createdById = createdById;
     }
 
     public List<PrsUsageRequest> getPrsItems() {

@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Size;
 
 public class InterventionUpdateRequest {
 
+    @Size(max = 50, message = "Le code intervention ne doit pas dépasser 50 caractères.")
+    private String codeIntervention;
+
     @Size(max = 200, message = "Le libellé ne doit pas dépasser 200 caractères.")
     private String libele;
 
@@ -28,8 +31,6 @@ public class InterventionUpdateRequest {
 
     @Valid
     private List<PrsUsageRequest> prsItems = new ArrayList<>();
-    private String codeIntervention;
-
 
     public String getCodeIntervention() {
         return codeIntervention;

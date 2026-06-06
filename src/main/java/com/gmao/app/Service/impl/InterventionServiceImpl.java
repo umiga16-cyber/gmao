@@ -1,6 +1,7 @@
 package com.gmao.app.Service.impl;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import com.gmao.app.Repository.PrsMouvementRepository;
 import com.gmao.app.Repository.PrsRepository;
 import com.gmao.app.Repository.UserRepository;
 import com.gmao.app.Service.InterventionService;
+import com.gmao.app.dto.DeleteCheckResponse;
 import com.gmao.app.dto.InterventionCreateRequest;
 import com.gmao.app.dto.InterventionDetailResponse;
 import com.gmao.app.dto.InterventionPrsLineResponse;
@@ -123,12 +125,13 @@ public class InterventionServiceImpl implements InterventionService {
                 .toList();
     }
 
+ 
     @Override
+    @Transactional(readOnly = true)
     public boolean canBeDeleted(Long id) {
         getInterventionOrThrow(id);
         return true;
     }
-    
     @Override
     public InterventionResponse create(InterventionCreateRequest request) {
         validateCreateRequest(request);
@@ -241,11 +244,56 @@ public class InterventionServiceImpl implements InterventionService {
                 .collect(Collectors.toList());
     }
 
+ 
+    
     @Override
+    @Transactional
     public void delete(Long id) {
+        DeleteCheckResponse check = checkDelete(id);
+
+        if (!check.isCanDelete()) {
+            throw new IllegalStateException(check.getMessage());
+        }
+
         Intervention intervention = getInterventionOrThrow(id);
-        restorePrsConsumptionOnDelete(intervention);
+
+        // Remove stock movement history linked to this intervention
+        prsMouvementRepository.deleteByInterventionId(id);
+
+        // Safety cleanup: normally empty if checkDelete allowed delete
+        interventionPrsRepository.deleteByInterventionId(id);
+
         interventionRepository.delete(intervention);
+    }
+    
+    @Transactional(readOnly = true)
+    public DeleteCheckResponse checkDelete(Long id) {
+        Intervention intervention = getInterventionOrThrow(id);
+
+        boolean isTerminee = "TERMINEE".equalsIgnoreCase(String.valueOf(intervention.getStatut()));
+
+        // Active PR link only
+        boolean hasPrLines = interventionPrsRepository.existsByInterventionId(id);
+
+        if (!isTerminee && !hasPrLines) {
+            return new DeleteCheckResponse(true, null);
+        }
+
+        List<String> reasons = new ArrayList<>();
+
+        if (hasPrLines) {
+            reasons.add("elle est liée à une ou plusieurs PR");
+        }
+
+        if (isTerminee) {
+            reasons.add("son statut est Terminée");
+        }
+
+        String message = "Impossible de supprimer cette intervention car "
+                + String.join(" et ", reasons)
+                + ".";
+
+        return new DeleteCheckResponse(false, message);
     }
     private String normalizeInterventionStatus(String statut) {
         if (statut == null || statut.isBlank()) {
@@ -487,21 +535,29 @@ public class InterventionServiceImpl implements InterventionService {
     }
 
     private void syncPrsConsumptionOnUpdate(Intervention intervention, List<PrsUsageRequest> newItems) {
-        Map<Long, BigDecimal> oldMap = interventionPrsRepository.findByInterventionId(intervention.getId())
-                .stream()
+
+        List<InterventionPrs> oldLines =
+                interventionPrsRepository.findByInterventionId(intervention.getId());
+
+        Map<Long, InterventionPrs> oldLineMap = oldLines.stream()
                 .collect(Collectors.toMap(
                         line -> line.getPrs().getId(),
-                        InterventionPrs::getQuantite
+                        line -> line
                 ));
 
         Map<Long, BigDecimal> newMap = normalizePrsItems(newItems);
 
         Set<Long> allPrsIds = new HashSet<>();
-        allPrsIds.addAll(oldMap.keySet());
+        allPrsIds.addAll(oldLineMap.keySet());
         allPrsIds.addAll(newMap.keySet());
 
         for (Long prsId : allPrsIds) {
-            BigDecimal oldQty = oldMap.getOrDefault(prsId, BigDecimal.ZERO);
+            InterventionPrs oldLine = oldLineMap.get(prsId);
+
+            BigDecimal oldQty = oldLine != null
+                    ? oldLine.getQuantite()
+                    : BigDecimal.ZERO;
+
             BigDecimal newQty = newMap.getOrDefault(prsId, BigDecimal.ZERO);
             BigDecimal delta = newQty.subtract(oldQty);
 
@@ -523,6 +579,7 @@ public class InterventionServiceImpl implements InterventionService {
                 mouvement.setOrigine("INTERVENTION_UPDATE#" + intervention.getId());
                 mouvement.setType(MovementType.SORTIE);
                 prsMouvementRepository.save(mouvement);
+
             } else if (delta.compareTo(BigDecimal.ZERO) < 0) {
                 BigDecimal returnedQty = delta.abs();
 
@@ -537,22 +594,25 @@ public class InterventionServiceImpl implements InterventionService {
                 mouvement.setType(MovementType.ENTREE);
                 prsMouvementRepository.save(mouvement);
             }
-        }
 
-        interventionPrsRepository.deleteByInterventionId(intervention.getId());
-
-        for (Map.Entry<Long, BigDecimal> entry : newMap.entrySet()) {
-            Prs prs = prsRepository.findById(entry.getKey())
-                    .orElseThrow(() -> new RuntimeException("PR introuvable: " + entry.getKey()));
-
-            InterventionPrs line = new InterventionPrs();
-            line.setIntervention(intervention);
-            line.setPrs(prs);
-            line.setQuantite(entry.getValue());
-            interventionPrsRepository.save(line);
+            if (newQty.compareTo(BigDecimal.ZERO) == 0) {
+                if (oldLine != null) {
+                    interventionPrsRepository.delete(oldLine);
+                }
+            } else {
+                if (oldLine != null) {
+                    oldLine.setQuantite(newQty);
+                    interventionPrsRepository.save(oldLine);
+                } else {
+                    InterventionPrs newLine = new InterventionPrs();
+                    newLine.setIntervention(intervention);
+                    newLine.setPrs(prs);
+                    newLine.setQuantite(newQty);
+                    interventionPrsRepository.save(newLine);
+                }
+            }
         }
     }
-
     private void restorePrsConsumptionOnDelete(Intervention intervention) {
         List<InterventionPrs> lines = interventionPrsRepository.findByInterventionId(intervention.getId());
 

@@ -68,39 +68,73 @@ const API = {
 
 	        renderStats(safeEquipements, filteredInterventions, filteredPreventifs, safeUsers);
 	        renderCharts(safeEquipements, filteredInterventions);
-	        renderRecentActivity(safeInterventions, safeUsers);
+	        renderRecentActivity(filteredInterventions, safeUsers);
 	        renderUpcomingPreventifs(filteredPreventifs);
+
 	    } catch (err) {
-	        document.getElementById('recentActivity').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
-	        document.getElementById('upcomingPreventifs').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+	        document.getElementById('recentActivity').innerHTML =
+	            `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+
+	        document.getElementById('upcomingPreventifs').innerHTML =
+	            `<div class="empty-state">${escapeHtml(err.message)}</div>`;
 	    }
 	}
 	function filterByDashboardPeriod(items, dateField) {
 	    const period = document.getElementById('dashboardPeriodFilter')?.value || 'MONTH';
 
 	    const now = new Date();
-	    const start = new Date(now);
+	    let start;
+	    let end;
 
 	    if (period === 'MONTH') {
-	        start.setMonth(now.getMonth() - 1);
+	        // Current month
+	        start = new Date(now.getFullYear(), now.getMonth(), 1);
+	        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
 	    } else if (period === 'QUARTER') {
-	        start.setMonth(now.getMonth() - 3);
+	        // Current quarter
+	        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+	        start = new Date(now.getFullYear(), quarterStartMonth, 1);
+	        end = new Date(now.getFullYear(), quarterStartMonth + 3, 0, 23, 59, 59, 999);
+
 	    } else if (period === 'YEAR') {
-	        start.setFullYear(now.getFullYear() - 1);
+	        // Current year
+	        start = new Date(now.getFullYear(), 0, 1);
+	        end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+	    } else {
+	        return items;
 	    }
 
-	    start.setHours(0, 0, 0, 0);
-
 	    return items.filter(item => {
-	        if (!item[dateField]) {
+	        const itemDate = parseDashboardDate(item[dateField]);
+
+	        if (!itemDate) {
+	            console.warn("Date invalide ignorée:", item[dateField], item);
 	            return false;
 	        }
 
-	        const itemDate = new Date(item[dateField]);
-	        return itemDate >= start && itemDate <= now;
+	        return itemDate >= start && itemDate <= end;
 	    });
 	}
+	function parseDashboardDate(value) {
+	    if (!value) return null;
 
+	    // Case: backend sends array [2026, 6, 5, 12, 8]
+	    if (Array.isArray(value)) {
+	        const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+	        return new Date(year, month - 1, day, hour, minute, second);
+	    }
+
+	    // Case: backend sends ISO string: 2026-06-05T12:08:00
+	    const date = new Date(value);
+
+	    if (!isNaN(date.getTime())) {
+	        return date;
+	    }
+
+	    return null;
+	}
     function renderStats(equipements, interventions, preventifs, users) {
         const equipActifs = equipements.filter(e => ['ACTIF', 'ACTIVE'].includes((e.statut || '').toUpperCase())).length;
         const interventionsEnCours = interventions.filter(i => (i.statut || '').toUpperCase() === 'EN_COURS').length;
@@ -323,7 +357,7 @@ const API = {
 	function goToInterventions(status = null, type = null) {
 	    const params = new URLSearchParams();
 
-	    const period = document.getElementById('dashboardPeriodFilter')?.value || 'MONTH';
+	    const period = document.getElementById('dashboardPeriodFilter')?.value;
 
 	    if (status) {
 	        params.set('status', status);
@@ -333,7 +367,9 @@ const API = {
 	        params.set('type', type);
 	    }
 
-	    params.set('period', period);
+	    if (period) {
+	        params.set('period', period);
+	    }
 
 	    const query = params.toString();
 	    window.location.href = query ? `/interventions?${query}` : '/interventions';
@@ -352,35 +388,21 @@ const API = {
 
 	    const userMap = new Map((users || []).map(u => [Number(u.id), u.nom]));
 
-	    const today = new Date();
-	    const startWeek = startOfWeek(today);
-	    const endWeek = endOfWeek(today);
-
-	    const weeklyInterventions = interventions
-	        .filter(item => {
-	            if (!item.dateDebut) {
-	                return false;
-	            }
-
-	            const dateDebut = new Date(item.dateDebut);
-	            return dateDebut >= startWeek && dateDebut <= endWeek;
-	        })
+	    const sorted = [...interventions]
+	        .filter(item => !!item.dateDebut)
 	        .sort((a, b) => {
-	            const aDate = new Date(a.dateDebut || 0).getTime();
-	            const bDate = new Date(b.dateDebut || 0).getTime();
+	            const aDate = parseDashboardDate(a.dateDebut)?.getTime() || 0;
+	            const bDate = parseDashboardDate(b.dateDebut)?.getTime() || 0;
 	            return bDate - aDate;
-	        });
+	        })
+	        .slice(0, 5);
 
-	    if (!weeklyInterventions.length) {
-	        container.innerHTML = `
-	            <div class="empty-state">
-	                Aucune intervention cette semaine
-	            </div>
-	        `;
+	    if (!sorted.length) {
+	        container.innerHTML = '<div class="empty-state">Aucune intervention disponible</div>';
 	        return;
 	    }
 
-	    container.innerHTML = weeklyInterventions.map(item => {
+	    container.innerHTML = sorted.map(item => {
 	        const creator = userMap.get(Number(item.createdById)) || `User #${item.createdById ?? ''}`;
 	        const codeIntervention = item.codeIntervention || `INT-${item.id ?? ''}`;
 
@@ -448,20 +470,7 @@ const API = {
 	    window.location.href = '/equipements-list';
 	}
 
-	function goToInterventions(status = null, type = null) {
-	    const params = new URLSearchParams();
 
-	    if (status) {
-	        params.set('status', status);
-	    }
-
-	    if (type) {
-	        params.set('type', type);
-	    }
-
-	    const query = params.toString();
-	    window.location.href = query ? `/interventions?${query}` : '/interventions';
-	}
 
 	function goToPreventifs() {
 	    window.location.href = '/preventif';

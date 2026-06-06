@@ -2,6 +2,7 @@ package com.gmao.app.Service;
 
 import java.util.List;
 
+import com.gmao.app.dto.DeleteCheckResponse;
 import com.gmao.app.dto.InterventionCreateRequest;
 import com.gmao.app.dto.InterventionDetailResponse;
 import com.gmao.app.dto.InterventionResponse;
@@ -36,4 +37,6 @@ public interface InterventionService {
     List<InterventionResponse> findByCreatedBy(Long createdById);
 
     List<InterventionResponse> findByPreventif(Long preventifId);
+    
+    DeleteCheckResponse checkDelete(Long id);
 }

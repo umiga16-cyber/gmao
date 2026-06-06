@@ -71,11 +71,7 @@ function showWarning(message) {
         warningMessage.textContent = message;
     }
 
-    if (warningModal) {
-        warningModal.show();
-    } else {
-        alert(message);
-    }
+    openModalSafely('warningModal');
 }
 
 function toggleSidebar() {
@@ -306,23 +302,51 @@ function isInsidePeriod(dateValue, period) {
         return true;
     }
 
-    const date = new Date(dateValue);
+    const date = parseInterventionDate(dateValue);
+
+    if (!date) {
+        console.warn("Date intervention invalide:", dateValue);
+        return false;
+    }
+
     const now = new Date();
-    const start = new Date(now);
+    let start;
+    let end;
 
     if (period === 'MONTH') {
-        start.setMonth(now.getMonth() - 1);
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
     } else if (period === 'QUARTER') {
-        start.setMonth(now.getMonth() - 3);
+        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+        start = new Date(now.getFullYear(), quarterStartMonth, 1);
+        end = new Date(now.getFullYear(), quarterStartMonth + 3, 0, 23, 59, 59, 999);
+
     } else if (period === 'YEAR') {
-        start.setFullYear(now.getFullYear() - 1);
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+
     } else {
         return true;
     }
 
-    start.setHours(0, 0, 0, 0);
+    return date >= start && date <= end;
+}
+function parseInterventionDate(value) {
+    if (!value) return null;
 
-    return date >= start && date <= now;
+    if (Array.isArray(value)) {
+        const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+        return new Date(year, month - 1, day, hour, minute, second);
+    }
+
+    const date = new Date(value);
+
+    if (!isNaN(date.getTime())) {
+        return date;
+    }
+
+    return null;
 }
 function applyFilters() {
     const status = document.getElementById('statusFilter')?.value.trim() || '';
@@ -772,7 +796,9 @@ async function saveInterventionCanvas() {
 
     const id = document.getElementById('interventionIdCanvas')?.value || '';
     const isUpdate = !!id;
-
+	if (!addPendingPrsLineBeforeSave()) {
+	    return;
+	}
     const payload = {
         codeIntervention: getVal('codeInterventionCanvas'),
         libele: getVal('libelleCanvas'),
@@ -818,25 +844,123 @@ async function saveInterventionCanvas() {
         }
     }
 }
+function cleanupModalState() {
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
 
-function confirmDelete(id) {
-    pendingDeleteId = id;
-
-    if (deleteModal) {
-        deleteModal.show();
-    }
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
 }
 
+function openModalSafely(modalId) {
+    const modalElement = document.getElementById(modalId);
+
+    if (!modalElement) {
+        alert("Modal introuvable: " + modalId);
+        return;
+    }
+
+    // Put modal directly under body, same as company modal behavior
+    document.body.appendChild(modalElement);
+
+    // Remove old broken backdrop before opening new modal
+    cleanupModalState();
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement, {
+        backdrop: true,
+        keyboard: true,
+        focus: true
+    });
+
+    modal.show();
+}
+async function confirmDelete(id) {
+    try {
+        console.log("DELETE CLICKED intervention id =", id);
+
+        const check = await fetchJson(`${API_URL}/${id}/delete-check`);
+
+        if (!check.canDelete) {
+            showWarning(check.message || "Impossible de supprimer cette intervention.");
+            return;
+        }
+
+        pendingDeleteId = id;
+        openModalSafely('deleteConfirmModal');
+
+    } catch (err) {
+        showWarning(err.message || "Erreur lors de la vérification avant suppression.");
+    }
+}
 async function executeDelete(id) {
     try {
         await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
+
+        const modalElement = document.getElementById('deleteConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+
+        if (modal) {
+            modal.hide();
+        }
+
+        cleanupModalState();
+
+        pendingDeleteId = null;
         await refreshPage();
+
     } catch (err) {
-        console.error('Erreur suppression intervention:', err);
-        showWarning(err.message);
+        cleanupModalState();
+        showWarning(err.message || "Suppression impossible.");
     }
 }
 
+function addPendingPrsLineBeforeSave() {
+    const prsSelect = document.getElementById('prsSelectCanvas');
+    const qtyInput = document.getElementById('prsQuantiteCanvas');
+
+    if (!prsSelect || !qtyInput) {
+        return true;
+    }
+
+    const prsId = Number(prsSelect.value);
+    const quantite = Number(qtyInput.value);
+
+    // No PR selected => nothing to add
+    if (!prsId) {
+        return true;
+    }
+
+    if (!quantite || quantite <= 0) {
+        showWarning("La quantité PR doit être supérieure à 0.");
+        return false;
+    }
+
+    const prs = prsCatalog.find(p => Number(p.id) === prsId);
+
+    if (!prs) {
+        showWarning("PR introuvable.");
+        return false;
+    }
+
+    const existing = currentPrsLines.find(line => Number(line.prsId) === prsId);
+
+    if (existing) {
+        existing.quantite = Number(existing.quantite) + quantite;
+    } else {
+        currentPrsLines.push({
+            prsId: prs.id,
+            prsLibelle: prs.libelle,
+            quantite: quantite
+        });
+    }
+
+    renderPrsLines();
+
+    prsSelect.value = '';
+    qtyInput.value = '1';
+
+    return true;
+}
 function openStatusModal(id) {
     pendingStatusId = id;
 

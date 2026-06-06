@@ -162,6 +162,44 @@
             border: none;
             box-shadow: 0 20px 35px rgba(0,0,0,0.1);
         }
+		.modal-backdrop {
+		    z-index: 1040 !important;
+		}
+
+		.modal {
+		    z-index: 1055 !important;
+		}
+
+		#deleteConfirmModal {
+		    z-index: 1060 !important;
+		}
+
+		#deleteConfirmModal .modal-dialog {
+		    z-index: 1061 !important;
+		}
+		.modal-backdrop {
+		    z-index: 1040 !important;
+		}
+
+		.modal {
+		    z-index: 1055 !important;
+		}
+
+		#deleteConfirmModal {
+		    z-index: 1060 !important;
+		}
+
+		#deleteConfirmModal .modal-dialog {
+		    z-index: 1061 !important;
+		}
+
+		#warningModal {
+		    z-index: 1070 !important;
+		}
+
+		#warningModal .modal-dialog {
+		    z-index: 1071 !important;
+		}
         .offcanvas-header, .modal-header {
             background: white;
             border-bottom: 1px solid #e2e8f0;
@@ -450,49 +488,48 @@
                     <textarea id="commentaireCanvas" class="form-control" rows="3" maxlength="500"></textarea>
                 </div>
 
-                <div class="col-12">
-                    <div class="section-title mt-2">
-                        <i class="fas fa-boxes me-2 text-primary"></i> PRs utilisées
-                    </div>
+				<div class="col-12">
+				    <div class="section-title mt-2">
+				        <i class="fas fa-boxes me-2 text-primary"></i> PRs utilisées
+				    </div>
 
-                    <div class="card border-0 bg-light rounded-4 p-3">
-                        <div class="row g-2 align-items-end mb-3">
-                            <div class="col-md-7">
-                                <label class="form-label">PR</label>
-                                <select id="prsSelectCanvas" class="form-select">
-                                    <option value="">Sélectionner une PR</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Quantité</label>
-                                <input type="number" id="prsQuantiteCanvas" class="form-control" min="0.001" step="0.001" value="1">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-outline-primary w-100" onclick="addPrsLine()">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
+				    <div class="card border-0 bg-light rounded-4 p-3">
+				        <div class="row g-2 align-items-end mb-3">
+				            <div class="col-md-7">
+				                <label class="form-label">PR</label>
+				                <select id="prsSelectCanvas" class="form-select">
+				                    <option value="">Sélectionner une PR</option>
+				                </select>
+				            </div>
+				            <div class="col-md-3">
+				                <label class="form-label">Quantité</label>
+				                <input type="number" id="prsQuantiteCanvas" class="form-control" min="0.001" step="0.001" value="1">
+				            </div>
+				            <div class="col-md-2">
+				                <button type="button" class="btn btn-outline-primary w-100" onclick="addPrsLine()">
+				                    <i class="fas fa-plus"></i>
+				                </button>
+				            </div>
+				        </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>PR</th>
-                                        <th>Quantité</th>
-                                        <th style="width: 80px;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="prsLinesBody">
-                                    <tr>
-                                        <td colspan="3" class="text-muted text-center">Aucune PR sélectionnée</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+				        <div class="table-responsive">
+				            <table class="table table-sm align-middle mb-0">
+				                <thead>
+				                    <tr>
+				                        <th>PR</th>
+				                        <th>Quantité</th>
+				                        <th style="width: 80px;">Action</th>
+				                    </tr>
+				                </thead>
+				                <tbody id="prsLinesBody">
+				                    <tr>
+				                        <td colspan="3" class="text-muted text-center">Aucune PR sélectionnée</td>
+				                    </tr>
+				                </tbody>
+				            </table>
+				        </div>
+				    </div>
+				</div>
 
             <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
             <div class="mt-4 d-flex gap-2">

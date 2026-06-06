@@ -7,6 +7,7 @@ import java.util.List;
 public class InterventionDetailResponse {
 
     private Long id;
+    private String codeIntervention;
     private String libele;
     private String type;
     private Long equipementId;
@@ -18,15 +19,6 @@ public class InterventionDetailResponse {
     private Long preventifId;
     private Long createdById;
     private List<InterventionPrsLineResponse> prsItems = new ArrayList<>();
-    private String codeIntervention;
-
-    public String getCodeIntervention() {
-        return codeIntervention;
-    }
-
-    public void setCodeIntervention(String codeIntervention) {
-        this.codeIntervention = codeIntervention;
-    }
 
     public Long getId() {
         return id;
@@ -34,6 +26,14 @@ public class InterventionDetailResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCodeIntervention() {
+        return codeIntervention;
+    }
+
+    public void setCodeIntervention(String codeIntervention) {
+        this.codeIntervention = codeIntervention;
     }
 
     public String getLibele() {
