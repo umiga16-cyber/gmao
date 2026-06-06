@@ -763,6 +763,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    const interventionIdFromUrl = urlParams.get('interventionId');
+    if (interventionIdFromUrl) {
+        showDetailCanvas(interventionIdFromUrl); 
+    }
+
     setupRealtimeValidation();
 });
 
