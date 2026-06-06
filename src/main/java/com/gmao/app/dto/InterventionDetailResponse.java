@@ -19,7 +19,6 @@ public class InterventionDetailResponse {
     private Long createdById;
     private List<InterventionPrsLineResponse> prsItems = new ArrayList<>();
     private String codeIntervention;
-    private String codeMateriel;
 
     public String getCodeIntervention() {
         return codeIntervention;
@@ -29,13 +28,6 @@ public class InterventionDetailResponse {
         this.codeIntervention = codeIntervention;
     }
 
-    public String getCodeMateriel() {
-        return codeMateriel;
-    }
-
-    public void setCodeMateriel(String codeMateriel) {
-        this.codeMateriel = codeMateriel;
-    }
     public Long getId() {
         return id;
     }

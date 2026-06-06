@@ -384,10 +384,6 @@ public class InterventionServiceImpl implements InterventionService {
             throw new IllegalArgumentException("Le code intervention est obligatoire.");
         }
 
-        if (request.getCodeMateriel() == null || request.getCodeMateriel().isBlank()) {
-            throw new IllegalArgumentException("Le code matériel est obligatoire.");
-        }
-
         if (request.getLibele() == null || request.getLibele().isBlank()) {
             throw new IllegalArgumentException("Le libellé est obligatoire.");
         }
@@ -404,10 +400,6 @@ public class InterventionServiceImpl implements InterventionService {
 
         if (request.getCodeIntervention() != null && request.getCodeIntervention().isBlank()) {
             throw new IllegalArgumentException("Le code intervention ne peut pas être vide.");
-        }
-
-        if (request.getCodeMateriel() != null && request.getCodeMateriel().isBlank()) {
-            throw new IllegalArgumentException("Le code matériel ne peut pas être vide.");
         }
 
         if (request.getLibele() != null && request.getLibele().isBlank()) {

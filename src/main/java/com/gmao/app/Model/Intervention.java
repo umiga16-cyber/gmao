@@ -72,8 +72,6 @@ public class Intervention {
     @Column(name = "code_intervention", nullable = false, unique = true, length = 50)
     private String codeIntervention;
 
-    @Column(name = "code_materiel", nullable = false, length = 50)
-    private String codeMateriel;
 	public Long getId() {
 		return id;
 	}
@@ -210,11 +208,4 @@ public class Intervention {
 	    this.codeIntervention = codeIntervention;
 	}
 
-	public String getCodeMateriel() {
-	    return codeMateriel;
-	}
-
-	public void setCodeMateriel(String codeMateriel) {
-	    this.codeMateriel = codeMateriel;
-	}
 }

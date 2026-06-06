@@ -15,7 +15,6 @@ public class InterventionResponse {
     private Long preventifId;
     private Long createdById;
     private String codeIntervention;
-    private String codeMateriel;
 
     public String getCodeIntervention() {
         return codeIntervention;
@@ -25,13 +24,6 @@ public class InterventionResponse {
         this.codeIntervention = codeIntervention;
     }
 
-    public String getCodeMateriel() {
-        return codeMateriel;
-    }
-
-    public void setCodeMateriel(String codeMateriel) {
-        this.codeMateriel = codeMateriel;
-    }
     public Long getId() {
         return id;
     }

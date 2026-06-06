@@ -20,6 +20,22 @@
         if (text.length <= maxLen) return text;
         return text.substring(0, maxLen) + '…';
     }
+// ======================== GENERACIÓN AUTOMÁTICA DE CÓDIGO ========================
+function generateNextEquipmentCode() {
+    if (!allEquipements.length) return 'EQ-000000001';
+    const numbers = allEquipements
+        .map(eq => {
+            const code = eq.code || '';
+            const match = code.match(/^EQ-(\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => num > 0);
+    if (numbers.length === 0) return 'EQ-000000001';
+    const maxNum = Math.max(...numbers);
+    const next = maxNum + 1;
+    const padded = String(next).padStart(9, '0'); // 8 dígitos
+    return `EQ-${padded}`;
+}
 	function validateInstallationDatesCanvas() {
 	    const dateInstallation = getVal('dateInstallationCanvas');
 	    const dateMiseEnService = getVal('dateMiseEnServiceCanvas');
@@ -572,6 +588,15 @@
 
 	    // INC 6: à la création, seul ACTIF est autorisé
 	    document.getElementById('statutCanvas').value = 'ACTIF';
+    	// === NUEVO: generar código automáticamente ===
+  		  const codeInput = document.getElementById('codeCanvas');
+   		if (codeInput) {
+    	    const newCode = generateNextEquipmentCode();
+     	   codeInput.value = newCode;
+     	   codeInput.readOnly = true;
+     	   codeInput.style.backgroundColor = '#e9ecef'; // fondo gris
+    	}
+
 
 	    await loadCompanyOptions();
 	    applyRequiredErrorOnEmpty();
@@ -583,6 +608,12 @@
             const e = await fetchJson(`${API_URL}/${id}/detail`);
             document.getElementById('formOffcanvasLabel').innerText = 'Éditer équipement';
             document.getElementById('equipementIdCanvas').value = e.id ?? '';
+        	const codeInput = document.getElementById('codeCanvas');
+        	if (codeInput) {
+        	    codeInput.value = e.code ?? '';
+        	    codeInput.readOnly = true;
+         	   codeInput.style.backgroundColor = '#e9ecef'; // fondo gris
+        	}			
             document.getElementById('codeCanvas').value = e.code ?? '';
             document.getElementById('descriptionCanvas').value = e.description ?? '';
             document.getElementById('typeCanvas').value = e.type ?? '';

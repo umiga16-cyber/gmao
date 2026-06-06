@@ -363,7 +363,6 @@ public class DataInitializer {
 			// =========================
 			Intervention i1 = new Intervention();
 			i1.setCodeIntervention("INT-001");
-			i1.setCodeMateriel("MAT-EQ-AT-001");
 			i1.setLibele("Remplacement filtre compresseur");
 			i1.setType("CORRECTIVE");
 			i1.setEquipement(eq1);
@@ -376,7 +375,6 @@ public class DataInitializer {
 
 			Intervention i2 = new Intervention();
 			i2.setCodeIntervention("INT-002");
-			i2.setCodeMateriel("MAT-EQ-NV-002");
 			i2.setLibele("Inspection tableau électrique");
 			i2.setType("PREVENTIVE");
 			i2.setEquipement(eq4);
@@ -389,7 +387,6 @@ public class DataInitializer {
 
 			Intervention i3 = new Intervention();
 			i3.setCodeIntervention("INT-003");
-			i3.setCodeMateriel("MAT-EQ-NV-001");
 			i3.setLibele("Diagnostic groupe électrogène");
 			i3.setType("CORRECTIVE");
 			i3.setEquipement(eq3);

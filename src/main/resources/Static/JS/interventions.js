@@ -22,6 +22,31 @@ let usersMap = new Map();
 let prsCatalog = [];
 let currentPrsLines = [];
 
+// ======================== NUEVA FUNCIÓN PARA GENERAR CÓDIGO ========================
+function generateNextInterventionCode() {
+    if (!allInterventions.length) {
+        return 'INT-000000001';
+    }
+
+    const numbers = allInterventions
+        .map(interv => {
+            const code = interv.codeIntervention || '';
+            const match = code.match(/^INT-(\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => num > 0);
+
+    if (numbers.length === 0) {
+        return 'INT-000000001';
+    }
+
+    const maxNumber = Math.max(...numbers);
+    const nextNumber = maxNumber + 1;
+    const padded = String(nextNumber).padStart(9, '0'); // 9 dígitos
+    return `INT-${padded}`;
+}
+// ===================================================================
+
 function normalizeInterventionStatus(status) {
     const value = (status || '').trim().toUpperCase();
 
@@ -174,7 +199,6 @@ async function loadPrsSelect(selectedPrsId = null) {
 function validateFieldLengths() {
     const fields = [
         { id: 'codeInterventionCanvas', max: 50, name: 'Code intervention' },
-        { id: 'codeMaterielCanvas', max: 50, name: 'Code matériel' },
         { id: 'libelleCanvas', max: 200, name: 'Libellé' },
         { id: 'commentaireCanvas', max: 500, name: 'Commentaire' }
     ];
@@ -195,7 +219,6 @@ function validateFieldLengths() {
 function setupRealtimeValidation() {
     const requiredFields = [
         'codeInterventionCanvas',
-        'codeMaterielCanvas',
         'libelleCanvas',
         'typeCanvas',
         'statutCanvas',
@@ -225,7 +248,6 @@ function setupRealtimeValidation() {
 function applyRequiredErrorOnEmpty() {
     const requiredFields = [
         'codeInterventionCanvas',
-        'codeMaterielCanvas',
         'libelleCanvas',
         'typeCanvas',
         'statutCanvas',
@@ -358,7 +380,6 @@ function renderTable(data) {
 
     tbody.innerHTML = data.map(i => {
         const codeIntervention = escapeHtml(i.codeIntervention || '—');
-        const codeMateriel = escapeHtml(i.codeMateriel || '—');
 
         const libelleFull = escapeHtml(i.libele || '');
         const libelleTrunc = truncateText(libelleFull, 80);
@@ -371,7 +392,6 @@ function renderTable(data) {
         return `
             <tr>
                 <td title="${codeIntervention}">${codeIntervention}</td>
-                <td title="${codeMateriel}">${codeMateriel}</td>
                 <td title="${libelleFull}">${libelleTrunc}</td>
                 <td>${renderTypeBadge(i.type)}</td>
                 <td title="${equipFull}">${equipTrunc}</td>
@@ -566,13 +586,6 @@ async function showDetailCanvas(id) {
 
                 <div class="col-6">
                     <div class="detail-card">
-                        <div class="detail-label">Code matériel</div>
-                        <div class="detail-value">${escapeHtml(i.codeMateriel || '—')}</div>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <div class="detail-card">
                         <div class="detail-label">Type</div>
                         <div class="detail-value">${renderTypeBadge(i.type)}</div>
                     </div>
@@ -654,6 +667,7 @@ async function showDetailCanvas(id) {
     }
 }
 
+// ======================== MODIFICACIÓN: openCreateOffcanvas con código automático ========================
 async function openCreateOffcanvas(preselectedEquipementId = null) {
     const formLabel = document.getElementById('formOffcanvasLabel');
     const form = document.getElementById('interventionFormCanvas');
@@ -685,20 +699,38 @@ async function openCreateOffcanvas(preselectedEquipementId = null) {
         }
     }
 
+    // GENERACIÓN AUTOMÁTICA DEL CÓDIGO
+    const codeInput = document.getElementById('codeInterventionCanvas');
+    if (codeInput) {
+        const newCode = generateNextInterventionCode();
+        codeInput.value = newCode;
+        codeInput.readOnly = true;
+        codeInput.style.backgroundColor = '#e9ecef';   // fondo gris
+    }
+
     applyRequiredErrorOnEmpty();
 
     if (formOffcanvas) {
         formOffcanvas.show();
     }
 }
+// ===================================================================
+
+// ======================== MODIFICACIÓN: openEditCanvas con readonly y gris ========================
 async function openEditCanvas(id) {
     try {
         const i = await fetchJson(`${API_URL}/${id}/detail`);
 
         document.getElementById('formOffcanvasLabel').innerText = 'Éditer intervention';
         document.getElementById('interventionIdCanvas').value = i.id ?? '';
-        document.getElementById('codeInterventionCanvas').value = i.codeIntervention ?? '';
-        document.getElementById('codeMaterielCanvas').value = i.codeMateriel ?? '';
+        
+        const codeInput = document.getElementById('codeInterventionCanvas');
+        if (codeInput) {
+            codeInput.value = i.codeIntervention ?? '';
+            codeInput.readOnly = true;
+            codeInput.style.backgroundColor = '#e9ecef';   // fondo gris
+        }
+        
         document.getElementById('libelleCanvas').value = i.libele ?? '';
         document.getElementById('typeCanvas').value = i.type ?? '';
         document.getElementById('statutCanvas').value = normalizeInterventionStatus(i.statut);
@@ -733,6 +765,7 @@ async function openEditCanvas(id) {
         showWarning(err.message);
     }
 }
+// ===================================================================
 
 async function saveInterventionCanvas() {
     console.log("saveInterventionCanvas appelée");
@@ -742,7 +775,6 @@ async function saveInterventionCanvas() {
 
     const payload = {
         codeIntervention: getVal('codeInterventionCanvas'),
-        codeMateriel: getVal('codeMaterielCanvas'),
         libele: getVal('libelleCanvas'),
         type: getVal('typeCanvas'),
         statut: normalizeInterventionStatus(getVal('statutCanvas')),
@@ -872,18 +904,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await refreshPage();
 
-    /*
-     * URL parameters:
-     * - /interventions?status=EN_COURS
-     * - /interventions?type=CORRECTIVE
-     * - /interventions?equipementId=3
-     */
     const urlParams = new URLSearchParams(window.location.search);
 
     const statusFromUrl = urlParams.get('status');
     const typeFromUrl = urlParams.get('type');
     const equipementIdFromUrl = urlParams.get('equipementId');
-	const periodFromUrl = urlParams.get('period');
+    const periodFromUrl = urlParams.get('period');
     if (statusFromUrl) {
         const statusFilter = document.getElementById('statusFilter');
 
@@ -900,17 +926,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-	if (statusFromUrl || typeFromUrl || periodFromUrl) {
-	    applyFilters();
-	}
+    if (statusFromUrl || typeFromUrl || periodFromUrl) {
+        applyFilters();
+    }
 
     if (equipementIdFromUrl) {
         await openCreateOffcanvas(equipementIdFromUrl);
     }
 
-	if (statusFromUrl || typeFromUrl || periodFromUrl || equipementIdFromUrl) {
-	    window.history.replaceState({}, document.title, '/interventions');
-	}
+    if (statusFromUrl || typeFromUrl || periodFromUrl || equipementIdFromUrl) {
+        window.history.replaceState({}, document.title, '/interventions');
+    }
 
     const interventionForm = document.getElementById('interventionFormCanvas');
 
@@ -926,17 +952,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             const codeInterventionField = document.getElementById('codeInterventionCanvas');
-            const codeMaterielField = document.getElementById('codeMaterielCanvas');
             const libelleField = document.getElementById('libelleCanvas');
             const typeField = document.getElementById('typeCanvas');
             const statutField = document.getElementById('statutCanvas');
             const equipementField = document.getElementById('equipementIdCanvas');
             const dateDebutField = document.getElementById('dateDebutCanvas');
 
-            if (!codeInterventionField || !codeMaterielField || !libelleField || !typeField || !statutField || !equipementField || !dateDebutField) {
+            if (!codeInterventionField || !libelleField || !typeField || !statutField || !equipementField || !dateDebutField) {
                 console.error("Champ manquant dans le formulaire", {
                     codeInterventionField,
-                    codeMaterielField,
                     libelleField,
                     typeField,
                     statutField,
@@ -949,15 +973,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const codeIntervention = codeInterventionField.value.trim();
-            const codeMateriel = codeMaterielField.value.trim();
             const libelle = libelleField.value.trim();
             const type = typeField.value;
             const statut = statutField.value;
             const equipementId = equipementField.value;
             const dateDebut = dateDebutField.value;
 
-            if (!codeIntervention || !codeMateriel || !libelle || !type || !statut || !equipementId || !dateDebut) {
-                showWarning("Veuillez remplir tous les champs obligatoires : Code intervention, Code matériel, Libellé, Type, Statut, Équipement, Date début.");
+            if (!codeIntervention || !libelle || !type || !statut || !equipementId || !dateDebut) {
+                showWarning("Veuillez remplir tous les champs obligatoires : Code intervention, Libellé, Type, Statut, Équipement, Date début.");
                 applyRequiredErrorOnEmpty();
                 return;
             }
