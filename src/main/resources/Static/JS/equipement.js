@@ -12,6 +12,9 @@ let currentEquipements = [];
 let allEquipements = [];
 let currentQuickFilter = 'TOTAL';
 
+// Variable global para evitar importaciones simultáneas
+let isImporting = false;
+
 // ======================== Funciones auxiliares ========================
 function truncateText(text, maxLen) {
     if (!text) return '—';
@@ -134,12 +137,6 @@ async function refreshPage() {
     } catch (err) {
         showWarning('Erreur: ' + err.message);
     }
-}
-
-async function loadStats() {
-    const data = await fetchJson(API_URL);
-    allEquipements = Array.isArray(data) ? data : [];
-    updateStatsFromData(getBaseFilteredEquipments());
 }
 
 async function loadEquipments() {
@@ -282,16 +279,6 @@ function resetFilters() {
     applyCurrentFiltersAndQuickAccess();
 }
 
-function applyUrlFilters() {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('status');
-    if (status) {
-        const statusFilter = document.getElementById('statusFilter');
-        if (statusFilter) statusFilter.value = status;
-        currentQuickFilter = 'TOTAL';
-    }
-}
-
 function renderTable(data) {
     const tbody = document.getElementById('equipementsTableBody');
     if (!Array.isArray(data) || data.length === 0) {
@@ -362,7 +349,7 @@ async function showDetailCanvas(id) {
             <div class="section-title"><i class="fas fa-chart-line me-2 text-primary"></i> Statut & Maintenance</div>
             <div class="row g-3 mb-4">
                 <div class="col-6"><div class="detail-card"><div class="detail-label">Statut actuel</div><div class="detail-value">${renderStatusBadge(e.statut)}</div></div></div>
-                <div class="col-6"><div class="detail-card"><div class="detail-label">Criticité</div><div class="detail-value">${e.criticite ? (e.criticite === 'BAJA' ? 'Baja' : e.criticite === 'MEDIA' ? 'Media' : e.criticite === 'ALTA' ? 'Alta' : escapeHtml(e.criticite)) : '—'}</div></div></div>
+                <div class="col-6"><div class="detail-card"><div class="detail-label">Criticité</div><div class="detail-value">${e.criticite ? (e.criticite === 'FAIBLE' ? 'Faible' : e.criticite === 'MOYEN' ? 'Moyen' : e.criticite === 'ELEVE' ? 'Élevé' : escapeHtml(e.criticite)) : '—'}</div></div></div>
                 <div class="col-6"><div class="detail-card"><div class="detail-label">Parent ID</div><div class="detail-value">${e.parentId ? e.parentId : '—'}</div></div></div>
             </div>
             <div class="section-title"><i class="fas fa-calendar-alt me-2 text-primary"></i> Dates clés</div>
@@ -520,14 +507,217 @@ async function changeStatus(id, newStatus) {
     } catch (err) { showWarning(err.message); }
 }
 
+// ======================== IMPORTATION (VERSION DÉFINITIVE SANS DOUBLE EXÉCUTION) ========================
+function showImportModal() {
+    const modalElem = document.getElementById('importModal');
+    if (modalElem?.classList.contains('show')) return;
+
+    // Réinitialiser l'UI
+    document.getElementById('importResult').innerHTML = '';
+    document.getElementById('importProgress').classList.add('d-none');
+
+    // Nettoyer l'input file avant d'ouvrir pour éviter des résidus
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.value = '';
+
+    const modal = new bootstrap.Modal(modalElem);
+    modal.show();
+}
+
+// Initialisation unique (appelée une fois depuis DOMContentLoaded)
+function setupImportFeatures() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    if (!dropZone || !fileInput) return;
+
+    // Éviter les doubles initialisations
+    if (window._importInitialized) return;
+    window._importInitialized = true;
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && !isImporting) processFile(file);
+    });
+
+    // Clic sur la zone -> ouvre le sélecteur
+    dropZone.addEventListener('click', (e) => {
+        // éviter de déclencher si on clique sur le bouton de fermeture du modal
+        if (e.target.closest('.btn-close')) return;
+        if (!isImporting) fileInput.click();
+    });
+
+    // Événement change du input file (sélection manuelle)
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length && !isImporting) {
+            processFile(e.target.files[0]);
+        }
+        // On ne réinitialise pas ici pour éviter de relancer l'événement
+    });
+}
+
+async function processFile(file) {
+    if (isImporting) return;
+    isImporting = true;
+
+    const progressDiv = document.getElementById('importProgress');
+    const progressBar = document.getElementById('importProgressBar');
+    const resultDiv = document.getElementById('importResult');
+    progressDiv.classList.remove('d-none');
+    progressBar.style.width = '30%';
+    resultDiv.innerHTML = '';
+
+    const fileInput = document.getElementById('fileInput');
+
+    try {
+        const data = await readFile(file);
+        progressBar.style.width = '60%';
+        const equipments = parseEquipmentsFromData(data);
+        if (equipments.length === 0) throw new Error('Aucune donnée valide (description ou type manquant).');
+        progressBar.style.width = '80%';
+        await sendImport(equipments);
+        progressBar.style.width = '100%';
+        resultDiv.innerHTML = `<div class="alert alert-success">✅ ${equipments.length} équipements importés avec succès.</div>`;
+        await loadEquipments();
+
+        // Fermer le modal et réinitialiser l'input après un délai
+        setTimeout(() => {
+            const modalElem = document.getElementById('importModal');
+            const modal = bootstrap.Modal.getInstance(modalElem);
+            if (modal) modal.hide();
+            // Réinitialiser l'input file pour permettre de re-sélectionner le même fichier plus tard
+            if (fileInput) fileInput.value = '';
+            // Nettoyer les backdrops résiduels
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+        }, 1500);
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Erreur : ${err.message}</div>`;
+        if (fileInput) fileInput.value = '';
+    } finally {
+        progressDiv.classList.add('d-none');
+        progressBar.style.width = '0%';
+        isImporting = false;
+    }
+}
+
+function readFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+            resolve(json);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function parseEquipmentsFromData(jsonData) {
+    if (!jsonData?.length) return [];
+    const rawKeys = Object.keys(jsonData[0]);
+    const normalizeKey = (key) => key.replace(/^["']|["']$/g, '').trim().toLowerCase();
+    const keyMap = new Map();
+    rawKeys.forEach(k => keyMap.set(normalizeKey(k), k));
+
+    const result = [];
+    for (const row of jsonData) {
+        const getValue = (field) => {
+            const origKey = keyMap.get(field);
+            if (origKey && row[origKey] !== undefined && row[origKey] !== '') {
+                let val = row[origKey];
+                if (typeof val === 'string') {
+                    val = val.trim();
+                    if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                }
+                return val;
+            }
+            return '';
+        };
+        const description = getValue('description');
+        const type = getValue('type');
+        if (!description || !type) continue;
+        const parentIdVal = getValue('parentid');
+        const parentId = parentIdVal && parentIdVal !== '' ? Number(parentIdVal) : null;
+        result.push({
+            code: getValue('code') || undefined,
+            description,
+            type,
+            marque: getValue('marque'),
+            numeroSerie: getValue('numeroserie'),
+            localisation: getValue('localisation'),
+            statut: getValue('statut') || 'ACTIF',
+            criticite: getValue('criticite'),
+            dateInstallation: getValue('dateinstallation') || null,
+            dateMiseEnService: getValue('datemiseenservice') || null,
+            commentaire: getValue('commentaire'),
+            parentId
+        });
+    }
+    return result;
+}
+
+async function sendImport(equipments) {
+    const response = await fetch('/api/equipements/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(equipments)
+    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Erreur lors de l\'import');
+    }
+    return await response.json();
+}
+
+function downloadTemplate() {
+    const headers = ['code', 'description', 'type', 'marque', 'numeroSerie', 'localisation',
+                     'statut', 'criticite', 'dateInstallation', 'dateMiseEnService',
+                     'commentaire', 'parentId'];
+    const exampleRow = ['', 'Exemple d\'équipement', 'Machine', 'MarqueX', 'SN12345',
+                        'Atelier A', 'ACTIF', 'MOYEN', '2025-01-01', '2025-01-15',
+                        'Ceci est un commentaire', ''];
+    const escapeCSV = (cell) => {
+        if (cell == null) return '';
+        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+            return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+    };
+    const rows = [headers, exampleRow.map(escapeCSV)];
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', 'template_equipements.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+// ======================== UTILITAIRES ========================
 function getVal(id) { return document.getElementById(id).value.trim(); }
 function getNumberVal(id) { const v = document.getElementById(id).value.trim(); return v ? Number(v) : null; }
-function formatDate(v) { return v || 'N/A'; }
+function formatDate(v) { return v ? String(v).slice(0, 10) : 'N/A'; }
 function escapeHtml(v) { if (v == null) return ''; return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
-// ======================== INICIALIZACIÓN ========================
+// ======================== INITIALISATION ========================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Event listeners
+    // Événement formulaire
     document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
         e.preventDefault();
         const code = document.getElementById('codeCanvas').value.trim();
@@ -563,13 +753,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupRealtimeValidation();
+    setupImportFeatures();  // <-- Initialisation unique de l'import (drag & drop + input file)
 
-    // Ajuste responsive
+    // Ajustement responsive
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.add('collapsed');
         document.getElementById('mainContent').classList.add('expanded');
     }
 
-    // 🔄 CARGA INICIAL DE EQUIPOS
+    // Chargement initial des équipements
     await refreshPage();
 });

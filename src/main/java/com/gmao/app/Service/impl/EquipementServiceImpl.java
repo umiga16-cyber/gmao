@@ -1,12 +1,14 @@
 package com.gmao.app.Service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.web.server.ResponseStatusException;
 
 import com.gmao.app.Model.Equipement;
 
@@ -111,6 +113,35 @@ public class EquipementServiceImpl implements EquipementService {
 		return equipementRepository.findAll().stream().map(equipementMapper::mapToResponse)
 				.collect(Collectors.toList());
 	}
+
+	public List<EquipementResponse> importEquipements(List<EquipementCreateRequest> requests) {
+    List<EquipementResponse> results = new ArrayList<>();
+    int index = 0;
+    for (EquipementCreateRequest req : requests) {
+        index++;
+        try {
+            // Si el código viene vacío, generar uno automáticamente
+            if (req.getCode() == null || req.getCode().trim().isEmpty()) {
+                req.setCode(generateNextCode());
+            }
+            // Llamar al create existente (que ya valida unicidad)
+            EquipementResponse response = create(req);
+            results.add(response);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur ligne " + index + ": " + e.getMessage());
+        }
+    }
+    return results;
+}
+
+// Método auxiliar para generar el siguiente código (similar al frontend)
+private String generateNextCode() {
+    String maxCode = equipementRepository.findMaxCode();
+    if (maxCode == null) return "EQ-000000001";
+    int num = Integer.parseInt(maxCode.substring(3));
+    int next = num + 1;
+    return String.format("EQ-%09d", next);
+}
 
 	@Override
 	public void delete(Long id) {

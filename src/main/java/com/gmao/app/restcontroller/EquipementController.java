@@ -37,6 +37,16 @@ public class EquipementController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+@PostMapping("/import")
+public ResponseEntity<?> importEquipements(@RequestBody List<EquipementCreateRequest> requests) {
+    try {
+        List<EquipementResponse> saved = equipementService.importEquipements(requests);
+        return ResponseEntity.ok(saved);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
 	@PutMapping("/{id:\\d+}")
 	public ResponseEntity<EquipementResponse> update(@PathVariable Long id,
 			@Valid @RequestBody EquipementUpdateRequest request) {

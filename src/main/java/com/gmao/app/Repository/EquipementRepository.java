@@ -32,4 +32,7 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
     """)
     List<Equipement> search(@Param("keyword") String keyword);
     
+
+@Query("SELECT MAX(e.code) FROM Equipement e WHERE e.code LIKE 'EQ-%'")
+String findMaxCode();
 }

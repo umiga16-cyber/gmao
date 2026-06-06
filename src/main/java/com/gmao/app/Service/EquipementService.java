@@ -51,4 +51,6 @@ public interface EquipementService {
     boolean existsByCode(String code);
 
     boolean canBeDeleted(Long id);
+
+    List<EquipementResponse> importEquipements(List<EquipementCreateRequest> requests); 
 }
