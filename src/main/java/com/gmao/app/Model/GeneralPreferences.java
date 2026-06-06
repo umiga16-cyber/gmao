@@ -45,10 +45,6 @@ public class GeneralPreferences {
     @Column(nullable = false, length = 5)
     private String csvSeparator = ",";
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_settings_id", nullable = false, unique = true)
-    @JsonIgnore
-    private CompanySettings companySettings;
 
     public GeneralPreferences() {
     }
@@ -169,11 +165,4 @@ public class GeneralPreferences {
         this.csvSeparator = csvSeparator;
     }
 
-    public CompanySettings getCompanySettings() {
-        return companySettings;
-    }
-
-    public void setCompanySettings(CompanySettings companySettings) {
-        this.companySettings = companySettings;
-    }
 }

@@ -36,10 +36,6 @@ public class PageController {
         return "interventions-list";
     }
 
-    @GetMapping("/company-list")
-    public String companiesPage() {
-        return "company-list";
-    }
 
     @GetMapping("/stock")
     public String stockPage() {

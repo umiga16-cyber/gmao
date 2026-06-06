@@ -16,7 +16,7 @@ public class EquipementUpdateRequest {
     private String commentaire;
     private Boolean actif;
     private Long parentId;
-    private Long companyId;
+    
 	public String getDescription() {
 		return description;
 	}
@@ -89,12 +89,6 @@ public class EquipementUpdateRequest {
 	}
 	public void setParentId(Long parentId) {
 		this.parentId = parentId;
-	}
-	public Long getCompanyId() {
-		return companyId;
-	}
-	public void setCompanyId(Long companyId) {
-		this.companyId = companyId;
 	}
     
 }

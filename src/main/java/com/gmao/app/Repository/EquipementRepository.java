@@ -32,5 +32,4 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
     """)
     List<Equipement> search(@Param("keyword") String keyword);
     
-    List<Equipement> findByCompanyId(Long companyId);
 }

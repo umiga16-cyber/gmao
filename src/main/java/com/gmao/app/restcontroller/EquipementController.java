@@ -26,11 +26,6 @@ public class EquipementController {
 	private final EquipementService equipementService;
 
 
-	@GetMapping("/company/{companyId:\\d+}")
-	public ResponseEntity<List<EquipementResponse>> findByCompany(@PathVariable Long companyId) {
-		return ResponseEntity.ok(equipementService.findByCompany(companyId));
-	}
-
 	public EquipementController(EquipementService equipementService) {
 		this.equipementService = equipementService;
 	

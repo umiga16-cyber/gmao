@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.gmao.app.Model.Company;
-import com.gmao.app.Model.CompanySettings;
 import com.gmao.app.Model.Currency;
 import com.gmao.app.Model.Disponibilite;
 import com.gmao.app.Model.Equipement;
@@ -23,7 +21,6 @@ import com.gmao.app.Model.enums.BusinessType;
 import com.gmao.app.Model.enums.DateFormat;
 import com.gmao.app.Model.enums.FrequencyType;
 import com.gmao.app.Model.enums.Language;
-import com.gmao.app.Repository.CompanyRepository;
 import com.gmao.app.Repository.CurrencyRepository;
 import com.gmao.app.Repository.DisponibiliteRepository;
 import com.gmao.app.Repository.EquipementRepository;
@@ -38,7 +35,7 @@ public class DataInitializer {
 	@Bean
 	@Transactional
 	CommandLineRunner initData(RoleRepository roleRepository, UserRepository appUserRepository,
-			CurrencyRepository currencyRepository, CompanyRepository companyRepository,
+			CurrencyRepository currencyRepository,
 			EquipementRepository equipementRepository, PreventifRepository preventifRepository,
 			InterventionRepository interventionRepository, DisponibiliteRepository disponibiliteRepository,
 			PasswordEncoder passwordEncoder) {
@@ -97,65 +94,28 @@ public class DataInitializer {
 			roleRepository.save(visiteurRole);
 			roleRepository.save(supervisorRole);
 
-			// =========================
-			// COMPANIES
-			// =========================
-			Company company1 = new Company();
-			company1.setName("Atlas Industrie");
-			company1.setAddress("12 Rue de Production");
-			company1.setPhone("+33 1 40 20 30 40");
-			company1.setWebsite("https://atlas-industrie.test");
-			company1.setEmail("contact@atlas.test");
-			company1.setEmployeesCount(120);
-			company1.setLogoUrl("https://dummyimage.com/200x80/667eea/ffffff&text=Atlas");
-			company1.setCity("Paris");
-			company1.setState("Ile-de-France");
-			company1.setZipCode("75010");
-			company1.setDemo(false);
 
-			CompanySettings settings1 = new CompanySettings();
-			settings1.setCompany(company1);
 
 			GeneralPreferences prefs1 = new GeneralPreferences();
-			prefs1.setCompanySettings(settings1);
 			prefs1.setLanguage(Language.FR);
 			prefs1.setDateFormat(DateFormat.DDMMYY);
 			prefs1.setCurrency(eur);
 			prefs1.setBusinessType(BusinessType.MANUFACTURING_MANAGEMENT);
 			prefs1.setTimeZone("Europe/Paris");
 
-			settings1.setGeneralPreferences(prefs1);
-			company1.setCompanySettings(settings1);
 
-			Company company2 = new Company();
-			company2.setName("Nova Facility Services");
-			company2.setAddress("45 Avenue Centrale");
-			company2.setPhone("+31 20 555 8899");
-			company2.setWebsite("https://nova-facility.test");
-			company2.setEmail("hello@nova.test");
-			company2.setEmployeesCount(65);
-			company2.setLogoUrl("https://dummyimage.com/200x80/764ba2/ffffff&text=Nova");
-			company2.setCity("Amsterdam");
-			company2.setState("Noord-Holland");
-			company2.setZipCode("1012");
-			company2.setDemo(true);
 
-			CompanySettings settings2 = new CompanySettings();
-			settings2.setCompany(company2);
+		
 
 			GeneralPreferences prefs2 = new GeneralPreferences();
-			prefs2.setCompanySettings(settings2);
+		
 			prefs2.setLanguage(Language.EN);
 			prefs2.setDateFormat(DateFormat.MMDDYY);
 			prefs2.setCurrency(usd);
 			prefs2.setBusinessType(BusinessType.FACILITY_MANAGEMENT);
 			prefs2.setTimeZone("Europe/Amsterdam");
 
-			settings2.setGeneralPreferences(prefs2);
-			company2.setCompanySettings(settings2);
 
-			companyRepository.save(company1);
-			companyRepository.save(company2);
 
 			// =========================
 			// USERS
@@ -272,8 +232,6 @@ public class DataInitializer {
 			eq1.setCriticite("ALTA");
 			eq1.setActif(true);
 			eq1.setCommentaire("Équipement critique pour la production.");
-			// Uncomment if you already added company relation in Equipement
-			// eq1.setCompany(company1);
 
 			Equipement eq2 = new Equipement();
 			eq2.setCode("EQ-AT-002");
@@ -289,7 +247,6 @@ public class DataInitializer {
 			eq2.setCriticite("MEDIA");
 			eq2.setActif(true);
 			eq2.setCommentaire("Maintenance préventive en cours.");
-			// eq2.setCompany(company1);
 
 			Equipement eq3 = new Equipement();
 			eq3.setCode("EQ-NV-001");
@@ -305,7 +262,7 @@ public class DataInitializer {
 			eq3.setCriticite("ALTA");
 			eq3.setActif(true);
 			eq3.setCommentaire("Hors service, remplacement à prévoir.");
-			// eq3.setCompany(company2);
+	
 
 			Equipement eq4 = new Equipement();
 			eq4.setCode("EQ-NV-002");
@@ -321,7 +278,7 @@ public class DataInitializer {
 			eq4.setCriticite("MEDIA");
 			eq4.setActif(true);
 			eq4.setCommentaire("Inspection visuelle mensuelle.");
-			// eq4.setCompany(company2);
+
 
 			equipementRepository.save(eq1);
 			equipementRepository.save(eq2);

@@ -25,6 +25,7 @@ public class SecurityConfig {
                     "/error",
                     "/css/**",
                     "/js/**",
+                    "/JS/**",
                     "/images/**",
                     "/h2-console/**",
                     "/favicon.ico"
@@ -135,22 +136,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/prs/**", "/api/stock/**")
                     .hasAnyRole("ADMIN", "MAGASINIER")
 
-                // =========================
-                // COMPANY
-                // not shown in the matrix -> keep Admin + Manager
-                // =========================
-                .requestMatchers(HttpMethod.GET, "/company-list", "/api/companies/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
-                .requestMatchers(HttpMethod.POST, "/api/companies/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
-                .requestMatchers(HttpMethod.PUT, "/api/companies/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
-                .requestMatchers(HttpMethod.PATCH, "/api/companies/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
-                .requestMatchers(HttpMethod.DELETE, "/api/companies/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
 
-                .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")

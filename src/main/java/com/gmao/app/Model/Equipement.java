@@ -61,17 +61,6 @@ public class Equipement {
 	@OneToMany(mappedBy = "equipement", fetch = FetchType.LAZY)
 	private Set<Preventif> preventifs = new HashSet<>();
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "company_id")
-	private Company company;
-
-	public Company getCompany() {
-		return company;
-	}
-
-	public void setCompany(Company company) {
-		this.company = company;
-	}
 
 	public Long getId() {
 		return id;
@@ -241,7 +230,7 @@ public class Equipement {
 	public Equipement(String description, String type, Equipement parent, String statut, String code, String marque,
 			String numeroSerie, String localisation, LocalDate dateInstallation, LocalDate dateMiseEnService,
 			String criticite, Boolean actif, String commentaire, Set<Equipement> children,
-			Set<Intervention> interventions, Set<Preventif> preventifs, Company company) {
+			Set<Intervention> interventions, Set<Preventif> preventifs) {
 		super();
 		this.description = description;
 		this.type = type;
@@ -260,7 +249,6 @@ public class Equipement {
 		this.children = children;
 		this.interventions = interventions;
 		this.preventifs = preventifs;
-		this.company = company;
 	}
 
 }
