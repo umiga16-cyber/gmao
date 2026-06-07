@@ -478,6 +478,11 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
             </div>
         </form>
+        <hr class="my-4">
+<div class="section-title"><i class="fas fa-paperclip me-2 text-primary"></i> Documents techniques</div>
+<div id="adjuntosEditContainer" class="mt-2">
+    <!-- Aquí se cargará la lista y el botón de subida -->
+</div>
     </div>
 </div>
 
@@ -575,6 +580,25 @@
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de confirmación para eliminar documento -->
+<div class="modal fade" id="deleteDocConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fas fa-trash-alt me-2"></i>Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>¿Eliminar este documento permanentemente?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteDocBtn">Supprimer</button>
             </div>
         </div>
     </div>

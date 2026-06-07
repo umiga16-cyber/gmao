@@ -12,6 +12,11 @@ let currentEquipements = [];
 let allEquipements = [];
 let currentQuickFilter = 'TOTAL';
 
+// Variables para el modal de confirmación de eliminación de documentos
+let pendingDocumentId = null;
+let pendingEquipementIdForDoc = null;
+const deleteDocModal = new bootstrap.Modal(document.getElementById('deleteDocConfirmModal'));
+
 // Variable global para evitar importaciones simultáneas
 let isImporting = false;
 
@@ -38,7 +43,6 @@ function generateNextEquipmentCode() {
     return `EQ-${padded}`;
 }
 
-// Genera el siguiente código basado en los equipos actuales + una lista de códigos ya generados en el lote
 function generateNextImportCode(generatedCodes) {
     let maxNum = 0;
     if (allEquipements.length) {
@@ -63,14 +67,12 @@ function generateNextImportCode(generatedCodes) {
     return `EQ-${padded}`;
 }
 
-// Convierte un número serial de Excel a un objeto Date
 function excelSerialToDate(serial) {
     const excelEpoch = new Date(1899, 11, 30);
     const milliseconds = serial * 86400000;
     return new Date(excelEpoch.getTime() + milliseconds);
 }
 
-// Función para convertir cualquier formato de fecha a 'YYYY-MM-DD' (sin hora)
 function parseDateToMySQL(dateStr) {
     if (dateStr === null || dateStr === undefined || dateStr === '') return null;
     
@@ -95,9 +97,7 @@ function parseDateToMySQL(dateStr) {
     }
     
     let matchIso = str.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (matchIso) {
-        return matchIso[1];
-    }
+    if (matchIso) return matchIso[1];
     
     let day, month, year;
     let match = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
@@ -160,11 +160,8 @@ function setupRealtimeValidation() {
         const field = document.getElementById(fieldId);
         if (field) {
             const validateField = () => {
-                if (field.value.trim() !== '') {
-                    field.classList.remove('required-error');
-                } else {
-                    field.classList.add('required-error');
-                }
+                if (field.value.trim() !== '') field.classList.remove('required-error');
+                else field.classList.add('required-error');
             };
             field.addEventListener('input', validateField);
             field.addEventListener('change', validateField);
@@ -178,11 +175,8 @@ function applyRequiredErrorOnEmpty() {
     requiredFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
-            if (field.value.trim() === '') {
-                field.classList.add('required-error');
-            } else {
-                field.classList.remove('required-error');
-            }
+            if (field.value.trim() === '') field.classList.add('required-error');
+            else field.classList.remove('required-error');
         }
     });
 }
@@ -238,21 +232,10 @@ function getBaseFilteredEquipments() {
 
     let equipments = Array.isArray(allEquipements) ? [...allEquipements] : [];
 
-    if (st) {
-        equipments = equipments.filter(e => (e.statut || '').toUpperCase() === st.toUpperCase());
-    }
-    if (kw) {
-        equipments = equipments.filter(e =>
-            (e.code || '').toLowerCase().includes(kw) ||
-            (e.description || '').toLowerCase().includes(kw)
-        );
-    }
-    if (localisation) {
-        equipments = equipments.filter(e => (e.localisation || '').toLowerCase().includes(localisation));
-    }
-    if (parentId) {
-        equipments = equipments.filter(e => String(e.parentId || '') === parentId);
-    }
+    if (st) equipments = equipments.filter(e => (e.statut || '').toUpperCase() === st.toUpperCase());
+    if (kw) equipments = equipments.filter(e => (e.code || '').toLowerCase().includes(kw) || (e.description || '').toLowerCase().includes(kw));
+    if (localisation) equipments = equipments.filter(e => (e.localisation || '').toLowerCase().includes(localisation));
+    if (parentId) equipments = equipments.filter(e => String(e.parentId || '') === parentId);
     return equipments;
 }
 
@@ -260,15 +243,9 @@ function applyCurrentFiltersAndQuickAccess() {
     const baseFiltered = getBaseFilteredEquipments();
     updateStatsFromData(baseFiltered);
     let result = [...baseFiltered];
-    if (currentQuickFilter === 'ACTIF') {
-        result = result.filter(e => (e.statut || '').toUpperCase() === 'ACTIF');
-    }
-    if (currentQuickFilter === 'MAINTENANCE') {
-        result = result.filter(e => (e.statut || '').toUpperCase() === 'MAINTENANCE');
-    }
-    if (currentQuickFilter === 'HS') {
-        result = result.filter(e => (e.statut || '').toUpperCase() === 'HS');
-    }
+    if (currentQuickFilter === 'ACTIF') result = result.filter(e => (e.statut || '').toUpperCase() === 'ACTIF');
+    if (currentQuickFilter === 'MAINTENANCE') result = result.filter(e => (e.statut || '').toUpperCase() === 'MAINTENANCE');
+    if (currentQuickFilter === 'HS') result = result.filter(e => (e.statut || '').toUpperCase() === 'HS');
     currentEquipements = result;
     renderTable(currentEquipements);
     updateQuickCardsStyle();
@@ -295,9 +272,7 @@ function updateQuickCardsStyle() {
         MAINTENANCE: document.getElementById('quickCardMaintenance'),
         HS: document.getElementById('quickCardHs')
     };
-    Object.values(cards).forEach(card => {
-        if (card) card.classList.remove('active-quick-filter');
-    });
+    Object.values(cards).forEach(card => card?.classList.remove('active-quick-filter'));
     const activeCard = cards[currentQuickFilter];
     if (activeCard) activeCard.classList.add('active-quick-filter');
 }
@@ -391,6 +366,8 @@ function renderTable(data) {
                         <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${statut}')" title="Changer statut"><i class="fas fa-repeat"></i></button>
                         <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}"><i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i></button>
+                        <!-- Botón Adjuntos -> abre edición directamente -->
+                        <button class="btn btn-outline-info btn-action" onclick="openEditCanvas(${e.id}, true)" title="Pieces jointes"><i class="fas fa-paperclip"></i></button>
                         <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
@@ -447,10 +424,51 @@ async function showDetailCanvas(id) {
             <div class="text-end text-muted small"><i class="fas fa-hashtag me-1"></i> ID interne : ${e.id}</div>
         `;
         document.getElementById('detailBodyCanvas').innerHTML = html;
+        cargarAdjuntosEnDetalle(e.id);
         detailOffcanvas.show();
     } catch (err) {
         showWarning(err.message);
     }
+}
+
+async function cargarAdjuntosEnDetalle(equipementId) {
+    try {
+        const docs = await fetchJson(`${API_URL}/${equipementId}/documents`);
+        const container = document.getElementById('detailBodyCanvas');
+        if (!docs || docs.length === 0) {
+            container.innerHTML += `<div class="section-title mt-3"><i class="fas fa-paperclip me-2 text-primary"></i> Documents techniques</div><p class="text-muted">Aucun document attaché.</p>`;
+            return;
+        }
+        let html = `<div class="section-title mt-3"><i class="fas fa-paperclip me-2 text-primary"></i> Documents techniques (${docs.length})</div><div class="list-group">`;
+        docs.forEach(doc => {
+            const icono = getIconoPorTipo(doc.tipoContenido);
+            html += `<a href="/api/documents/${doc.id}" target="_blank" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <i class="${icono} me-3 fa-fw"></i>
+                        <span>${escapeHtml(doc.nombreOriginal)}</span>
+                        <small class="text-muted ms-auto">${formatFileSize(doc.tamaño)}</small>
+                     </a>`;
+        });
+        html += `</div>`;
+        container.innerHTML += html;
+    } catch (err) {
+        console.warn("Error cargando adjuntos:", err);
+    }
+}
+
+function getIconoPorTipo(mimeType) {
+    if (mimeType.includes("pdf")) return "fas fa-file-pdf text-danger";
+    if (mimeType.includes("image")) return "fas fa-file-image text-primary";
+    if (mimeType.includes("word") || mimeType.includes("document")) return "fas fa-file-word text-info";
+    if (mimeType.includes("sheet") || mimeType.includes("excel")) return "fas fa-file-excel text-success";
+    return "fas fa-file-alt text-secondary";
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 async function openCreateOffcanvas() {
@@ -470,7 +488,7 @@ async function openCreateOffcanvas() {
     formOffcanvas.show();
 }
 
-async function openEditCanvas(id) {
+async function openEditCanvas(id, scrollToDocuments = false) {
     try {
         const e = await fetchJson(`${API_URL}/${id}/detail`);
         document.getElementById('formOffcanvasLabel').innerText = 'Éditer équipement';
@@ -494,8 +512,113 @@ async function openEditCanvas(id) {
         document.getElementById('parentIdCanvas').value = e.parentId ?? '';
         document.getElementById('formErrorCanvas').classList.add('d-none');
         applyRequiredErrorOnEmpty();
+        await cargarAdjuntosEnEdicion(e.id);
         formOffcanvas.show();
-    } catch (err) { showWarning(err.message); }
+
+        // Si se solicita desplazarse a la sección de documentos, hacerlo después de que el offcanvas esté visible
+        if (scrollToDocuments) {
+            setTimeout(() => {
+                const container = document.getElementById('adjuntosEditContainer');
+                if (container) {
+                    // Scroll suave hasta el contenedor de documentos
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Resaltar brevemente el contenedor para llamar la atención
+                    container.style.transition = 'background-color 0.5s';
+                    container.style.backgroundColor = '#fff3cd';
+                    setTimeout(() => {
+                        container.style.backgroundColor = '';
+                    }, 1500);
+                    // Opcional: enfocar el input de archivo para que el usuario pueda subir rápidamente
+                    const fileInput = document.getElementById('fileSubir');
+                    if (fileInput) fileInput.focus();
+                }
+            }, 500); // 500ms es suficiente para que el offcanvas termine su animación
+        }
+    } catch (err) { 
+        showWarning(err.message); 
+    }
+}
+
+async function cargarAdjuntosEnEdicion(equipementId) {
+    const container = document.getElementById('adjuntosEditContainer');
+    if (!container) return;
+    try {
+        const docs = await fetchJson(`${API_URL}/${equipementId}/documents`);
+        let html = `<div class="mb-3"><label class="form-label">Subir nuevo documento</label><div class="input-group"><input type="file" id="fileSubir" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"><button class="btn btn-primary" onclick="subirDocumento(${equipementId})"><i class="fas fa-upload"></i> Subir</button></div></div><div class="list-group" id="listaAdjuntosEdit">`;
+        if (docs && docs.length) {
+            docs.forEach(doc => {
+                const icono = getIconoPorTipo(doc.tipoContenido);
+                html += `<div class="list-group-item d-flex justify-content-between align-items-center" data-id="${doc.id}">
+                            <div><i class="${icono} me-2"></i> ${escapeHtml(doc.nombreOriginal)} <small class="text-muted">(${formatFileSize(doc.tamaño)})</small></div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarDocumento(${doc.id}, ${equipementId})"><i class="fas fa-trash-alt"></i></button>
+                         </div>`;
+            });
+        } else {
+            html += `<div class="list-group-item text-muted">No hay documentos adjuntos.</div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<div class="alert alert-danger">Error cargando adjuntos</div>`;
+    }
+}
+
+async function subirDocumento(equipementId) {
+    const fileInput = document.getElementById('fileSubir');
+    if (!fileInput.files.length) {
+        showWarning("Por favor seleccione un archivo.");
+        return;
+    }
+    const file = fileInput.files[0];
+    if (file.size > 32 * 1024 * 1024) {
+        showWarning("El archivo no puede superar 32 MB.");
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const response = await fetch(`${API_URL}/${equipementId}/documents`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+        await cargarAdjuntosEnEdicion(equipementId);
+        fileInput.value = '';
+        showWarning("Documento subido correctamente");
+    } catch (err) {
+        showWarning("Error al subir: " + (err.message || "Error desconocido"));
+    }
+}
+
+// Función que abre el modal de confirmación antes de eliminar documento
+function confirmarEliminarDocumento(documentoId, equipementId) {
+    pendingDocumentId = documentoId;
+    pendingEquipementIdForDoc = equipementId;
+    deleteDocModal.show();
+}
+
+// Eliminación real (llamada desde el botón del modal)
+async function ejecutarEliminarDocumento() {
+    if (!pendingDocumentId) return;
+    try {
+        const response = await fetch(`/api/documents/${pendingDocumentId}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+        await cargarAdjuntosEnEdicion(pendingEquipementIdForDoc);
+        showWarning("Documento eliminado correctamente");
+    } catch (err) {
+        showWarning("Error al eliminar: " + (err.message || "Error desconocido"));
+    } finally {
+        deleteDocModal.hide();
+        pendingDocumentId = null;
+        pendingEquipementIdForDoc = null;
+    }
 }
 
 async function saveEquipementCanvas() {
@@ -592,7 +715,7 @@ async function changeStatus(id, newStatus) {
     } catch (err) { showWarning(err.message); }
 }
 
-// ======================== IMPORTATION CORREGIDA (con validación de columnas y soporte .txt) ========================
+// ======================== IMPORTACIÓN ========================
 function showImportModal() {
     const modalElem = document.getElementById('importModal');
     if (modalElem?.classList.contains('show')) return;
@@ -666,12 +789,9 @@ async function processFile(file) {
     const fileInput = document.getElementById('fileInput');
 
     try {
-        // Leer el archivo según su extensión
         let jsonData;
         if (fileExtension === 'txt') {
-            // Leer como texto plano y luego convertir a hoja de cálculo (asumiendo CSV con separador ;)
             const text = await readTextFile(file);
-            // Usar XLSX para leer el contenido CSV
             const workbook = XLSX.read(text, { type: 'string', raw: true });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
@@ -681,7 +801,6 @@ async function processFile(file) {
         
         progressBar.style.width = '60%';
         
-        // Validar que las columnas esperadas existan
         const requiredColumns = ['description', 'type'];
         const availableColumns = jsonData.length > 0 ? Object.keys(jsonData[0]).map(k => k.toLowerCase()) : [];
         const missingCols = requiredColumns.filter(col => !availableColumns.includes(col));
@@ -689,11 +808,7 @@ async function processFile(file) {
             throw new Error(`Colonnes obligatoires manquantes: ${missingCols.join(', ')}. Vérifiez que votre fichier contient les en-têtes requis (description, type, etc.) et utilise le séparateur point-virgule (;).`);
         }
         
-        // Opcional: verificar que al menos tenemos 12 columnas? Mejor solo requerir las mínimas.
-        
-        if (!allEquipements.length) {
-            await loadEquipments();
-        }
+        if (!allEquipements.length) await loadEquipments();
         
         const equipments = parseEquipmentsFromDataWithCodeGeneration(jsonData);
         if (equipments.length === 0) throw new Error('Aucune donnée valide (description ou type manquant).');
@@ -723,7 +838,6 @@ async function processFile(file) {
     }
 }
 
-// Lee archivo Excel o CSV (binario)
 function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -739,7 +853,6 @@ function readExcelFile(file) {
     });
 }
 
-// Lee archivo de texto plano
 function readTextFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -751,7 +864,6 @@ function readTextFile(file) {
     });
 }
 
-// Función que IGNORA el código del archivo y siempre genera uno nuevo; las fechas se devuelven en 'YYYY-MM-DD' (sin hora)
 function parseEquipmentsFromDataWithCodeGeneration(jsonData) {
     if (!jsonData?.length) return [];
     const rawKeys = Object.keys(jsonData[0]);
@@ -780,7 +892,6 @@ function parseEquipmentsFromDataWithCodeGeneration(jsonData) {
         const type = getValue('type');
         if (!description || !type) continue;
 
-        // Generar código automáticamente (ignorar cualquier valor existente en el archivo)
         const code = generateNextImportCode(generatedCodes);
         generatedCodes.push(code);
 
@@ -794,6 +905,7 @@ function parseEquipmentsFromDataWithCodeGeneration(jsonData) {
         const parentId = parentIdVal && parentIdVal !== '' ? Number(parentIdVal) : null;
 
         result.push({
+            code: code,
             description: description,
             type: type,
             marque: getValue('marque'),
@@ -898,6 +1010,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             deleteModal.hide();
             pendingDeleteId = null;
         }
+    });
+
+    // Botón de confirmación del modal de eliminación de documentos
+    document.getElementById('confirmDeleteDocBtn').addEventListener('click', () => {
+        ejecutarEliminarDocumento();
     });
 
     document.querySelectorAll('.status-option-btn').forEach(btn => {
