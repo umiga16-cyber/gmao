@@ -136,6 +136,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/prs/**", "/api/stock/**")
                     .hasAnyRole("ADMIN", "MAGASINIER")
 
+                    // DOCUMENTS
+.requestMatchers(HttpMethod.GET, "/api/documents/**")
+    .hasAnyRole("ADMIN", "MANAGER", "TECHNICIAN", "PLANIFICATEUR", "VISITEUR")
+
+.requestMatchers(HttpMethod.POST, "/api/documents/**")
+    .hasAnyRole("ADMIN", "MANAGER", "TECHNICIAN")
+
+.requestMatchers(HttpMethod.DELETE, "/api/documents/**")
+    .hasAnyRole("ADMIN", "MANAGER")
 
             )
             .formLogin(form -> form
