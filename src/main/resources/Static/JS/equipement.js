@@ -38,6 +38,91 @@ function generateNextEquipmentCode() {
     return `EQ-${padded}`;
 }
 
+// Genera el siguiente código basado en los equipos actuales + una lista de códigos ya generados en el lote
+function generateNextImportCode(generatedCodes) {
+    let maxNum = 0;
+    if (allEquipements.length) {
+        const numbers = allEquipements
+            .map(eq => {
+                const code = eq.code || '';
+                const match = code.match(/^EQ-(\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter(num => num > 0);
+        if (numbers.length) maxNum = Math.max(...numbers);
+    }
+    for (const code of generatedCodes) {
+        const match = code.match(/^EQ-(\d+)$/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+        }
+    }
+    const next = maxNum + 1;
+    const padded = String(next).padStart(9, '0');
+    return `EQ-${padded}`;
+}
+
+// Convierte un número serial de Excel a un objeto Date
+function excelSerialToDate(serial) {
+    const excelEpoch = new Date(1899, 11, 30);
+    const milliseconds = serial * 86400000;
+    return new Date(excelEpoch.getTime() + milliseconds);
+}
+
+// Función para convertir cualquier formato de fecha a 'YYYY-MM-DD' (sin hora)
+function parseDateToMySQL(dateStr) {
+    if (dateStr === null || dateStr === undefined || dateStr === '') return null;
+    
+    if (typeof dateStr === 'number') {
+        const dateObj = excelSerialToDate(dateStr);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    let str = String(dateStr).trim();
+    if (/^\d+(\.\d+)?$/.test(str)) {
+        const num = parseFloat(str);
+        if (!isNaN(num)) {
+            const dateObj = excelSerialToDate(num);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    }
+    
+    let matchIso = str.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (matchIso) {
+        return matchIso[1];
+    }
+    
+    let day, month, year;
+    let match = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if (match) {
+        day = parseInt(match[1], 10);
+        month = parseInt(match[2], 10);
+        year = parseInt(match[3], 10);
+        if (year < 100) year += 2000;
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    }
+    match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+        month = parseInt(match[1], 10);
+        day = parseInt(match[2], 10);
+        year = parseInt(match[3], 10);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    }
+    console.warn("Formato de fecha no reconocido:", dateStr);
+    return null;
+}
+
 function validateInstallationDatesCanvas() {
     const dateInstallation = getVal('dateInstallationCanvas');
     const dateMiseEnService = getVal('dateMiseEnServiceCanvas');
@@ -507,16 +592,14 @@ async function changeStatus(id, newStatus) {
     } catch (err) { showWarning(err.message); }
 }
 
-// ======================== IMPORTATION (VERSION DÉFINITIVE SANS DOUBLE EXÉCUTION) ========================
+// ======================== IMPORTATION CORREGIDA (con validación de columnas y soporte .txt) ========================
 function showImportModal() {
     const modalElem = document.getElementById('importModal');
     if (modalElem?.classList.contains('show')) return;
 
-    // Réinitialiser l'UI
     document.getElementById('importResult').innerHTML = '';
     document.getElementById('importProgress').classList.add('d-none');
 
-    // Nettoyer l'input file avant d'ouvrir pour éviter des résidus
     const fileInput = document.getElementById('fileInput');
     if (fileInput) fileInput.value = '';
 
@@ -524,17 +607,14 @@ function showImportModal() {
     modal.show();
 }
 
-// Initialisation unique (appelée une fois depuis DOMContentLoaded)
 function setupImportFeatures() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     if (!dropZone || !fileInput) return;
 
-    // Éviter les doubles initialisations
     if (window._importInitialized) return;
     window._importInitialized = true;
 
-    // Drag & drop
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('drag-over');
@@ -549,24 +629,31 @@ function setupImportFeatures() {
         if (file && !isImporting) processFile(file);
     });
 
-    // Clic sur la zone -> ouvre le sélecteur
     dropZone.addEventListener('click', (e) => {
-        // éviter de déclencher si on clique sur le bouton de fermeture du modal
         if (e.target.closest('.btn-close')) return;
         if (!isImporting) fileInput.click();
     });
 
-    // Événement change du input file (sélection manuelle)
     fileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length && !isImporting) {
             processFile(e.target.files[0]);
         }
-        // On ne réinitialise pas ici pour éviter de relancer l'événement
     });
 }
 
 async function processFile(file) {
     if (isImporting) return;
+    
+    const allowedExtensions = ['csv', 'xlsx', 'xls', 'txt'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+        const resultDiv = document.getElementById('importResult');
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Format non autorisé. Veuillez utiliser .csv, .xlsx ou .txt.</div>`;
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.value = '';
+        return;
+    }
+    
     isImporting = true;
 
     const progressDiv = document.getElementById('importProgress');
@@ -579,24 +666,49 @@ async function processFile(file) {
     const fileInput = document.getElementById('fileInput');
 
     try {
-        const data = await readFile(file);
+        // Leer el archivo según su extensión
+        let jsonData;
+        if (fileExtension === 'txt') {
+            // Leer como texto plano y luego convertir a hoja de cálculo (asumiendo CSV con separador ;)
+            const text = await readTextFile(file);
+            // Usar XLSX para leer el contenido CSV
+            const workbook = XLSX.read(text, { type: 'string', raw: true });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+        } else {
+            jsonData = await readExcelFile(file);
+        }
+        
         progressBar.style.width = '60%';
-        const equipments = parseEquipmentsFromData(data);
+        
+        // Validar que las columnas esperadas existan
+        const requiredColumns = ['description', 'type'];
+        const availableColumns = jsonData.length > 0 ? Object.keys(jsonData[0]).map(k => k.toLowerCase()) : [];
+        const missingCols = requiredColumns.filter(col => !availableColumns.includes(col));
+        if (missingCols.length > 0) {
+            throw new Error(`Colonnes obligatoires manquantes: ${missingCols.join(', ')}. Vérifiez que votre fichier contient les en-têtes requis (description, type, etc.) et utilise le séparateur point-virgule (;).`);
+        }
+        
+        // Opcional: verificar que al menos tenemos 12 columnas? Mejor solo requerir las mínimas.
+        
+        if (!allEquipements.length) {
+            await loadEquipments();
+        }
+        
+        const equipments = parseEquipmentsFromDataWithCodeGeneration(jsonData);
         if (equipments.length === 0) throw new Error('Aucune donnée valide (description ou type manquant).');
+        
         progressBar.style.width = '80%';
         await sendImport(equipments);
         progressBar.style.width = '100%';
         resultDiv.innerHTML = `<div class="alert alert-success">✅ ${equipments.length} équipements importés avec succès.</div>`;
         await loadEquipments();
 
-        // Fermer le modal et réinitialiser l'input après un délai
         setTimeout(() => {
             const modalElem = document.getElementById('importModal');
             const modal = bootstrap.Modal.getInstance(modalElem);
             if (modal) modal.hide();
-            // Réinitialiser l'input file pour permettre de re-sélectionner le même fichier plus tard
             if (fileInput) fileInput.value = '';
-            // Nettoyer les backdrops résiduels
             document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
             document.body.classList.remove('modal-open');
         }, 1500);
@@ -611,7 +723,8 @@ async function processFile(file) {
     }
 }
 
-function readFile(file) {
+// Lee archivo Excel o CSV (binario)
+function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -626,7 +739,20 @@ function readFile(file) {
     });
 }
 
-function parseEquipmentsFromData(jsonData) {
+// Lee archivo de texto plano
+function readTextFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file, 'UTF-8');
+    });
+}
+
+// Función que IGNORA el código del archivo y siempre genera uno nuevo; las fechas se devuelven en 'YYYY-MM-DD' (sin hora)
+function parseEquipmentsFromDataWithCodeGeneration(jsonData) {
     if (!jsonData?.length) return [];
     const rawKeys = Object.keys(jsonData[0]);
     const normalizeKey = (key) => key.replace(/^["']|["']$/g, '').trim().toLowerCase();
@@ -634,6 +760,8 @@ function parseEquipmentsFromData(jsonData) {
     rawKeys.forEach(k => keyMap.set(normalizeKey(k), k));
 
     const result = [];
+    const generatedCodes = [];
+
     for (const row of jsonData) {
         const getValue = (field) => {
             const origKey = keyMap.get(field);
@@ -647,24 +775,36 @@ function parseEquipmentsFromData(jsonData) {
             }
             return '';
         };
+
         const description = getValue('description');
         const type = getValue('type');
         if (!description || !type) continue;
+
+        // Generar código automáticamente (ignorar cualquier valor existente en el archivo)
+        const code = generateNextImportCode(generatedCodes);
+        generatedCodes.push(code);
+
+        let rawDateInstall = getValue('dateinstallation');
+        let rawDateService = getValue('datemiseenservice');
+        
+        let dateInstallation = rawDateInstall ? parseDateToMySQL(rawDateInstall) : null;
+        let dateMiseEnService = rawDateService ? parseDateToMySQL(rawDateService) : null;
+
         const parentIdVal = getValue('parentid');
         const parentId = parentIdVal && parentIdVal !== '' ? Number(parentIdVal) : null;
+
         result.push({
-            code: getValue('code') || undefined,
-            description,
-            type,
+            description: description,
+            type: type,
             marque: getValue('marque'),
             numeroSerie: getValue('numeroserie'),
             localisation: getValue('localisation'),
             statut: getValue('statut') || 'ACTIF',
             criticite: getValue('criticite'),
-            dateInstallation: getValue('dateinstallation') || null,
-            dateMiseEnService: getValue('datemiseenservice') || null,
+            dateInstallation: dateInstallation,
+            dateMiseEnService: dateMiseEnService,
             commentaire: getValue('commentaire'),
-            parentId
+            parentId: parentId
         });
     }
     return result;
@@ -684,21 +824,36 @@ async function sendImport(equipments) {
 }
 
 function downloadTemplate() {
-    const headers = ['code', 'description', 'type', 'marque', 'numeroSerie', 'localisation',
+    const headers = ['description', 'type', 'marque', 'numeroSerie', 'localisation',
                      'statut', 'criticite', 'dateInstallation', 'dateMiseEnService',
                      'commentaire', 'parentId'];
-    const exampleRow = ['', 'Exemple d\'équipement', 'Machine', 'MarqueX', 'SN12345',
-                        'Atelier A', 'ACTIF', 'MOYEN', '2025-01-01', '2025-01-15',
-                        'Ceci est un commentaire', ''];
-    const escapeCSV = (cell) => {
+    
+    const exampleRow = [
+        'Moteur électrique 15kW',    
+        'Moteur',                    
+        'Siemens',                   
+        'SN-M-2024-001',             
+        'Atelier A - Bâtiment 2',    
+        'ACTIF',                     
+        'ELEVE',                     
+        '01/01/2025',                
+        '15/01/2025',                
+        'Moteur principal ligne production',
+        ''                           
+    ];
+    
+    const escapeForCSV = (cell) => {
         if (cell == null) return '';
-        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
-            return `"${cell.replace(/"/g, '""')}"`;
+        const str = String(cell);
+        if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return `"${str.replace(/"/g, '""')}"`;
         }
-        return cell;
+        return str;
     };
-    const rows = [headers, exampleRow.map(escapeCSV)];
-    const csvContent = rows.map(row => row.join(',')).join('\n');
+    
+    const rows = [headers, exampleRow.map(escapeForCSV)];
+    const csvContent = rows.map(row => row.join(';')).join('\n');
+    
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -709,15 +864,19 @@ function downloadTemplate() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
 // ======================== UTILITAIRES ========================
 function getVal(id) { return document.getElementById(id).value.trim(); }
 function getNumberVal(id) { const v = document.getElementById(id).value.trim(); return v ? Number(v) : null; }
-function formatDate(v) { return v ? String(v).slice(0, 10) : 'N/A'; }
+function formatDate(v) { 
+    if (!v) return 'N/A';
+    const parts = String(v).split(' ')[0];
+    return parts;
+}
 function escapeHtml(v) { if (v == null) return ''; return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
 // ======================== INITIALISATION ========================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Événement formulaire
     document.getElementById('equipementFormCanvas').addEventListener('submit', async (e) => {
         e.preventDefault();
         const code = document.getElementById('codeCanvas').value.trim();
@@ -753,14 +912,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupRealtimeValidation();
-    setupImportFeatures();  // <-- Initialisation unique de l'import (drag & drop + input file)
+    setupImportFeatures();
 
-    // Ajustement responsive
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.add('collapsed');
         document.getElementById('mainContent').classList.add('expanded');
     }
 
-    // Chargement initial des équipements
     await refreshPage();
 });
