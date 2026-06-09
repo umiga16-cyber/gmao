@@ -1138,4 +1138,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await refreshPage();
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusParam = urlParams.get('status');
+    if (statusParam) {
+        const statusSelect = document.getElementById('statusFilter');
+            if (statusSelect) {
+                statusSelect.value = statusParam.toUpperCase();
+                await applyFilters();  // Aplicar el filtro automáticamente
+            }
+}
 });

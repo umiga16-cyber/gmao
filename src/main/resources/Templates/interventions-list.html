@@ -315,59 +315,54 @@
         </div>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <div>
-            <h1 class="fw-bold text-dark mb-1">
-                <i class="fas fa-wrench text-primary me-2"></i> Gestion des Interventions
-            </h1>
-            <p class="text-muted mb-0">Suivez et gérez toutes vos interventions</p>
+<div class="mb-4">
+    <div class="text-center text-md-start">
+        <h1 class="fw-bold text-dark mb-1">
+            <i class="fas fa-wrench text-primary me-2"></i> Gestion des Interventions
+        </h1>
+        <p class="text-muted mb-3">Suivez et gérez toutes vos interventions</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
+        <button class="btn btn-primary" onclick="openCreateOffcanvas()">
+            <i class="fas fa-plus me-1"></i> Nouvelle intervention
+        </button>
+        <button class="btn btn-outline-secondary" onclick="loadInterventions()">
+            <i class="fas fa-rotate me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+<!-- Filtros - siempre visibles -->
+<div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Statut</label>
+            <select id="statusFilter" class="form-select">
+                <option value="">Tous</option>
+                <option value="PLANIFIEE">Planifiée</option>
+                <option value="EN_COURS">En cours</option>
+                <option value="TERMINEE">Terminée</option>
+                <option value="ANNULEE">Annulée</option>
+            </select>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-primary" onclick="openCreateOffcanvas()">
-                <i class="fas fa-plus me-1"></i> Nouvelle intervention
-            </button>
-            <button class="btn btn-outline-secondary" onclick="loadInterventions()">
-                <i class="fas fa-rotate me-1"></i> Refresh
-            </button>
-            <button class="btn btn-outline-info" data-bs-toggle="collapse" data-bs-target="#filterSection">
-                <i class="fas fa-filter me-1"></i> Filtres
-            </button>
+        <div class="col-md-3">
+            <label class="form-label">Type</label>
+            <select id="typeFilter" class="form-select">
+                <option value="">Tous</option>
+                <option value="CORRECTIVE">Corrective</option>
+                <option value="PREVENTIVE">Préventive</option>
+                <option value="PREDICTIVE">Prédictive</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Équipement</label>
+            <input type="text" id="equipementFilter" class="form-control" placeholder="Code ou description">
+        </div>
+        <div class="col-md-2 d-flex align-items-end gap-2">
+            <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
+            <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
         </div>
     </div>
-
-    <div class="collapse mb-4" id="filterSection">
-        <div class="card bg-white rounded-4 shadow-sm p-3">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Statut</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">Tous</option>
-                        <option value="PLANIFIEE">Planifiée</option>
-                        <option value="EN_COURS">En cours</option>
-                        <option value="TERMINEE">Terminée</option>
-                        <option value="ANNULEE">Annulée</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Type</label>
-                    <select id="typeFilter" class="form-select">
-                        <option value="">Tous</option>
-                        <option value="CORRECTIVE">Corrective</option>
-                        <option value="PREVENTIVE">Préventive</option>
-                        <option value="PREDICTIVE">Prédictive</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Équipement</label>
-                    <input type="text" id="equipementFilter" class="form-control" placeholder="Code ou description">
-                </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
-                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
-                </div>
-            </div>
-        </div>
-    </div>
+</div>
 
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">

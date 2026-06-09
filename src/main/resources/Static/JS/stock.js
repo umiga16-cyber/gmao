@@ -81,7 +81,7 @@ function renderTable(filteredData) {
     if (!filteredData.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty-state">
+                <td colspan="10" class="empty-state">
                     <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
                     <h5>Aucune PR en stock</h5>
                     <p class="text-muted mb-0">Ajoutez votre première pièce de rechange.</p>
@@ -108,13 +108,14 @@ function renderTable(filteredData) {
             stockLabel = 'Stock bas';
         }
 
-		const deleteDisabled = '';
-
         return `
             <tr>
-                <td class="text-truncate-cell" title="${escapeHtml(item.libelle)}">
-                    <strong>${escapeHtml(item.libelle)}</strong>
+                <td class="text-truncate-cell" title="${escapeHtml(item.code)}">
+                    <strong>${escapeHtml(item.code)}</strong>
                 </td>
+                <td class="text-truncate-cell" title="${escapeHtml(item.libelle)}">${escapeHtml(item.libelle)}</td>
+                <td>${escapeHtml(item.reference || '—')}</td>
+                <td>${parseNumber(item.pmp).toFixed(2)} DH</td>
                 <td>${qty}</td>
                 <td>${seuil}</td>
                 <td><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
@@ -127,7 +128,7 @@ function renderTable(filteredData) {
                     <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${item.id})" title="Éditer">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${item.id})" title="Supprimer" ${deleteDisabled}>
+                    <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${item.id})" title="Supprimer">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -143,7 +144,9 @@ function filterStock() {
 
     if (search) {
         filtered = filtered.filter(item =>
-            item.libelle && item.libelle.toLowerCase().includes(search)
+            (item.libelle && item.libelle.toLowerCase().includes(search)) ||
+            (item.code && item.code.toLowerCase().includes(search)) ||
+            (item.reference && item.reference.toLowerCase().includes(search))
         );
     }
 
@@ -172,8 +175,20 @@ async function showDetail(id) {
 
         const html = `
             <div class="detail-card">
+                <div class="detail-label">Code PR</div>
+                <div class="detail-value">${escapeHtml(item.code)}</div>
+            </div>
+            <div class="detail-card">
                 <div class="detail-label">Libellé</div>
                 <div class="detail-value">${escapeHtml(item.libelle)}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Référence</div>
+                <div class="detail-value">${escapeHtml(item.reference) || '—'}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">PMP (DH)</div>
+                <div class="detail-value">${parseNumber(item.pmp).toFixed(2)} DH</div>
             </div>
             <div class="detail-card">
                 <div class="detail-label">Quantité en stock</div>
@@ -214,6 +229,7 @@ function openCreateOffcanvas() {
     document.getElementById('stockIdCanvas').value = '';
     document.getElementById('quantiteStockCanvas').value = '0';
     document.getElementById('seuilMiniCanvas').value = '0';
+    document.getElementById('pmpCanvas').value = '0';
     document.getElementById('formErrorCanvas').classList.add('d-none');
     formOffcanvas.show();
 }
@@ -223,7 +239,10 @@ async function openEditCanvas(id) {
         const item = await fetchJson(`${API_STOCK_URL}/${id}`);
         document.getElementById('formOffcanvasLabel').innerText = 'Modifier la PR';
         document.getElementById('stockIdCanvas').value = item.id;
+        document.getElementById('codeCanvas').value = item.code || '';
         document.getElementById('libelleCanvas').value = item.libelle || '';
+        document.getElementById('referenceCanvas').value = item.reference || '';
+        document.getElementById('pmpCanvas').value = item.pmp ?? 0;
         document.getElementById('quantiteStockCanvas').value = item.quantiteStock ?? 0;
         document.getElementById('seuilMiniCanvas').value = item.seuilMini ?? 0;
         document.getElementById('formErrorCanvas').classList.add('d-none');
@@ -238,15 +257,38 @@ async function saveStock() {
     const isUpdate = !!id;
 
     const payload = {
+        code: document.getElementById('codeCanvas').value.trim(),
         libelle: document.getElementById('libelleCanvas').value.trim(),
-        quantiteStock: document.getElementById('quantiteStockCanvas').value,
-        seuilMini: document.getElementById('seuilMiniCanvas').value
+        reference: document.getElementById('referenceCanvas').value.trim(),
+        pmp: parseNumber(document.getElementById('pmpCanvas').value),
+        quantiteStock: parseNumber(document.getElementById('quantiteStockCanvas').value),
+        seuilMini: parseNumber(document.getElementById('seuilMiniCanvas').value)
     };
 
+    if (!payload.code) {
+        showWarning("Le code PR est obligatoire.");
+        return;
+    }
     if (!payload.libelle) {
         showWarning("Le libellé est obligatoire.");
         return;
     }
+    if (payload.pmp < 0) {
+        showWarning("Le PMP ne peut pas être négatif.");
+        return;
+    }
+
+    const quantite = parseNumber(document.getElementById('quantiteStockCanvas').value);
+const seuil = parseNumber(document.getElementById('seuilMiniCanvas').value);
+
+if (!Number.isInteger(quantite)) {
+    showWarning("La quantité en stock doit être un nombre entier.");
+    return;
+}
+if (!Number.isInteger(seuil)) {
+    showWarning("Le seuil minimum doit être un nombre entier.");
+    return;
+}
 
     try {
         const url = isUpdate ? `${API_STOCK_URL}/${id}` : API_STOCK_URL;
@@ -308,7 +350,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             await executeDelete(id);
         }
     });
+    setupImportPrsFeatures();
 });
+
+function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+            resolve(json);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function readTextFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file, 'UTF-8');
+    });
+}
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -323,6 +392,205 @@ function toggleSidebar() {
     }
 }
 
+// ======================== IMPORTACIÓN MASIVA PRS ========================
+let isImportingPrs = false;
+
+function showImportPrsModal() {
+    const modalElem = document.getElementById('importPrsModal');
+    if (modalElem?.classList.contains('show')) return;
+
+    document.getElementById('importPrsResult').innerHTML = '';
+    document.getElementById('importPrsProgress').classList.add('d-none');
+
+    const fileInput = document.getElementById('fileInputPrs');
+    if (fileInput) fileInput.value = '';
+
+    const modal = new bootstrap.Modal(modalElem);
+    modal.show();
+}
+
+function setupImportPrsFeatures() {
+    const dropZone = document.getElementById('dropZonePrs');
+    const fileInput = document.getElementById('fileInputPrs');
+    if (!dropZone || !fileInput) return;
+
+    if (window._importPrsInitialized) return;
+    window._importPrsInitialized = true;
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && !isImportingPrs) processPrsFile(file);
+    });
+
+    dropZone.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-close')) return;
+        if (!isImportingPrs) fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length && !isImportingPrs) {
+            processPrsFile(e.target.files[0]);
+        }
+    });
+}
+
+async function processPrsFile(file) {
+    if (isImportingPrs) return;
+    
+    const allowedExtensions = ['csv', 'xlsx', 'xls', 'txt'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+        const resultDiv = document.getElementById('importPrsResult');
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Format non autorisé. Veuillez utiliser .csv, .xlsx ou .txt.</div>`;
+        const fileInput = document.getElementById('fileInputPrs');
+        if (fileInput) fileInput.value = '';
+        return;
+    }
+    
+    isImportingPrs = true;
+
+    const progressDiv = document.getElementById('importPrsProgress');
+    const progressBar = document.getElementById('importPrsProgressBar');
+    const resultDiv = document.getElementById('importPrsResult');
+    progressDiv.classList.remove('d-none');
+    progressBar.style.width = '30%';
+    resultDiv.innerHTML = '';
+
+    const fileInput = document.getElementById('fileInputPrs');
+
+    try {
+        let jsonData;
+        if (fileExtension === 'txt') {
+            const text = await readTextFile(file);
+            const workbook = XLSX.read(text, { type: 'string', raw: true });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+        } else {
+            jsonData = await readExcelFile(file);
+        }
+        
+        progressBar.style.width = '60%';
+        
+        const requiredColumns = ['libelle'];  // mínimo necesario (code puede generarse)
+        const availableColumns = jsonData.length > 0 ? Object.keys(jsonData[0]).map(k => k.toLowerCase()) : [];
+        const missingCols = requiredColumns.filter(col => !availableColumns.includes(col));
+        if (missingCols.length > 0) {
+            throw new Error(`Colonnes obligatoires manquantes: ${missingCols.join(', ')}. Vérifiez votre fichier (libelle).`);
+        }
+        
+        const prsList = parsePrsFromData(jsonData);
+        if (prsList.length === 0) throw new Error('Aucune donnée valide (libelle requis).');
+        
+        progressBar.style.width = '80%';
+        const response = await fetch('/api/stock/import', {  // ajusta la URL según tu backend
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(prsList)
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        
+        progressBar.style.width = '100%';
+        resultDiv.innerHTML = `<div class="alert alert-success">✅ ${result.imported} PRs importées avec succès.</div>`;
+        await loadStock();  // recargar la tabla
+
+        setTimeout(() => {
+            const modalElem = document.getElementById('importPrsModal');
+            const modal = bootstrap.Modal.getInstance(modalElem);
+            if (modal) modal.hide();
+            if (fileInput) fileInput.value = '';
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+        }, 1500);
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Erreur : ${err.message}</div>`;
+        if (fileInput) fileInput.value = '';
+    } finally {
+        progressDiv.classList.add('d-none');
+        progressBar.style.width = '0%';
+        isImportingPrs = false;
+    }
+}
+
+function parsePrsFromData(jsonData) {
+    if (!jsonData?.length) return [];
+    const rawKeys = Object.keys(jsonData[0]);
+    const normalizeKey = (key) => key.replace(/^["']|["']$/g, '').trim().toLowerCase();
+    const keyMap = new Map();
+    rawKeys.forEach(k => keyMap.set(normalizeKey(k), k));
+
+    const result = [];
+    for (const row of jsonData) {
+        const getValue = (field) => {
+            const origKey = keyMap.get(field);
+            if (origKey && row[origKey] !== undefined && row[origKey] !== '') {
+                let val = row[origKey];
+                if (typeof val === 'string') {
+                    val = val.trim();
+                    if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                }
+                return val;
+            }
+            return '';
+        };
+
+        const libelle = getValue('libelle');
+        if (!libelle) continue;
+
+        const code = getValue('code') || '';  // si no viene, el backend lo generará
+        const reference = getValue('reference') || '';
+        const pmp = parseFloat(getValue('pmp')) || 0;
+        const quantiteStock = parseFloat(getValue('quantitestock')) || 0;
+        const seuilMini = parseFloat(getValue('seuilmini')) || 0;
+
+        result.push({
+            code: code,
+            libelle: libelle,
+            reference: reference,
+            pmp: pmp,
+            quantiteStock: quantiteStock,
+            seuilMini: seuilMini
+        });
+    }
+    return result;
+}
+
+function downloadPrsTemplate() {
+    const headers = ['code', 'libelle', 'reference', 'pmp', 'quantiteStock', 'seuilMini'];
+    const exampleRow = ['', 'Roulement à billes', 'SKF-6204', '25.50', '100', '10'];
+    
+    const escapeForCSV = (cell) => {
+        if (cell == null) return '';
+        const str = String(cell);
+        if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+    
+    const rows = [headers, exampleRow.map(escapeForCSV)];
+    const csvContent = rows.map(row => row.join(';')).join('\n');
+    
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', 'template_prs.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)

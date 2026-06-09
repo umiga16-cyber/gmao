@@ -1,6 +1,7 @@
 package com.gmao.app.restcontroller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.gmao.app.Service.PrsService;
 import com.gmao.app.dto.PrsCreateRequest;
+import com.gmao.app.dto.PrsImportDTO;
 import com.gmao.app.dto.PrsResponse;
 import com.gmao.app.dto.PrsUpdateRequest;
 
@@ -57,4 +59,9 @@ public class StockController {
         prsService.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @PostMapping("/import")
+public ResponseEntity<?> importPrs(@RequestBody List<PrsImportDTO> prsList) {
+    int imported = prsService.importPrs(prsList);
+    return ResponseEntity.ok(Map.of("imported", imported));
+}
 }

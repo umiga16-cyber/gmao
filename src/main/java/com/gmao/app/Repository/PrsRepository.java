@@ -17,5 +17,17 @@ public interface PrsRepository extends JpaRepository<Prs, Long> {
 
     boolean existsByLibelleIgnoreCase(String libelle);
 
+    Optional<Prs> findTopByOrderByIdDesc();
+
     List<Prs> findByLibelleContainingIgnoreCase(String keyword);
+
+    boolean existsByCodeIgnoreCase(String code);
+    Optional<Prs> findByCodeIgnoreCase(String code);
+
+    @Query("SELECT p.code FROM Prs p WHERE p.code LIKE 'PR-%' ORDER BY p.id DESC")
+String findMaxCode();
+
+
+@Query("SELECT p.code FROM Prs p WHERE p.code LIKE 'PR-%' ORDER BY p.id DESC")
+String findMaxPrsCode();
 }

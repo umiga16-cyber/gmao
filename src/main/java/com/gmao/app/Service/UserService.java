@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.gmao.app.dto.UserCreateRequest;
+import com.gmao.app.dto.UserImportDTO;
 import com.gmao.app.dto.UserResponse;
 import com.gmao.app.dto.UserUpdateRequest;
 
@@ -28,4 +29,6 @@ public interface UserService {
     UserResponse archive(Long id);
 
     void delete(Long id);
+
+    int importUsers(List<UserImportDTO> users);
 }

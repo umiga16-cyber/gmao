@@ -23,8 +23,17 @@ public class Prs {
     @Column(name = "prs_id")
     private Long id;
 
+    @Column(name = "code", nullable = false, unique = true, length = 50)
+    private String code;
+
     @Column(name = "libelle", nullable = false, length = 200)
     private String libelle;
+
+    @Column(name = "reference", length = 100)
+    private String reference;
+
+    @Column(name = "pmp", nullable = false, precision = 15, scale = 2)
+    private BigDecimal pmp = BigDecimal.ZERO;
 
     @Column(name = "quantite_stock", nullable = false, precision = 19, scale = 3)
     private BigDecimal quantiteStock = BigDecimal.ZERO;
@@ -40,68 +49,43 @@ public class Prs {
     @OneToMany(mappedBy = "prs", fetch = FetchType.LAZY)
     private Set<PrsMouvement> mouvements = new HashSet<>();
 
-	public Long getId() {
-		return id;
-	}
+    // Constructores
+    public Prs() {}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public Prs(String code, String libelle, String reference, BigDecimal pmp, BigDecimal quantiteStock, BigDecimal seuilMini) {
+        this.code = code;
+        this.libelle = libelle;
+        this.reference = reference;
+        this.pmp = pmp;
+        this.quantiteStock = quantiteStock;
+        this.seuilMini = seuilMini;
+    }
 
-	public String getLibelle() {
-		return libelle;
-	}
+    // Getters y setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-	public void setLibelle(String libelle) {
-		this.libelle = libelle;
-	}
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 
-	public BigDecimal getQuantiteStock() {
-		return quantiteStock;
-	}
+    public String getLibelle() { return libelle; }
+    public void setLibelle(String libelle) { this.libelle = libelle; }
 
-	public void setQuantiteStock(BigDecimal quantiteStock) {
-		this.quantiteStock = quantiteStock;
-	}
+    public String getReference() { return reference; }
+    public void setReference(String reference) { this.reference = reference; }
 
-	public BigDecimal getSeuilMini() {
-		return seuilMini;
-	}
+    public BigDecimal getPmp() { return pmp; }
+    public void setPmp(BigDecimal pmp) { this.pmp = pmp; }
 
-	public void setSeuilMini(BigDecimal seuilMini) {
-		this.seuilMini = seuilMini;
-	}
+    public BigDecimal getQuantiteStock() { return quantiteStock; }
+    public void setQuantiteStock(BigDecimal quantiteStock) { this.quantiteStock = quantiteStock; }
 
-	public Set<InterventionPrs> getInterventionPrs() {
-		return interventionPrs;
-	}
+    public BigDecimal getSeuilMini() { return seuilMini; }
+    public void setSeuilMini(BigDecimal seuilMini) { this.seuilMini = seuilMini; }
 
-	public void setInterventionPrs(Set<InterventionPrs> interventionPrs) {
-		this.interventionPrs = interventionPrs;
-	}
+    public Set<InterventionPrs> getInterventionPrs() { return interventionPrs; }
+    public void setInterventionPrs(Set<InterventionPrs> interventionPrs) { this.interventionPrs = interventionPrs; }
 
-	public Set<PrsMouvement> getMouvements() {
-		return mouvements;
-	}
-
-	public void setMouvements(Set<PrsMouvement> mouvements) {
-		this.mouvements = mouvements;
-	}
-
-	public Prs() {
-		super();
-		 
-	}
-
-	public Prs(String libelle, BigDecimal quantiteStock, BigDecimal seuilMini, Set<InterventionPrs> interventionPrs,
-			Set<PrsMouvement> mouvements) {
-		super();
-		this.libelle = libelle;
-		this.quantiteStock = quantiteStock;
-		this.seuilMini = seuilMini;
-		this.interventionPrs = interventionPrs;
-		this.mouvements = mouvements;
-	}
-    
-    
+    public Set<PrsMouvement> getMouvements() { return mouvements; }
+    public void setMouvements(Set<PrsMouvement> mouvements) { this.mouvements = mouvements; }
 }

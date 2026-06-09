@@ -2,6 +2,7 @@ package com.gmao.app.restcontroller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.gmao.app.Service.UserService;
 import com.gmao.app.dto.UserCreateRequest;
+import com.gmao.app.dto.UserImportDTO;
 import com.gmao.app.dto.UserResponse;
 import com.gmao.app.dto.UserUpdateRequest;
 
@@ -77,4 +79,9 @@ public class UserController {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+@PostMapping("/import")
+public ResponseEntity<?> importUsers(@RequestBody List<UserImportDTO> users) {
+    int imported = userService.importUsers(users);
+    return ResponseEntity.ok(Map.of("imported", imported));
+}
 }

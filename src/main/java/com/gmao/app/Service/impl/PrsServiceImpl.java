@@ -13,6 +13,7 @@ import com.gmao.app.Repository.PrsMouvementRepository;
 import com.gmao.app.Repository.PrsRepository;
 import com.gmao.app.Service.PrsService;
 import com.gmao.app.dto.PrsCreateRequest;
+import com.gmao.app.dto.PrsImportDTO;
 import com.gmao.app.dto.PrsResponse;
 import com.gmao.app.dto.PrsUpdateRequest;
 import com.gmao.app.mapper.PrsMapper;
@@ -49,7 +50,12 @@ public class PrsServiceImpl implements PrsService {
         prs.setLibelle(request.getLibelle().trim());
         prs.setQuantiteStock(request.getQuantiteStock());
         prs.setSeuilMini(request.getSeuilMini());
-
+if (prsRepository.existsByCodeIgnoreCase(request.getCode().trim())) {
+    throw new IllegalArgumentException("Ce code PR existe déjà.");
+}
+prs.setCode(request.getCode().trim());
+prs.setReference(request.getReference() != null ? request.getReference().trim() : null);
+prs.setPmp(request.getPmp());
         Prs saved = prsRepository.save(prs);
         return prsMapper.toResponse(saved, 0L, 0L, true);
     }
@@ -69,13 +75,68 @@ public class PrsServiceImpl implements PrsService {
         prs.setLibelle(newLibelle);
         prs.setQuantiteStock(request.getQuantiteStock());
         prs.setSeuilMini(request.getSeuilMini());
-
+String newCode = request.getCode().trim();
+if (!newCode.equalsIgnoreCase(prs.getCode()) && prsRepository.existsByCodeIgnoreCase(newCode)) {
+    throw new IllegalArgumentException("Ce code PR existe déjà.");
+}
+prs.setCode(newCode);
+prs.setReference(request.getReference() != null ? request.getReference().trim() : null);
+prs.setPmp(request.getPmp());
         Prs saved = prsRepository.save(prs);
         long mouvementsCount = prsMouvementRepository.countByPrsId(saved.getId());
         long interventionsCount = interventionPrsRepository.countByPrsId(saved.getId());
 
         return prsMapper.toResponse(saved, mouvementsCount, interventionsCount, canDelete(saved.getId()));
     }
+
+   @Override
+@Transactional
+public int importPrs(List<PrsImportDTO> prsList) {
+    int count = 0;
+    for (PrsImportDTO dto : prsList) {
+        // Validar libelle obligatorio
+        if (dto.getLibelle() == null || dto.getLibelle().isBlank()) {
+            throw new RuntimeException("Le libellé est obligatoire pour chaque ligne.");
+        }
+
+        // Determinar el código (si viene vacío, generarlo automáticamente)
+        String code = dto.getCode();
+        if (code == null || code.isBlank()) {
+            code = generateNextPrsCode();
+        } else {
+            // Verificar que el código no exista (case insensitive)
+            if (prsRepository.existsByCodeIgnoreCase(code)) {
+                throw new RuntimeException("Code PR déjà existant : " + code);
+            }
+        }
+
+        Prs prs = new Prs();
+        prs.setCode(code);
+        prs.setLibelle(dto.getLibelle());
+        prs.setReference(dto.getReference() != null ? dto.getReference() : "");
+        prs.setPmp(dto.getPmp() != null ? dto.getPmp() : BigDecimal.ZERO);
+        prs.setQuantiteStock(dto.getQuantiteStock() != null ? dto.getQuantiteStock() : BigDecimal.ZERO);
+        prs.setSeuilMini(dto.getSeuilMini() != null ? dto.getSeuilMini() : BigDecimal.ZERO);
+
+        prsRepository.save(prs);
+        count++;
+    }
+    return count;
+}
+
+private String generateNextPrsCode() {
+    // Buscar el último código que comience con "PR-"
+    String maxCode = prsRepository.findMaxPrsCode();
+    if (maxCode == null || maxCode.isBlank()) {
+        return "PR-000001";
+    }
+    // Extraer el número (ej. "PR-000123" -> 123)
+    String numStr = maxCode.replaceAll("\\D+", "");
+    if (numStr.isEmpty()) return "PR-000001";
+    int num = Integer.parseInt(numStr);
+    int next = num + 1;
+    return String.format("PR-%06d", next);
+}
 
     @Override
     @Transactional(readOnly = true)

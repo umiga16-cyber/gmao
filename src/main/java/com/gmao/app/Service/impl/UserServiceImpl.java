@@ -1,9 +1,11 @@
 package com.gmao.app.Service.impl;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +17,10 @@ import com.gmao.app.Repository.DisponibiliteRepository;
 import com.gmao.app.Repository.RoleRepository;
 import com.gmao.app.Repository.UserRepository;
 import com.gmao.app.Service.UserService;
+import com.gmao.app.dto.EquipementCreateRequest;
+import com.gmao.app.dto.EquipementResponse;
 import com.gmao.app.dto.UserCreateRequest;
+import com.gmao.app.dto.UserImportDTO;
 import com.gmao.app.dto.UserResponse;
 import com.gmao.app.dto.UserUpdateRequest;
 import com.gmao.app.mapper.UserMapper;
@@ -166,6 +171,42 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.mapToResponse(userRepository.save(user));
     }
+@Transactional
+public int importUsers(List<UserImportDTO> users) {
+    int count = 0;
+    for (UserImportDTO dto : users) {
+        // Validar email único
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
+            throw new RuntimeException("Email déjà existant: " + dto.getEmail());
+        }
+
+        User user = new User();
+        user.setNom(dto.getNom());
+        user.setEmail(dto.getEmail());
+
+        // Asignar rol (si no viene, por defecto TECHNICIAN)
+        String roleName = dto.getRole() != null ? dto.getRole().toUpperCase() : "TECHNICIAN";
+        Role role = roleRepository.findByNom(roleName)
+                .orElseThrow(() -> new RuntimeException("Rôle invalide: " + roleName));
+        user.setRole(role);
+
+        // Asignar statut (por defecto ACTIVE)
+        String statut = dto.getStatut() != null ? dto.getStatut().toUpperCase() : "ACTIVE";
+        user.setStatut(statut);
+
+        // Asignar actif (por defecto true)
+        user.setActif(dto.getActif() != null ? dto.getActif() : true);
+
+        // Asignar contraseña (si no viene, usar "password123")
+        String rawPassword = dto.getPassword() != null && !dto.getPassword().isEmpty() 
+                ? dto.getPassword() : "password123";
+        user.setPassword(passwordEncoder.encode(rawPassword));
+
+        userRepository.save(user);
+        count++;
+    }
+    return count;
+}
 
     @Override
     public UserResponse archive(Long id) {
