@@ -20,6 +20,9 @@ const deleteDocModal = new bootstrap.Modal(document.getElementById('deleteDocCon
 // Variable global para evitar importaciones simultáneas
 let isImporting = false;
 
+// Archivos pendientes durante la creación de un nuevo equipo
+let pendingFilesForNewEquipment = [];
+
 // ======================== Funciones auxiliares ========================
 function truncateText(text, maxLen) {
     if (!text) return '—';
@@ -366,8 +369,7 @@ function renderTable(data) {
                         <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${statut}')" title="Changer statut"><i class="fas fa-repeat"></i></button>
                         <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}"><i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i></button>
-                        <!-- Botón Adjuntos -> abre edición directamente -->
-                        <button class="btn btn-outline-info btn-action" onclick="openEditCanvas(${e.id}, true)" title="Pieces jointes"><i class="fas fa-paperclip"></i></button>
+                        <button class="btn btn-outline-info btn-action" onclick="openEditCanvas(${e.id}, true)" title="Pièces jointes"><i class="fas fa-paperclip"></i></button>
                         <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
@@ -471,6 +473,7 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
+// ======================== CREACIÓN Y EDICIÓN ========================
 async function openCreateOffcanvas() {
     document.getElementById('formOffcanvasLabel').innerText = 'Nouvel équipement';
     document.getElementById('equipementFormCanvas').reset();
@@ -479,13 +482,86 @@ async function openCreateOffcanvas() {
     document.getElementById('statutCanvas').value = 'ACTIF';
     const codeInput = document.getElementById('codeCanvas');
     if (codeInput) {
-        const newCode = generateNextEquipmentCode();
-        codeInput.value = newCode;
-        codeInput.readOnly = true;
-        codeInput.style.backgroundColor = '#e9ecef';
+    //    const newCode = generateNextEquipmentCode();
+    //    codeInput.value = newCode;
+        codeInput.value = '';
+        codeInput.readOnly = false;
+        codeInput.style.backgroundColor = '';
+    //    codeInput.focus();
     }
     applyRequiredErrorOnEmpty();
+    
+    // Limpiar archivos pendientes
+    pendingFilesForNewEquipment = [];
+    
+    // Añadir sección de adjuntos (con input file para subir antes de guardar)
+    const container = document.getElementById('adjuntosEditContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label">Téléverser des documents</label>
+                <div class="input-group">
+                    <input type="file" id="fileSubirNuevo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt" multiple>
+                    <button class="btn btn-primary" type="button" onclick="agregarArchivosPendientes()"><i class="fas fa-plus"></i> Ajouter</button>
+                </div>
+                <div id="listaArchivosPendientes" class="mt-2 list-group"></div>
+            </div>
+        `;
+    }
+    
     formOffcanvas.show();
+}
+
+function agregarArchivosPendientes() {
+    const fileInput = document.getElementById('fileSubirNuevo');
+    if (!fileInput.files.length) {
+        showWarning("Veuillez sélectionner au moins un fichier.");
+        return;
+    }
+    
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
+    const maxSize = 32 * 1024 * 1024; // 32 MB
+    let validFiles = [];
+    let invalidFiles = [];
+    
+    // Validar cada archivo seleccionado
+    for (let file of fileInput.files) {
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(extension)) {
+            invalidFiles.push(`${file.name} (extension non autorisée)`);
+        } else if (file.size > maxSize) {
+            invalidFiles.push(`${file.name} (taille > 32 Mo)`);
+        } else {
+            validFiles.push(file);
+        }
+    }
+    
+    // Mostrar advertencias si hay archivos inválidos
+    if (invalidFiles.length > 0) {
+        showWarning(`Fichiers ignorés :\n${invalidFiles.join('\n')}`);
+    }
+    
+    // Añadir los archivos válidos a la lista pendiente
+    if (validFiles.length === 0) return;
+    
+    const lista = document.getElementById('listaArchivosPendientes');
+    for (let file of validFiles) {
+        pendingFilesForNewEquipment.push(file);
+        const item = document.createElement('div');
+        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+        item.innerHTML = `<span><i class="fas fa-file"></i> ${escapeHtml(file.name)} (${formatFileSize(file.size)})</span>
+                          <button class="btn btn-sm btn-outline-danger" onclick="eliminarArchivoPendiente(this, '${file.name}')"><i class="fas fa-trash"></i></button>`;
+        lista.appendChild(item);
+    }
+    
+    // Limpiar el input para que se puedan seleccionar más archivos después
+    fileInput.value = '';
+}
+
+function eliminarArchivoPendiente(btn, fileName) {
+    const index = pendingFilesForNewEquipment.findIndex(f => f.name === fileName);
+    if (index !== -1) pendingFilesForNewEquipment.splice(index, 1);
+    btn.closest('.list-group-item').remove();
 }
 
 async function openEditCanvas(id, scrollToDocuments = false) {
@@ -496,8 +572,8 @@ async function openEditCanvas(id, scrollToDocuments = false) {
         const codeInput = document.getElementById('codeCanvas');
         if (codeInput) {
             codeInput.value = e.code ?? '';
-            codeInput.readOnly = true;
-            codeInput.style.backgroundColor = '#e9ecef';
+            codeInput.readOnly = false;
+            codeInput.style.backgroundColor = '';
         }
         document.getElementById('descriptionCanvas').value = e.description ?? '';
         document.getElementById('typeCanvas').value = e.type ?? '';
@@ -515,24 +591,20 @@ async function openEditCanvas(id, scrollToDocuments = false) {
         await cargarAdjuntosEnEdicion(e.id);
         formOffcanvas.show();
 
-        // Si se solicita desplazarse a la sección de documentos, hacerlo después de que el offcanvas esté visible
         if (scrollToDocuments) {
             setTimeout(() => {
                 const container = document.getElementById('adjuntosEditContainer');
                 if (container) {
-                    // Scroll suave hasta el contenedor de documentos
                     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    // Resaltar brevemente el contenedor para llamar la atención
                     container.style.transition = 'background-color 0.5s';
                     container.style.backgroundColor = '#fff3cd';
                     setTimeout(() => {
                         container.style.backgroundColor = '';
                     }, 1500);
-                    // Opcional: enfocar el input de archivo para que el usuario pueda subir rápidamente
                     const fileInput = document.getElementById('fileSubir');
                     if (fileInput) fileInput.focus();
                 }
-            }, 500); // 500ms es suficiente para que el offcanvas termine su animación
+            }, 500);
         }
     } catch (err) { 
         showWarning(err.message); 
@@ -544,7 +616,7 @@ async function cargarAdjuntosEnEdicion(equipementId) {
     if (!container) return;
     try {
         const docs = await fetchJson(`${API_URL}/${equipementId}/documents`);
-        let html = `<div class="mb-3"><label class="form-label">Subir nuevo documento</label><div class="input-group"><input type="file" id="fileSubir" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"><button class="btn btn-primary" onclick="subirDocumento(${equipementId})"><i class="fas fa-upload"></i> Subir</button></div></div><div class="list-group" id="listaAdjuntosEdit">`;
+        let html = `<div class="mb-3"><label class="form-label">Téléverser un nouveau document</label><div class="input-group"><input type="file" id="fileSubir" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"><button class="btn btn-primary" onclick="subirDocumento(${equipementId})"><i class="fas fa-upload"></i> Téléverser</button></div></div><div class="list-group" id="listaAdjuntosEdit">`;
         if (docs && docs.length) {
             docs.forEach(doc => {
                 const icono = getIconoPorTipo(doc.tipoContenido);
@@ -554,25 +626,25 @@ async function cargarAdjuntosEnEdicion(equipementId) {
                          </div>`;
             });
         } else {
-            html += `<div class="list-group-item text-muted">No hay documentos adjuntos.</div>`;
+            html += `<div class="list-group-item text-muted">Aucune pièce jointe.</div>`;
         }
         html += `</div>`;
         container.innerHTML = html;
     } catch (err) {
         console.error(err);
-        container.innerHTML = `<div class="alert alert-danger">Error cargando adjuntos</div>`;
+        container.innerHTML = `<div class="alert alert-danger">Erreur chargement des documents</div>`;
     }
 }
 
 async function subirDocumento(equipementId) {
     const fileInput = document.getElementById('fileSubir');
     if (!fileInput.files.length) {
-        showWarning("Por favor seleccione un archivo.");
+        showWarning("Veuillez sélectionner un fichier.");
         return;
     }
     const file = fileInput.files[0];
     if (file.size > 32 * 1024 * 1024) {
-        showWarning("El archivo no puede superar 32 MB.");
+        showWarning("Le fichier ne peut pas dépasser 32 Mo.");
         return;
     }
     const formData = new FormData();
@@ -588,20 +660,18 @@ async function subirDocumento(equipementId) {
         }
         await cargarAdjuntosEnEdicion(equipementId);
         fileInput.value = '';
-        showWarning("Documento subido correctamente");
+        showWarning("Document téléversé avec succès");
     } catch (err) {
-        showWarning("Error al subir: " + (err.message || "Error desconocido"));
+        showWarning("Erreur lors du téléversement: " + (err.message || "Erreur inconnue"));
     }
 }
 
-// Función que abre el modal de confirmación antes de eliminar documento
 function confirmarEliminarDocumento(documentoId, equipementId) {
     pendingDocumentId = documentoId;
     pendingEquipementIdForDoc = equipementId;
     deleteDocModal.show();
 }
 
-// Eliminación real (llamada desde el botón del modal)
 async function ejecutarEliminarDocumento() {
     if (!pendingDocumentId) return;
     try {
@@ -611,9 +681,9 @@ async function ejecutarEliminarDocumento() {
             throw new Error(errorText);
         }
         await cargarAdjuntosEnEdicion(pendingEquipementIdForDoc);
-        showWarning("Documento eliminado correctamente");
+        showWarning("Document supprimé avec succès");
     } catch (err) {
-        showWarning("Error al eliminar: " + (err.message || "Error desconocido"));
+        showWarning("Erreur lors de la suppression: " + (err.message || "Erreur inconnue"));
     } finally {
         deleteDocModal.hide();
         pendingDocumentId = null;
@@ -643,14 +713,43 @@ async function saveEquipementCanvas() {
         statut: 'ACTIF'
     };
     try {
+        // Verificar unicidad del código (solo para creación, en edición lo maneja el backend)
         if (!isUpdate && payload.code) {
             const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
-            if (exists) throw new Error('Code déjà existant');
+            if (exists) throw new Error('Ce code équipement existe déjà. Veuillez en choisir un autre.');
         }
-        await fetchJson(isUpdate ? `${API_URL}/${id}` : API_URL, {
-            method: isUpdate ? 'PUT' : 'POST',
-            body: JSON.stringify(payload)
-        });
+
+        let nuevoId = id;
+        if (!isUpdate) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(errText);
+            }
+            const newEquip = await response.json();
+            nuevoId = newEquip.id || newEquip.equipementId;
+            if (!nuevoId) throw new Error("ID du nouvel équipement non reçu");
+            
+            // Subir documentos pendientes
+            if (pendingFilesForNewEquipment.length > 0) {
+                for (const file of pendingFilesForNewEquipment) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    await fetch(`${API_URL}/${nuevoId}/documents`, { method: 'POST', body: formData });
+                }
+                pendingFilesForNewEquipment = [];
+            }
+        } else {
+            await fetchJson(`${API_URL}/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+        }
+        
         formOffcanvas.hide();
         await refreshPage();
     } catch (err) {
@@ -1012,10 +1111,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Botón de confirmación del modal de eliminación de documentos
-    document.getElementById('confirmDeleteDocBtn').addEventListener('click', () => {
-        ejecutarEliminarDocumento();
-    });
+    const confirmDeleteDocBtn = document.getElementById('confirmDeleteDocBtn');
+    if (confirmDeleteDocBtn) {
+        confirmDeleteDocBtn.addEventListener('click', () => {
+            ejecutarEliminarDocumento();
+        });
+    }
 
     document.querySelectorAll('.status-option-btn').forEach(btn => {
         btn.addEventListener('click', async () => {

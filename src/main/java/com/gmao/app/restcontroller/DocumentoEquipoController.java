@@ -37,14 +37,14 @@ public class DocumentoEquipoController {
     }
 
     // Descargar/ver un documento por su ID
-    @GetMapping("/documents/{documentoId}")
-    public ResponseEntity<byte[]> descargarDocumento(@PathVariable Long documentoId) {
-        DocumentoEquipo doc = documentoService.obtenerDocumento(documentoId);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(doc.getTipoContenido()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getNombreOriginal() + "\"")
-                .body(doc.getContenido());
-    }
+@GetMapping("/documents/{documentoId}")
+public ResponseEntity<byte[]> descargarDocumento(@PathVariable Long documentoId) {
+    DocumentoEquipo doc = documentoService.obtenerDocumento(documentoId);
+    return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(doc.getTipoContenido()))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getNombreOriginal() + "\"")
+            .body(doc.getContenido());
+}
 
     // Eliminar documento (solo para edición)
     @DeleteMapping("/documents/{documentoId}")
