@@ -59,7 +59,7 @@ function getAllowedNextStatuses(currentStatus, isAdmin) {
     if (norm === 'TERMINEE') {
         let allowed = [];
         if (BACKEND_SUPPORTS_ARCHIVE) allowed.push('ARCHIVEE');
-        if (isAdmin) allowed.push('EN_COURS');  // retour arrière autorisé seulement pour ADMIN
+        if (isAdmin) allowed.push('EN_COURS');
         return allowed;
     }
     if (norm === 'ARCHIVEE') return [];
@@ -361,7 +361,15 @@ function renderTable(data) {
     const tbody = document.getElementById('interventionsTableBody');
     if (!tbody) return;
     if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="empty-state text-center"><i class="fas fa-wrench fa-3x mb-3 d-block"></i><h5>Aucune intervention</h5><p class="text-muted mb-0">Commencez par créer une nouvelle intervention</p></td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="empty-state text-center" style="vertical-align: middle;">
+                    <i class="fas fa-wrench fa-3x mb-3 d-block"></i>
+                    <h5>Aucune intervention</h5>
+                    <p class="text-muted mb-0">Commencez par créer une nouvelle intervention</p>
+                </td>
+            </tr>
+        `;
         return;
     }
     tbody.innerHTML = data.map(i => {
@@ -468,11 +476,11 @@ function removePrsLine(prsId) {
     renderPrsLines();
 }
 
-// ======================== DÉTAIL D'UNE INTERVENTION (avec affichage du motif d'annulation) ========================
+// ======================== DÉTAIL D'UNE INTERVENTION ========================
 async function showDetailCanvas(id) {
     try {
         const i = await fetchJson(`${API_URL}/${id}/detail`);
-        console.log("Détail reçu :", i);  // Pour déboguer
+        console.log("Détail reçu :", i);
 
         const creatorName = usersMap.get(Number(i.createdById)) || ('User #' + i.createdById);
         const equipCode = equipmentsMap.get(Number(i.equipementId)) || i.equipementDescription || (`Équipement #${i.equipementId}`);
@@ -482,7 +490,6 @@ async function showDetailCanvas(id) {
                <div class="detail-card"><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>PR</th><th>Quantité</th></tr></thead><tbody>${i.prsItems.map(p => `<tr><td>${escapeHtml(p.prsLibelle)}</td><td>${p.quantite}</td></tr>`).join('')}</tbody></table></div></div>`
             : '';
 
-        // Extraction du motif d'annulation depuis le commentaire
         let motifAnnulation = null;
         if (i.commentaire) {
             const match = i.commentaire.match(/\[ANNULATION\]\s*(.*?)(\n|$)/);
@@ -499,7 +506,6 @@ async function showDetailCanvas(id) {
                     </div>
                 `;
             } else if (i.commentaire) {
-                // Si aucun tag spécifique, on montre tout le commentaire comme motif
                 annulationHtml = `
                     <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation (dans commentaire)</div>
                     <div class="detail-card bg-light border-start border-4 border-danger">
@@ -516,7 +522,6 @@ async function showDetailCanvas(id) {
             }
         }
 
-        // Commentaire normal sans la ligne d'annulation
         let commentaireNormal = i.commentaire || '';
         if (commentaireNormal && commentaireNormal.includes('[ANNULATION]')) {
             commentaireNormal = commentaireNormal.replace(/\[ANNULATION\][^\n]*\n?/, '').trim();
@@ -699,7 +704,7 @@ function addPendingPrsLineBeforeSave() {
     return true;
 }
 
-// ======================== SUPPRESSION (seulement EN PRÉPARATION) ========================
+// ======================== SUPPRESSION ========================
 async function confirmDelete(id) {
     try {
         const intervention = await fetchJson(`${API_URL}/${id}/detail`);
@@ -735,7 +740,7 @@ async function executeDelete(id) {
     }
 }
 
-// ======================== CHANGEMENT DE STATUT AVEC MOTIF OBLIGATOIRE POUR ANNULATION ========================
+// ======================== CHANGEMENT DE STATUT ========================
 async function openStatusModal(id) {
     try {
         const intervention = await fetchJson(`${API_URL}/${id}/detail`);
@@ -810,7 +815,6 @@ async function onStatusSelected(id, newStatus) {
 
 async function changeStatus(id, newStatus, motif) {
     try {
-        // 1. Obtener la intervención actual
         const intervention = await fetchJson(`${API_URL}/${id}/detail`);
         const currentStatus = normalizeInterventionStatus(intervention.statut);
         const allowed = getAllowedNextStatuses(currentStatus, isAdmin);
@@ -820,26 +824,20 @@ async function changeStatus(id, newStatus, motif) {
         }
         
         const normalizedStatus = normalizeInterventionStatus(newStatus);
-        
-        // 2. Cambiar el estado (sin body, solo query param)
         await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(normalizedStatus)}`, { method: 'PATCH' });
         
-        // 3. Si hay motivo, actualizar el comentario mediante PUT
         if (motif) {
-            // Volver a obtener la intervención actualizada (por si cambió algo)
             const updated = await fetchJson(`${API_URL}/${id}/detail`);
             const motifLine = `[ANNULATION] ${motif}`;
             let newCommentaire = updated.commentaire || '';
-            // Evitar duplicados
             if (!newCommentaire.includes(motifLine)) {
                 newCommentaire = motifLine + '\n' + newCommentaire;
             }
-            // Preparar payload completo (todos los campos obligatorios)
             const payload = {
                 codeIntervention: updated.codeIntervention,
                 libele: updated.libele,
                 type: updated.type,
-                statut: normalizedStatus,   // el nuevo estado
+                statut: normalizedStatus,
                 equipementId: updated.equipementId,
                 dateDebut: updated.dateDebut,
                 dateFin: updated.dateFin,
@@ -847,13 +845,39 @@ async function changeStatus(id, newStatus, motif) {
                 preventifId: updated.preventifId,
                 prsItems: updated.prsItems || []
             };
-            // Enviar PUT para actualizar todo (incluyendo comentario)
             await fetchJson(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
         }
         
         await refreshPage();
     } catch (err) {
         showWarning(err.message);
+    }
+}
+
+// ======================== FILTRES PAR CARTES STATISTIQUES ========================
+function filterByStatus(status) {
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.value = status;
+        applyFilters();
+    }
+}
+
+function attachCardFilters() {
+    const cards = document.querySelectorAll('.stat-card');
+    if (cards.length >= 4) {
+        // Total (réinitialiser le filtre)
+        cards[0].style.cursor = 'pointer';
+        cards[0].onclick = () => filterByStatus('');
+        // Terminées
+        cards[1].style.cursor = 'pointer';
+        cards[1].onclick = () => filterByStatus('TERMINEE');
+        // En cours
+        cards[2].style.cursor = 'pointer';
+        cards[2].onclick = () => filterByStatus('EN_COURS');
+        // Planifiées
+        cards[3].style.cursor = 'pointer';
+        cards[3].onclick = () => filterByStatus('PLANIFIEE');
     }
 }
 
@@ -916,6 +940,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadPrsSelect();
     renderPrsLines();
     await refreshPage();
+
+    // Attacher les événements de clic sur les cartes statistiques
+    attachCardFilters();
 
     const urlParams = new URLSearchParams(window.location.search);
     const statusFromUrl = urlParams.get('status');
