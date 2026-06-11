@@ -141,6 +141,7 @@
         .status-EN_COURS { background: #f59e0b; color: white; }
         .status-TERMINEE { background: #10b981; color: white; }
         .status-ANNULEE { background: #ef4444; color: white; }
+        .status-ARCHIVEE { background: #64748b; color: white; }
 
         .type-CORRECTIVE { background: #ef4444; color: white; }
         .type-PREVENTIVE { background: #10b981; color: white; }
@@ -162,44 +163,24 @@
             border: none;
             box-shadow: 0 20px 35px rgba(0,0,0,0.1);
         }
-		.modal-backdrop {
-		    z-index: 1040 !important;
-		}
-
-		.modal {
-		    z-index: 1055 !important;
-		}
-
-		#deleteConfirmModal {
-		    z-index: 1060 !important;
-		}
-
-		#deleteConfirmModal .modal-dialog {
-		    z-index: 1061 !important;
-		}
-		.modal-backdrop {
-		    z-index: 1040 !important;
-		}
-
-		.modal {
-		    z-index: 1055 !important;
-		}
-
-		#deleteConfirmModal {
-		    z-index: 1060 !important;
-		}
-
-		#deleteConfirmModal .modal-dialog {
-		    z-index: 1061 !important;
-		}
-
-		#warningModal {
-		    z-index: 1070 !important;
-		}
-
-		#warningModal .modal-dialog {
-		    z-index: 1071 !important;
-		}
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal {
+            z-index: 1055 !important;
+        }
+        #deleteConfirmModal {
+            z-index: 1060 !important;
+        }
+        #deleteConfirmModal .modal-dialog {
+            z-index: 1061 !important;
+        }
+        #warningModal {
+            z-index: 1070 !important;
+        }
+        #warningModal .modal-dialog {
+            z-index: 1071 !important;
+        }
         .offcanvas-header, .modal-header {
             background: white;
             border-bottom: 1px solid #e2e8f0;
@@ -271,10 +252,10 @@
             align-items: center;
         }
         #statusModal {
-             z-index: 1080 !important;
+            z-index: 1080 !important;
         }
         #statusModal .modal-dialog {
-         z-index: 1081 !important;
+            z-index: 1081 !important;
         }
     </style>
 </head>
@@ -306,7 +287,7 @@
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">
                     <i class="fas fa-user-circle text-primary"></i>
-                         <span th:text="${username}">User</span>
+                    <span th:text="${username}">User</span>
                 </span>
                 <a href="/logout" class="btn btn-outline-danger">
                     <i class="fas fa-sign-out-alt"></i> Déconnexion
@@ -315,55 +296,24 @@
         </div>
     </nav>
 
-<div class="mb-4">
-    <div class="text-center text-md-start">
-        <h1 class="fw-bold text-dark mb-1">
-            <i class="fas fa-wrench text-primary me-2"></i> Gestion des Interventions
-        </h1>
-        <p class="text-muted mb-3">Suivez et gérez toutes vos interventions</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
-        <button class="btn btn-primary" onclick="openCreateOffcanvas()">
-            <i class="fas fa-plus me-1"></i> Nouvelle intervention
-        </button>
-        <button class="btn btn-outline-secondary" onclick="loadInterventions()">
-            <i class="fas fa-rotate me-1"></i> Refresh
-        </button>
-    </div>
-</div>
-<!-- Filtros - siempre visibles -->
-<div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
-    <div class="row g-3">
-        <div class="col-md-3">
-            <label class="form-label">Statut</label>
-            <select id="statusFilter" class="form-select">
-                <option value="">Tous</option>
-                <option value="PLANIFIEE">Planifiée</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="TERMINEE">Terminée</option>
-                <option value="ANNULEE">Annulée</option>
-            </select>
+    <div class="mb-4">
+        <div class="text-center text-md-start">
+            <h1 class="fw-bold text-dark mb-1">
+                <i class="fas fa-wrench text-primary me-2"></i> Gestion des Interventions
+            </h1>
+            <p class="text-muted mb-3">Suivez et gérez toutes vos interventions</p>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Type</label>
-            <select id="typeFilter" class="form-select">
-                <option value="">Tous</option>
-                <option value="CORRECTIVE">Corrective</option>
-                <option value="PREVENTIVE">Préventive</option>
-                <option value="PREDICTIVE">Prédictive</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Équipement</label>
-            <input type="text" id="equipementFilter" class="form-control" placeholder="Code ou description">
-        </div>
-        <div class="col-md-2 d-flex align-items-end gap-2">
-            <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
-            <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
+        <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
+            <button class="btn btn-primary" onclick="openCreateOffcanvas()">
+                <i class="fas fa-plus me-1"></i> Nouvelle intervention
+            </button>
+            <button class="btn btn-outline-secondary" onclick="loadInterventions()">
+                <i class="fas fa-rotate me-1"></i> Refresh
+            </button>
         </div>
     </div>
-</div>
 
+    <!-- STATS CARDS (arriba) -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
@@ -395,21 +345,55 @@
         </div>
     </div>
 
+    <!-- FILTRES (ahora debajo de las cards) -->
+    <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="PLANIFIEE">En préparation</option>
+                    <option value="EN_COURS">En cours</option>
+                    <option value="TERMINEE">Terminée</option>
+                    <option value="ANNULEE">Annulée</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select id="typeFilter" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="CORRECTIVE">Corrective</option>
+                    <option value="PREVENTIVE">Préventive</option>
+                    <option value="PREDICTIVE">Prédictive</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Équipement</label>
+                <input type="text" id="equipementFilter" class="form-control" placeholder="Code ou description">
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button class="btn btn-primary w-100" onclick="applyFilters()">Filtrer</button>
+                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLEAU -->
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead>
-                <tr>
-					<th>Code intervention</th>
-                    <th>Libellé</th>
-                    <th>Type</th>
-                    <th>Équipement</th>
-                    <th>Statut</th>
-                    <th>Date début</th>
-                    <th>Date fin</th>
-                    <th>Créé par</th>
-                    <th class="text-center">Actions</th>
-                </tr>
+                    <tr>
+                        <th>Code intervention</th>
+                        <th>Libellé</th>
+                        <th>Type</th>
+                        <th>Équipement</th>
+                        <th>Statut</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Créé par</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
                 </thead>
                 <tbody id="interventionsTableBody"></tbody>
             </table>
@@ -417,6 +401,7 @@
     </div>
 </div>
 
+<!-- Offcanvas Détail -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 500px;">
     <div class="offcanvas-header border-0 pb-0">
         <h5 class="offcanvas-title fw-bold">
@@ -427,24 +412,24 @@
     <div class="offcanvas-body pt-0" id="detailBodyCanvas"></div>
 </div>
 
+<!-- Offcanvas Formulaire -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 620px;">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouvelle intervention</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-      <form id="interventionFormCanvas" novalidate>
+        <form id="interventionFormCanvas" novalidate>
             <input type="hidden" id="interventionIdCanvas">
             <div class="row g-3">
-				<div class="col-md-6">
-				    <label class="form-label">Code intervention *</label>
-				    <input type="text" id="codeInterventionCanvas" class="form-control" maxlength="50">
-				</div>
-
-				<div class="col-12">
-				    <label class="form-label">Libellé *</label>
-				    <input type="text" id="libelleCanvas" class="form-control" maxlength="200">
-				</div>
+                <div class="col-md-6">
+                    <label class="form-label">Code intervention *</label>
+                    <input type="text" id="codeInterventionCanvas" class="form-control" maxlength="50">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Libellé *</label>
+                    <input type="text" id="libelleCanvas" class="form-control" maxlength="200">
+                </div>
                 <div class="col-md-6">
                     <label class="form-label">Type *</label>
                     <select id="typeCanvas" class="form-select" required>
@@ -454,11 +439,10 @@
                         <option value="PREDICTIVE">Prédictive</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="statutFieldContainer">
                     <label class="form-label">Statut *</label>
-                    <select id="statutCanvas" class="form-select" required>
-                        <option value="">Sélectionner</option>
-                        <option value="PLANIFIEE">Planifiée</option>
+                    <select id="statutCanvas" class="form-select" disabled>
+                        <option value="PLANIFIEE">En préparation</option>
                         <option value="EN_COURS">En cours</option>
                         <option value="TERMINEE">Terminée</option>
                         <option value="ANNULEE">Annulée</option>
@@ -470,7 +454,6 @@
                         <option value="">Sélectionner un équipement</option>
                     </select>
                 </div>
-                
                 <div class="col-md-6">
                     <label class="form-label">Date début *</label>
                     <input type="datetime-local" id="dateDebutCanvas" class="form-control" required>
@@ -487,59 +470,51 @@
                     <label class="form-label">Commentaire</label>
                     <textarea id="commentaireCanvas" class="form-control" rows="3" maxlength="500"></textarea>
                 </div>
-
-				<div class="col-12">
-				    <div class="section-title mt-2">
-				        <i class="fas fa-boxes me-2 text-primary"></i> PRs utilisées
-				    </div>
-
-				    <div class="card border-0 bg-light rounded-4 p-3">
-				        <div class="row g-2 align-items-end mb-3">
-				            <div class="col-md-7">
-				                <label class="form-label">PR</label>
-				                <select id="prsSelectCanvas" class="form-select">
-				                    <option value="">Sélectionner une PR</option>
-				                </select>
-				            </div>
-				            <div class="col-md-3">
-				                <label class="form-label">Quantité</label>
-				                <input type="number" id="prsQuantiteCanvas" class="form-control" min="0.001" step="0.001" value="1">
-				            </div>
-				            <div class="col-md-2">
-				                <button type="button" class="btn btn-outline-primary w-100" onclick="addPrsLine()">
-				                    <i class="fas fa-plus"></i>
-				                </button>
-				            </div>
-				        </div>
-
-				        <div class="table-responsive">
-				            <table class="table table-sm align-middle mb-0">
-				                <thead>
-				                    <tr>
-				                        <th>PR</th>
-				                        <th>Quantité</th>
-				                        <th style="width: 80px;">Action</th>
-				                    </tr>
-				                </thead>
-				                <tbody id="prsLinesBody">
-				                    <tr>
-				                        <td colspan="3" class="text-muted text-center">Aucune PR sélectionnée</td>
-				                    </tr>
-				                </tbody>
-				            </table>
-				        </div>
-				    </div>
-				</div>
-
-            <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
+                <div class="col-12">
+                    <div class="section-title mt-2">
+                        <i class="fas fa-boxes me-2 text-primary"></i> PRs utilisées
+                    </div>
+                    <div class="card border-0 bg-light rounded-4 p-3">
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label">PR</label>
+                                <select id="prsSelectCanvas" class="form-select">
+                                    <option value="">Sélectionner une PR</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Quantité</label>
+                                <input type="number" id="prsQuantiteCanvas" class="form-control" min="0.001" step="0.001" value="1">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="addPrsLine()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr><th>PR</th><th>Quantité</th><th style="width: 80px;">Action</th></tr>
+                                </thead>
+                                <tbody id="prsLinesBody">
+                                    <tr><td colspan="3" class="text-muted text-center">Aucune PR sélectionnée</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-3 d-none" id="formErrorCanvas"></div>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Annuler</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
+<!-- Modal Suppression -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -559,6 +534,7 @@
     </div>
 </div>
 
+<!-- Modal Changement statut -->
 <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -569,7 +545,7 @@
             <div class="modal-body p-4">
                 <p class="mb-3">Sélectionnez le nouveau statut :</p>
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary status-option-btn" data-status="PLANIFIEE"><i class="fas fa-calendar-day me-2"></i> Planifiée</button>
+                    <button class="btn btn-outline-primary status-option-btn" data-status="PLANIFIEE"><i class="fas fa-calendar-day me-2"></i> En préparation</button>
                     <button class="btn btn-outline-warning status-option-btn" data-status="EN_COURS"><i class="fas fa-play-circle me-2"></i> En cours</button>
                     <button class="btn btn-outline-success status-option-btn" data-status="TERMINEE"><i class="fas fa-check-circle me-2"></i> Terminée</button>
                     <button class="btn btn-outline-danger status-option-btn" data-status="ANNULEE"><i class="fas fa-ban me-2"></i> Annulée</button>
@@ -582,6 +558,7 @@
     </div>
 </div>
 
+<!-- Modal Warning -->
 <div class="modal fade" id="warningModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -597,7 +574,28 @@
     </div>
 </div>
 
+<!-- Modal pour saisir le motif d'annulation -->
+<div class="modal fade" id="annulationMotifModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-ban me-2"></i>Annulation de l'intervention</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Veuillez indiquer le motif de l'annulation :</p>
+                <textarea id="motifAnnulation" class="form-control" rows="4" maxlength="500" placeholder="Motif obligatoire..."></textarea>
+                <div class="invalid-feedback" id="motifAnnulationError">Le motif est obligatoire.</div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Retour</button>
+                <button type="button" class="btn btn-danger" id="confirmAnnulationBtn">Confirmer l'annulation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/JS/interventions.js?v=2"></script>
+<script src="/JS/interventions.js?v=3"></script>
 </body>
 </html>

@@ -8,22 +8,75 @@ const formOffcanvasEl = document.getElementById('formOffcanvas');
 const deleteModalEl = document.getElementById('deleteConfirmModal');
 const statusModalEl = document.getElementById('statusModal');
 const warningModalEl = document.getElementById('warningModal');
+const annulationMotifModalEl = document.getElementById('annulationMotifModal');
 
 const detailOffcanvas = detailOffcanvasEl ? new bootstrap.Offcanvas(detailOffcanvasEl) : null;
 const formOffcanvas = formOffcanvasEl ? new bootstrap.Offcanvas(formOffcanvasEl) : null;
 const deleteModal = deleteModalEl ? new bootstrap.Modal(deleteModalEl) : null;
 const statusModal = statusModalEl ? new bootstrap.Modal(statusModalEl) : null;
 const warningModal = warningModalEl ? new bootstrap.Modal(warningModalEl) : null;
+let annulationMotifModal = null;
+if (annulationMotifModalEl) annulationMotifModal = new bootstrap.Modal(annulationMotifModalEl);
 
 let pendingDeleteId = null;
 let pendingStatusId = null;
+let pendingNewStatus = null;
 let allInterventions = [];
 let usersMap = new Map();
-let equipmentsMap = new Map();   // <-- NUEVO: mapa id -> código
+let equipmentsMap = new Map();
 let prsCatalog = [];
 let currentPrsLines = [];
 
-// ======================== GENERAR CÓDIGO INTERVENCIÓN ========================
+// --- Rôle utilisateur (ADMIN ou non) ---
+let isAdmin = false;
+// Désactivez la ligne suivante si vous avez un endpoint /api/users/me fonctionnel
+// isAdmin = true;   // pour forcer le mode ADMIN en test
+
+// --- Support état ARCHIVÉE (si votre backend le gère, passer à true) ---
+const BACKEND_SUPPORTS_ARCHIVE = false;
+
+// ======================== OBTENIR LE RÔLE UTILISATEUR ========================
+async function loadCurrentUserRole() {
+    try {
+        const response = await fetch('/api/users/me');
+        if (response.ok) {
+            const user = await response.json();
+            isAdmin = user.role === 'ADMIN' || user.role === 'ROLE_ADMIN';
+        } else {
+            console.warn("Impossible d'obtenir le rôle, utilisateur standard supposé");
+        }
+    } catch (err) {
+        console.warn("Erreur récupération rôle:", err);
+    }
+}
+
+// ======================== RÈGLES DE TRANSITION ========================
+function getAllowedNextStatuses(currentStatus, isAdmin) {
+    const norm = normalizeInterventionStatus(currentStatus);
+    if (norm === 'ANNULEE') return [];
+    if (norm === 'PLANIFIEE') return ['EN_COURS'];
+    if (norm === 'EN_COURS') return ['TERMINEE', 'ANNULEE'];
+    if (norm === 'TERMINEE') {
+        let allowed = [];
+        if (BACKEND_SUPPORTS_ARCHIVE) allowed.push('ARCHIVEE');
+        if (isAdmin) allowed.push('EN_COURS');  // retour arrière autorisé seulement pour ADMIN
+        return allowed;
+    }
+    if (norm === 'ARCHIVEE') return [];
+    return [];
+}
+
+function normalizeInterventionStatus(status) {
+    const value = (status || '').trim().toUpperCase();
+    if (value === 'OPEN') return 'PLANIFIEE';
+    if (value === 'IN_PROGRESS') return 'EN_COURS';
+    if (value === 'CLOSED' || value === 'DONE' || value === 'COMPLETED') return 'TERMINEE';
+    if (value === 'CANCELED' || value === 'CANCELLED') return 'ANNULEE';
+    if (value === 'ARCHIVED' || value === 'ARCHIVEE') return 'ARCHIVEE';
+    return value;
+}
+
+// ======================== GÉNÉRATION CODE INTERVENTION ========================
 function generateNextInterventionCode() {
     if (!allInterventions.length) return 'INT-000000001';
     const numbers = allInterventions
@@ -40,15 +93,7 @@ function generateNextInterventionCode() {
     return `INT-${padded}`;
 }
 
-function normalizeInterventionStatus(status) {
-    const value = (status || '').trim().toUpperCase();
-    if (value === 'OPEN') return 'PLANIFIEE';
-    if (value === 'IN_PROGRESS') return 'EN_COURS';
-    if (value === 'CLOSED' || value === 'DONE' || value === 'COMPLETED') return 'TERMINEE';
-    if (value === 'CANCELED' || value === 'CANCELLED') return 'ANNULEE';
-    return value;
-}
-
+// ======================== UTILITAIRES ========================
 function truncateText(text, maxLen) {
     if (!text) return '—';
     if (text.length <= maxLen) return text;
@@ -94,7 +139,7 @@ async function fetchJson(url, options = {}) {
     }
 }
 
-// ======================== NUEVA FUNCIÓN: cargar mapa de códigos de equipos ========================
+// ======================== CHARGEMENT DES DONNÉES ========================
 async function loadEquipmentsMap() {
     try {
         const data = await fetchJson(EQUIP_API);
@@ -186,7 +231,7 @@ function validateFieldLengths() {
 function setupRealtimeValidation() {
     const requiredFields = [
         'codeInterventionCanvas', 'libelleCanvas', 'typeCanvas',
-        'statutCanvas', 'equipementIdCanvas', 'dateDebutCanvas'
+        'equipementIdCanvas', 'dateDebutCanvas'
     ];
     requiredFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
@@ -208,7 +253,7 @@ function setupRealtimeValidation() {
 function applyRequiredErrorOnEmpty() {
     const requiredFields = [
         'codeInterventionCanvas', 'libelleCanvas', 'typeCanvas',
-        'statutCanvas', 'equipementIdCanvas', 'dateDebutCanvas'
+        'equipementIdCanvas', 'dateDebutCanvas'
     ];
     requiredFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
@@ -222,6 +267,7 @@ function applyRequiredErrorOnEmpty() {
     });
 }
 
+// ======================== STATISTIQUES ET TABLEAU ========================
 async function refreshPage() {
     try {
         await loadStats();
@@ -311,7 +357,6 @@ function resetFilters() {
     renderTable(allInterventions);
 }
 
-// ======================== RENDER TABLE MODIFICADO ========================
 function renderTable(data) {
     const tbody = document.getElementById('interventionsTableBody');
     if (!tbody) return;
@@ -323,7 +368,6 @@ function renderTable(data) {
         const codeIntervention = escapeHtml(i.codeIntervention || '—');
         const libelleFull = escapeHtml(i.libele || '');
         const libelleTrunc = truncateText(libelleFull, 80);
-        // 🔹 Obtener el código del equipo desde el mapa, si no existe mostrar la descripción
         const equipCode = equipmentsMap.get(Number(i.equipementId));
         const equipDisplay = equipCode ? equipCode : (i.equipementDescription || `Équipement #${i.equipementId}`);
         const equipFull = escapeHtml(equipDisplay);
@@ -355,16 +399,15 @@ function renderTable(data) {
 function renderStatusBadge(status) {
     const normalized = normalizeInterventionStatus(status);
     let cls = 'status-badge ';
-    if (normalized === 'PLANIFIEE') cls += 'status-PLANIFIEE';
-    else if (normalized === 'EN_COURS') cls += 'status-EN_COURS';
-    else if (normalized === 'TERMINEE') cls += 'status-TERMINEE';
-    else if (normalized === 'ANNULEE') cls += 'status-ANNULEE';
-    else cls += 'status-PLANIFIEE';
-    let label = normalized === 'PLANIFIEE' ? 'Planifiée'
-        : normalized === 'EN_COURS' ? 'En cours'
-        : normalized === 'TERMINEE' ? 'Terminée'
-        : normalized === 'ANNULEE' ? 'Annulée'
-        : escapeHtml(status);
+    let label = '';
+    switch (normalized) {
+        case 'PLANIFIEE': cls += 'status-PLANIFIEE'; label = 'En préparation'; break;
+        case 'EN_COURS': cls += 'status-EN_COURS'; label = 'En cours'; break;
+        case 'TERMINEE': cls += 'status-TERMINEE'; label = 'Terminée'; break;
+        case 'ANNULEE': cls += 'status-ANNULEE'; label = 'Annulée'; break;
+        case 'ARCHIVEE': cls += 'status-ARCHIVEE'; label = 'Archivée'; break;
+        default: cls += 'status-PLANIFIEE'; label = escapeHtml(status);
+    }
     return `<span class="${cls}">${label}</span>`;
 }
 
@@ -382,6 +425,7 @@ function renderTypeBadge(type) {
     return `<span class="${cls}">${label}</span>`;
 }
 
+// ======================== GESTION DES LIGNES DE PR ========================
 function renderPrsLines() {
     const tbody = document.getElementById('prsLinesBody');
     if (!tbody) return;
@@ -424,15 +468,60 @@ function removePrsLine(prsId) {
     renderPrsLines();
 }
 
+// ======================== DÉTAIL D'UNE INTERVENTION (avec affichage du motif d'annulation) ========================
 async function showDetailCanvas(id) {
     try {
         const i = await fetchJson(`${API_URL}/${id}/detail`);
+        console.log("Détail reçu :", i);  // Pour déboguer
+
         const creatorName = usersMap.get(Number(i.createdById)) || ('User #' + i.createdById);
         const equipCode = equipmentsMap.get(Number(i.equipementId)) || i.equipementDescription || (`Équipement #${i.equipementId}`);
+
         const prsHtml = Array.isArray(i.prsItems) && i.prsItems.length
             ? `<div class="section-title"><i class="fas fa-boxes me-2 text-primary"></i> PRs consommées</div>
                <div class="detail-card"><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>PR</th><th>Quantité</th></tr></thead><tbody>${i.prsItems.map(p => `<tr><td>${escapeHtml(p.prsLibelle)}</td><td>${p.quantite}</td></tr>`).join('')}</tbody></table></div></div>`
             : '';
+
+        // Extraction du motif d'annulation depuis le commentaire
+        let motifAnnulation = null;
+        if (i.commentaire) {
+            const match = i.commentaire.match(/\[ANNULATION\]\s*(.*?)(\n|$)/);
+            if (match) motifAnnulation = match[1];
+        }
+
+        let annulationHtml = '';
+        if (normalizeInterventionStatus(i.statut) === 'ANNULEE') {
+            if (motifAnnulation) {
+                annulationHtml = `
+                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div>
+                    <div class="detail-card bg-light border-start border-4 border-danger">
+                        <div class="detail-value">${escapeHtml(motifAnnulation)}</div>
+                    </div>
+                `;
+            } else if (i.commentaire) {
+                // Si aucun tag spécifique, on montre tout le commentaire comme motif
+                annulationHtml = `
+                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation (dans commentaire)</div>
+                    <div class="detail-card bg-light border-start border-4 border-danger">
+                        <div class="detail-value">${escapeHtml(i.commentaire)}</div>
+                    </div>
+                `;
+            } else {
+                annulationHtml = `
+                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div>
+                    <div class="detail-card bg-light border-start border-4 border-danger">
+                        <div class="detail-value text-muted">Aucun motif fourni</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Commentaire normal sans la ligne d'annulation
+        let commentaireNormal = i.commentaire || '';
+        if (commentaireNormal && commentaireNormal.includes('[ANNULATION]')) {
+            commentaireNormal = commentaireNormal.replace(/\[ANNULATION\][^\n]*\n?/, '').trim();
+        }
+
         const html = `
             <div class="detail-header"><div class="detail-icon"><i class="fas fa-clipboard-list fa-2x" style="color: var(--primary);"></i></div><h4 class="fw-bold mb-1">${escapeHtml(i.libele)}</h4></div>
             <div class="section-title"><i class="fas fa-info-circle me-2 text-primary"></i> Informations générales</div>
@@ -450,7 +539,8 @@ async function showDetailCanvas(id) {
                 <div class="col-6"><div class="detail-card"><div class="detail-label">Date fin</div><div class="detail-value">${i.dateFin ? formatDate(i.dateFin) : '—'}</div></div></div>
             </div>
             ${prsHtml}
-            ${i.commentaire ? `<div class="section-title"><i class="fas fa-comment-dots me-2 text-primary"></i> Commentaire</div><div class="detail-card mb-3"><div class="detail-value">${escapeHtml(i.commentaire)}</div></div>` : ''}
+            ${annulationHtml}
+            ${commentaireNormal ? `<div class="section-title"><i class="fas fa-comment-dots me-2 text-primary"></i> Commentaire</div><div class="detail-card mb-3"><div class="detail-value">${escapeHtml(commentaireNormal)}</div></div>` : ''}
             <hr class="my-3"><div class="text-end text-muted small"><i class="fas fa-hashtag me-1"></i> ID interne : ${i.id}</div>
         `;
         document.getElementById('detailBodyCanvas').innerHTML = html;
@@ -460,12 +550,16 @@ async function showDetailCanvas(id) {
     }
 }
 
+// ======================== CRÉATION D'UNE INTERVENTION ========================
 async function openCreateOffcanvas(preselectedEquipementId = null) {
     const formLabel = document.getElementById('formOffcanvasLabel');
     const form = document.getElementById('interventionFormCanvas');
     const interventionId = document.getElementById('interventionIdCanvas');
     const formError = document.getElementById('formErrorCanvas');
     const prsQty = document.getElementById('prsQuantiteCanvas');
+    const statutContainer = document.getElementById('statutFieldContainer');
+    const statutSelect = document.getElementById('statutCanvas');
+    
     if (formLabel) formLabel.innerText = 'Nouvelle intervention';
     if (form) form.reset();
     if (interventionId) interventionId.value = '';
@@ -485,13 +579,25 @@ async function openCreateOffcanvas(preselectedEquipementId = null) {
         codeInput.readOnly = true;
         codeInput.style.backgroundColor = '#e9ecef';
     }
+    
+    if (statutSelect) {
+        statutSelect.value = 'PLANIFIEE';
+        statutSelect.disabled = true;
+    }
+    if (statutContainer) statutContainer.style.display = 'block';
+    
     applyRequiredErrorOnEmpty();
     if (formOffcanvas) formOffcanvas.show();
 }
 
+// ======================== ÉDITION D'UNE INTERVENTION ========================
+let originalStatusForEdit = null;
+
 async function openEditCanvas(id) {
     try {
         const i = await fetchJson(`${API_URL}/${id}/detail`);
+        originalStatusForEdit = normalizeInterventionStatus(i.statut);
+        
         document.getElementById('formOffcanvasLabel').innerText = 'Éditer intervention';
         document.getElementById('interventionIdCanvas').value = i.id ?? '';
         const codeInput = document.getElementById('codeInterventionCanvas');
@@ -502,7 +608,6 @@ async function openEditCanvas(id) {
         }
         document.getElementById('libelleCanvas').value = i.libele ?? '';
         document.getElementById('typeCanvas').value = i.type ?? '';
-        document.getElementById('statutCanvas').value = normalizeInterventionStatus(i.statut);
         await loadEquipmentsSelect(i.equipementId);
         await loadPrsSelect();
         currentPrsLines = Array.isArray(i.prsItems) ? i.prsItems.map(p => ({ prsId: p.prsId, prsLibelle: p.prsLibelle, quantite: Number(p.quantite) })) : [];
@@ -513,6 +618,10 @@ async function openEditCanvas(id) {
         document.getElementById('commentaireCanvas').value = i.commentaire ?? '';
         document.getElementById('prsQuantiteCanvas').value = '1';
         document.getElementById('formErrorCanvas').classList.add('d-none');
+        
+        const statutContainer = document.getElementById('statutFieldContainer');
+        if (statutContainer) statutContainer.style.display = 'none';
+        
         applyRequiredErrorOnEmpty();
         if (formOffcanvas) formOffcanvas.show();
     } catch (err) {
@@ -521,15 +630,14 @@ async function openEditCanvas(id) {
 }
 
 async function saveInterventionCanvas() {
-    console.log("saveInterventionCanvas appelée");
     const id = document.getElementById('interventionIdCanvas')?.value || '';
     const isUpdate = !!id;
     if (!addPendingPrsLineBeforeSave()) return;
-    const payload = {
+    
+    let payload = {
         codeIntervention: getVal('codeInterventionCanvas'),
         libele: getVal('libelleCanvas'),
         type: getVal('typeCanvas'),
-        statut: normalizeInterventionStatus(getVal('statutCanvas')),
         equipementId: getNumberVal('equipementIdCanvas'),
         dateDebut: toIsoDateTime(getVal('dateDebutCanvas')),
         dateFin: toIsoDateTime(getVal('dateFinCanvas')),
@@ -537,13 +645,19 @@ async function saveInterventionCanvas() {
         preventifId: getNumberVal('preventifIdCanvas'),
         prsItems: currentPrsLines.map(line => ({ prsId: Number(line.prsId), quantite: Number(line.quantite) }))
     };
+    
+    if (!isUpdate) {
+        payload.statut = 'PLANIFIEE';
+    } else {
+        payload.statut = originalStatusForEdit;
+    }
+    
     try {
         const url = isUpdate ? `${API_URL}/${id}` : API_URL;
         const method = isUpdate ? 'PUT' : 'POST';
         await fetchJson(url, { method, body: JSON.stringify(payload) });
         if (formOffcanvas) formOffcanvas.hide();
         await refreshPage();
-        // Recargar el mapa de equipos por si algún código ha cambiado (opcional)
         await loadEquipmentsMap();
         renderTable(allInterventions);
     } catch (err) {
@@ -554,51 +668,6 @@ async function saveInterventionCanvas() {
         } else {
             showWarning(err.message);
         }
-    }
-}
-
-function cleanupModalState() {
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-}
-
-function openModalSafely(modalId) {
-    const modalElement = document.getElementById(modalId);
-    if (!modalElement) return;
-    document.body.appendChild(modalElement);
-    cleanupModalState();
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement, { backdrop: true, keyboard: true, focus: true });
-    modal.show();
-}
-
-async function confirmDelete(id) {
-    try {
-        const check = await fetchJson(`${API_URL}/${id}/delete-check`);
-        if (!check.canDelete) {
-            showWarning(check.message || "Impossible de supprimer cette intervention.");
-            return;
-        }
-        pendingDeleteId = id;
-        openModalSafely('deleteConfirmModal');
-    } catch (err) {
-        showWarning(err.message || "Erreur lors de la vérification avant suppression.");
-    }
-}
-
-async function executeDelete(id) {
-    try {
-        await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
-        const modalElement = document.getElementById('deleteConfirmModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) modal.hide();
-        cleanupModalState();
-        pendingDeleteId = null;
-        await refreshPage();
-    } catch (err) {
-        cleanupModalState();
-        showWarning(err.message || "Suppression impossible.");
     }
 }
 
@@ -630,19 +699,179 @@ function addPendingPrsLineBeforeSave() {
     return true;
 }
 
-function openStatusModal(id) {
-    pendingStatusId = id;
-    openModalSafely('statusModal');
+// ======================== SUPPRESSION (seulement EN PRÉPARATION) ========================
+async function confirmDelete(id) {
+    try {
+        const intervention = await fetchJson(`${API_URL}/${id}/detail`);
+        const currentStatus = normalizeInterventionStatus(intervention.statut);
+        if (currentStatus !== 'PLANIFIEE') {
+            showWarning("La suppression d’une intervention n’est possible qu’à l’état « EN PRÉPARATION ».");
+            return;
+        }
+        const check = await fetchJson(`${API_URL}/${id}/delete-check`);
+        if (!check.canDelete) {
+            showWarning(check.message || "Impossible de supprimer cette intervention.");
+            return;
+        }
+        pendingDeleteId = id;
+        openModalSafely('deleteConfirmModal');
+    } catch (err) {
+        showWarning(err.message || "Erreur lors de la vérification avant suppression.");
+    }
 }
 
-async function changeStatus(id, newStatus) {
+async function executeDelete(id) {
     try {
+        await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
+        const modalElement = document.getElementById('deleteConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
+        cleanupModalState();
+        pendingDeleteId = null;
+        await refreshPage();
+    } catch (err) {
+        cleanupModalState();
+        showWarning(err.message || "Suppression impossible.");
+    }
+}
+
+// ======================== CHANGEMENT DE STATUT AVEC MOTIF OBLIGATOIRE POUR ANNULATION ========================
+async function openStatusModal(id) {
+    try {
+        const intervention = await fetchJson(`${API_URL}/${id}/detail`);
+        const currentStatus = normalizeInterventionStatus(intervention.statut);
+        const allowedStatuses = getAllowedNextStatuses(currentStatus, isAdmin);
+        
+        if (allowedStatuses.length === 0) {
+            showWarning("Aucun changement de statut possible pour cette intervention.");
+            return;
+        }
+        
+        const allBtns = document.querySelectorAll('.status-option-btn');
+        allBtns.forEach(btn => btn.style.display = 'none');
+        
+        allowedStatuses.forEach(status => {
+            const btn = document.querySelector(`.status-option-btn[data-status="${status}"]`);
+            if (btn) btn.style.display = 'block';
+        });
+        
+        if (allowedStatuses.includes('ARCHIVEE') && !document.querySelector('.status-option-btn[data-status="ARCHIVEE"]')) {
+            const container = document.querySelector('#statusModal .d-grid');
+            if (container) {
+                const newBtn = document.createElement('button');
+                newBtn.className = 'btn btn-outline-secondary status-option-btn';
+                newBtn.setAttribute('data-status', 'ARCHIVEE');
+                newBtn.innerHTML = '<i class="fas fa-archive me-2"></i> Archivée';
+                container.appendChild(newBtn);
+                newBtn.addEventListener('click', async () => {
+                    if (pendingStatusId) await changeStatus(pendingStatusId, 'ARCHIVEE', null);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
+                    if (modal) modal.hide();
+                    cleanupModalState();
+                    pendingStatusId = null;
+                });
+            }
+        }
+        
+        pendingStatusId = id;
+        openModalSafely('statusModal');
+    } catch (err) {
+        showWarning(err.message);
+    }
+}
+
+async function onStatusSelected(id, newStatus) {
+    if (newStatus === 'ANNULEE') {
+        pendingStatusId = id;
+        pendingNewStatus = newStatus;
+        const motifTextarea = document.getElementById('motifAnnulation');
+        if (motifTextarea) {
+            motifTextarea.value = '';
+            motifTextarea.classList.remove('is-invalid');
+        }
+        const errorDiv = document.getElementById('motifAnnulationError');
+        if (errorDiv) errorDiv.style.display = 'none';
+        
+        const statusModalElLocal = document.getElementById('statusModal');
+        const statusModalInstance = bootstrap.Modal.getInstance(statusModalElLocal);
+        if (statusModalInstance) statusModalInstance.hide();
+        cleanupModalState();
+        
+        if (annulationMotifModal) annulationMotifModal.show();
+    } else {
+        await changeStatus(id, newStatus, null);
+        const modalElement = document.getElementById('statusModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
+        cleanupModalState();
+        pendingStatusId = null;
+    }
+}
+
+async function changeStatus(id, newStatus, motif) {
+    try {
+        // 1. Obtener la intervención actual
+        const intervention = await fetchJson(`${API_URL}/${id}/detail`);
+        const currentStatus = normalizeInterventionStatus(intervention.statut);
+        const allowed = getAllowedNextStatuses(currentStatus, isAdmin);
+        if (!allowed.includes(newStatus)) {
+            showWarning("Changement de statut non autorisé selon les règles.");
+            return;
+        }
+        
         const normalizedStatus = normalizeInterventionStatus(newStatus);
+        
+        // 2. Cambiar el estado (sin body, solo query param)
         await fetchJson(`${API_URL}/${id}/status?statut=${encodeURIComponent(normalizedStatus)}`, { method: 'PATCH' });
+        
+        // 3. Si hay motivo, actualizar el comentario mediante PUT
+        if (motif) {
+            // Volver a obtener la intervención actualizada (por si cambió algo)
+            const updated = await fetchJson(`${API_URL}/${id}/detail`);
+            const motifLine = `[ANNULATION] ${motif}`;
+            let newCommentaire = updated.commentaire || '';
+            // Evitar duplicados
+            if (!newCommentaire.includes(motifLine)) {
+                newCommentaire = motifLine + '\n' + newCommentaire;
+            }
+            // Preparar payload completo (todos los campos obligatorios)
+            const payload = {
+                codeIntervention: updated.codeIntervention,
+                libele: updated.libele,
+                type: updated.type,
+                statut: normalizedStatus,   // el nuevo estado
+                equipementId: updated.equipementId,
+                dateDebut: updated.dateDebut,
+                dateFin: updated.dateFin,
+                commentaire: newCommentaire,
+                preventifId: updated.preventifId,
+                prsItems: updated.prsItems || []
+            };
+            // Enviar PUT para actualizar todo (incluyendo comentario)
+            await fetchJson(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        }
+        
         await refreshPage();
     } catch (err) {
         showWarning(err.message);
     }
+}
+
+// ======================== FONCTIONS UTILITAIRES ========================
+function cleanupModalState() {
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+}
+
+function openModalSafely(modalId) {
+    const modalElement = document.getElementById(modalId);
+    if (!modalElement) return;
+    document.body.appendChild(modalElement);
+    cleanupModalState();
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement, { backdrop: true, keyboard: true, focus: true });
+    modal.show();
 }
 
 function getVal(id) {
@@ -677,11 +906,12 @@ function escapeHtml(str) {
         .replaceAll("'", '&#039;');
 }
 
-// ======================== INIT ========================
+// ======================== INITIALISATION ========================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("interventions.js chargé");
+    await loadCurrentUserRole();
     await loadUsersSelect();
-    await loadEquipmentsMap();      // <-- Cargar mapa de códigos
+    await loadEquipmentsMap();
     await loadEquipmentsSelect();
     await loadPrsSelect();
     renderPrsLines();
@@ -707,36 +937,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const interventionForm = document.getElementById('interventionFormCanvas');
-    if (!interventionForm) {
-        console.error("Formulaire intervention introuvable: interventionFormCanvas");
-        return;
+    if (interventionForm) {
+        interventionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const codeInterventionField = document.getElementById('codeInterventionCanvas');
+            const libelleField = document.getElementById('libelleCanvas');
+            const typeField = document.getElementById('typeCanvas');
+            const equipementField = document.getElementById('equipementIdCanvas');
+            const dateDebutField = document.getElementById('dateDebutCanvas');
+            if (!codeInterventionField || !libelleField || !typeField || !equipementField || !dateDebutField) {
+                showWarning("Erreur technique : un champ obligatoire est manquant dans le formulaire.");
+                return;
+            }
+            const codeIntervention = codeInterventionField.value.trim();
+            const libelle = libelleField.value.trim();
+            const type = typeField.value;
+            const equipementId = equipementField.value;
+            const dateDebut = dateDebutField.value;
+            if (!codeIntervention || !libelle || !type || !equipementId || !dateDebut) {
+                showWarning("Veuillez remplir tous les champs obligatoires : Code intervention, Libellé, Type, Équipement, Date début.");
+                applyRequiredErrorOnEmpty();
+                return;
+            }
+            if (!validateFieldLengths()) return;
+            await saveInterventionCanvas();
+        });
     }
-    interventionForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const codeInterventionField = document.getElementById('codeInterventionCanvas');
-        const libelleField = document.getElementById('libelleCanvas');
-        const typeField = document.getElementById('typeCanvas');
-        const statutField = document.getElementById('statutCanvas');
-        const equipementField = document.getElementById('equipementIdCanvas');
-        const dateDebutField = document.getElementById('dateDebutCanvas');
-        if (!codeInterventionField || !libelleField || !typeField || !statutField || !equipementField || !dateDebutField) {
-            showWarning("Erreur technique : un champ obligatoire est manquant dans le formulaire.");
-            return;
-        }
-        const codeIntervention = codeInterventionField.value.trim();
-        const libelle = libelleField.value.trim();
-        const type = typeField.value;
-        const statut = statutField.value;
-        const equipementId = equipementField.value;
-        const dateDebut = dateDebutField.value;
-        if (!codeIntervention || !libelle || !type || !statut || !equipementId || !dateDebut) {
-            showWarning("Veuillez remplir tous les champs obligatoires : Code intervention, Libellé, Type, Statut, Équipement, Date début.");
-            applyRequiredErrorOnEmpty();
-            return;
-        }
-        if (!validateFieldLengths()) return;
-        await saveInterventionCanvas();
-    });
 
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     if (confirmDeleteBtn) {
@@ -753,24 +979,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', async () => {
             const newStatus = btn.getAttribute('data-status');
             if (pendingStatusId && newStatus) {
-                await changeStatus(pendingStatusId, newStatus);
-                const modalElement = document.getElementById('statusModal');
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) modal.hide();
-                cleanupModalState();
-                pendingStatusId = null;
+                if (newStatus === 'ANNULEE') {
+                    await onStatusSelected(pendingStatusId, newStatus);
+                } else {
+                    await changeStatus(pendingStatusId, newStatus, null);
+                    const modalElement = document.getElementById('statusModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                    cleanupModalState();
+                    pendingStatusId = null;
+                }
             }
         });
     });
 
+    const confirmAnnulationBtn = document.getElementById('confirmAnnulationBtn');
+    if (confirmAnnulationBtn) {
+        confirmAnnulationBtn.addEventListener('click', async () => {
+            const motifTextarea = document.getElementById('motifAnnulation');
+            const motif = motifTextarea ? motifTextarea.value.trim() : '';
+            if (!motif) {
+                if (motifTextarea) motifTextarea.classList.add('is-invalid');
+                const errorDiv = document.getElementById('motifAnnulationError');
+                if (errorDiv) errorDiv.style.display = 'block';
+                return;
+            }
+            if (pendingStatusId && pendingNewStatus === 'ANNULEE') {
+                await changeStatus(pendingStatusId, 'ANNULEE', motif);
+                if (annulationMotifModal) annulationMotifModal.hide();
+                cleanupModalState();
+                pendingStatusId = null;
+                pendingNewStatus = null;
+            }
+        });
+    }
+
     const interventionIdFromUrl = urlParams.get('interventionId');
     if (interventionIdFromUrl) {
-        showDetailCanvas(interventionIdFromUrl); 
+        showDetailCanvas(interventionIdFromUrl);
     }
 
     setupRealtimeValidation();
 });
 
+// Ajustement responsive du sidebar
 if (window.innerWidth <= 768) {
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
