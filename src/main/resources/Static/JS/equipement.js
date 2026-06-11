@@ -345,7 +345,16 @@ function resetFilters() {
 function renderTable(data) {
     const tbody = document.getElementById('equipementsTableBody');
     if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><i class="fas fa-tools fa-3x mb-3"></i><h5>Aucun équipement</h5></td></tr>`;
+tbody.innerHTML = `
+<tr>
+    <td colspan="5" class="empty-state text-center">
+        <i class="fas fa-tools fa-3x mb-3"></i>
+        <h5>Aucun équipement</h5>
+        <p class="text-muted mb-0">
+            Commencez par créer un nouveau équipement
+        </p>
+    </td>
+</tr>`;
         return;
     }
     tbody.innerHTML = data.map(e => {
@@ -475,7 +484,7 @@ function formatFileSize(bytes) {
 
 // ======================== CREACIÓN Y EDICIÓN ========================
 async function openCreateOffcanvas() {
-    document.getElementById('formOffcanvasLabel').innerText = 'Nouvel équipement';
+    document.getElementById('formOffcanvasLabel').innerText = 'Nouveau équipement';
     document.getElementById('equipementFormCanvas').reset();
     document.getElementById('equipementIdCanvas').value = '';
     document.getElementById('formErrorCanvas').classList.add('d-none');
@@ -732,7 +741,7 @@ async function saveEquipementCanvas() {
             }
             const newEquip = await response.json();
             nuevoId = newEquip.id || newEquip.equipementId;
-            if (!nuevoId) throw new Error("ID du nouvel équipement non reçu");
+            if (!nuevoId) throw new Error("ID du nouveau équipement non reçu");
             
             // Subir documentos pendientes
             if (pendingFilesForNewEquipment.length > 0) {
