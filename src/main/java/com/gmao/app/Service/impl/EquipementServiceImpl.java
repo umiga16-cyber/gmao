@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.gmao.app.Model.Equipement;
-
+import com.gmao.app.Repository.DocumentoEquipoRepository;
 import com.gmao.app.Repository.EquipementRepository;
 import com.gmao.app.Service.EquipementService;
 import com.gmao.app.dto.EquipementCreateRequest;
@@ -21,17 +21,20 @@ import com.gmao.app.dto.EquipementTreeResponse;
 import com.gmao.app.dto.EquipementUpdateRequest;
 import com.gmao.app.mapper.EquipementMapper;
 
+
 @Service
 @Transactional
 public class EquipementServiceImpl implements EquipementService {
 
 	private final EquipementRepository equipementRepository;
 	private final EquipementMapper equipementMapper;
+	private final DocumentoEquipoRepository documentoRepository;
 
 
-	public EquipementServiceImpl(EquipementRepository equipementRepository, EquipementMapper equipementMapper) {
+	public EquipementServiceImpl(EquipementRepository equipementRepository, EquipementMapper equipementMapper, DocumentoEquipoRepository documentoRepository) {
 		this.equipementRepository = equipementRepository;
 		this.equipementMapper = equipementMapper;
+		this.documentoRepository = documentoRepository;
 	}
 
 	private void validateInstallationDates(java.time.LocalDate dateInstallation,
@@ -143,17 +146,27 @@ private String generateNextCode() {
     return String.format("EQ-%09d", next);
 }
 
-	@Override
-	public void delete(Long id) {
-		Equipement equipement = getEquipementOrThrow(id);
+@Override
+@Transactional
+public void delete(Long id) {
+    Equipement equipement = getEquipementOrThrow(id);
 
-		if (!canBeDeleted(id)) {
-			throw new IllegalStateException(
-					"Impossible de supprimer cet équipement car il possède des enfants, des interventions ou des préventifs.");
-		}
+    // Verificar restricciones (excepto documentos, que se borrarán)
+    boolean hasChildren = equipement.getChildren() != null && !equipement.getChildren().isEmpty();
+    boolean hasInterventions = equipement.getInterventions() != null && !equipement.getInterventions().isEmpty();
+    boolean hasPreventifs = equipement.getPreventifs() != null && !equipement.getPreventifs().isEmpty();
 
-		equipementRepository.delete(equipement);
-	}
+    if (hasChildren || hasInterventions || hasPreventifs) {
+        throw new IllegalStateException(
+                "Impossible de supprimer cet équipement car il possède des enfants, des interventions ou des préventifs.");
+    }
+
+    // 1. Eliminar documentos asociados (si existen)
+    documentoRepository.deleteByEquipementId(id);
+
+    // 2. Eliminar el equipo
+    equipementRepository.delete(equipement);
+}
 
 	@Override
 	public void archive(Long id) {
@@ -280,17 +293,16 @@ private String generateNextCode() {
 		return equipementRepository.existsByCode(code.trim());
 	}
 
-	@Override
-	@Transactional(readOnly = true)
-	public boolean canBeDeleted(Long id) {
-		Equipement equipement = getEquipementOrThrow(id);
-
-		boolean hasChildren = equipement.getChildren() != null && !equipement.getChildren().isEmpty();
-		boolean hasInterventions = equipement.getInterventions() != null && !equipement.getInterventions().isEmpty();
-		boolean hasPreventifs = equipement.getPreventifs() != null && !equipement.getPreventifs().isEmpty();
-
-		return !hasChildren && !hasInterventions && !hasPreventifs;
-	}
+@Override
+@Transactional(readOnly = true)
+public boolean canBeDeleted(Long id) {
+    Equipement equipement = getEquipementOrThrow(id);
+    boolean hasChildren = equipement.getChildren() != null && !equipement.getChildren().isEmpty();
+    boolean hasInterventions = equipement.getInterventions() != null && !equipement.getInterventions().isEmpty();
+    boolean hasPreventifs = equipement.getPreventifs() != null && !equipement.getPreventifs().isEmpty();
+    // Los documentos se eliminan automáticamente, así que no bloquean
+    return !hasChildren && !hasInterventions && !hasPreventifs;
+}
 
 	private Equipement getEquipementOrThrow(Long id) {
 		return equipementRepository.findById(id)

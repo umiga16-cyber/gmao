@@ -442,15 +442,8 @@ function updateToolbarState() {
     });
     if (hasSelection) {
         const eq = allEquipements.find(e => e.id === selectedEquipmentId);
-        const archiveBtn = document.getElementById('btnArchive');
-        if (eq && eq.statut === 'ARCHIVED') {
-            archiveBtn.innerHTML = '<i class="fas fa-box-open me-1"></i> Désarchiver';
-        } else {
-            archiveBtn.innerHTML = '<i class="fas fa-box-archive me-1"></i> Archiver';
-        }
     } else {
         const archiveBtn = document.getElementById('btnArchive');
-        if (archiveBtn) archiveBtn.innerHTML = '<i class="fas fa-box-archive me-1"></i> Archiver';
     }
 }
 
