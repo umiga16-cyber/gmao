@@ -29,11 +29,10 @@ let currentPrsLines = [];
 
 // --- Rôle utilisateur (ADMIN ou non) ---
 let isAdmin = false;
-// Désactivez la ligne suivante si vous avez un endpoint /api/users/me fonctionnel
-// isAdmin = true;   // pour forcer le mode ADMIN en test
-
-// --- Support état ARCHIVÉE (si votre backend le gère, passer à true) ---
 const BACKEND_SUPPORTS_ARCHIVE = false;
+
+// --- Sélection unique ---
+let selectedInterventionId = null;
 
 // ======================== OBTENIR LE RÔLE UTILISATEUR ========================
 async function loadCurrentUserRole() {
@@ -357,53 +356,7 @@ function resetFilters() {
     renderTable(allInterventions);
 }
 
-function renderTable(data) {
-    const tbody = document.getElementById('interventionsTableBody');
-    if (!tbody) return;
-    if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="empty-state text-center" style="vertical-align: middle;">
-                    <i class="fas fa-wrench fa-3x mb-3 d-block"></i>
-                    <h5>Aucune intervention</h5>
-                    <p class="text-muted mb-0">Commencez par créer une nouvelle intervention</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    tbody.innerHTML = data.map(i => {
-        const codeIntervention = escapeHtml(i.codeIntervention || '—');
-        const libelleFull = escapeHtml(i.libele || '');
-        const libelleTrunc = truncateText(libelleFull, 80);
-        const equipCode = equipmentsMap.get(Number(i.equipementId));
-        const equipDisplay = equipCode ? equipCode : (i.equipementDescription || `Équipement #${i.equipementId}`);
-        const equipFull = escapeHtml(equipDisplay);
-        const equipTrunc = truncateText(equipFull, 30);
-        const creatorName = usersMap.get(Number(i.createdById)) || ('User #' + i.createdById);
-        return `
-            <tr>
-                <td title="${codeIntervention}">${codeIntervention}</td>
-                <td title="${libelleFull}">${libelleTrunc}</td>
-                <td>${renderTypeBadge(i.type)}</td>
-                <td title="${equipFull}">${equipTrunc}</td>
-                <td>${renderStatusBadge(i.statut)}</td>
-                <td style="white-space: nowrap;">${formatDate(i.dateDebut)}</td>
-                <td style="white-space: nowrap;">${i.dateFin ? formatDate(i.dateFin) : '—'}</td>
-                <td>${escapeHtml(creatorName)}</td>
-                <td class="text-center action-buttons">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${i.id})" title="Détail"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${i.id})" title="Éditer"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-info btn-action" onclick="openStatusModal(${i.id})" title="Changer statut"><i class="fas fa-repeat"></i></button>
-                        <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${i.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
+// ======================== RENDU TABLEAU AVEC SÉLECTION UNIQUE ========================
 function renderStatusBadge(status) {
     const normalized = normalizeInterventionStatus(status);
     let cls = 'status-badge ';
@@ -431,6 +384,109 @@ function renderTypeBadge(type) {
         : value === 'PREDICTIVE' ? 'Prédictive'
         : escapeHtml(type || '—');
     return `<span class="${cls}">${label}</span>`;
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('interventionsTableBody');
+    if (!tbody) return;
+    if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state text-center"><i class="fas fa-wrench fa-3x mb-3 d-block"></i><h5>Aucune intervention</h5><p class="text-muted mb-0">Commencez par créer une nouvelle intervention</p></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = data.map(i => {
+        const codeIntervention = escapeHtml(i.codeIntervention || '—');
+        const libelleFull = escapeHtml(i.libele || '');
+        const libelleTrunc = truncateText(libelleFull, 80);
+        const equipCode = equipmentsMap.get(Number(i.equipementId));
+        const equipDisplay = equipCode ? equipCode : (i.equipementDescription || `Équipement #${i.equipementId}`);
+        const equipFull = escapeHtml(equipDisplay);
+        const equipTrunc = truncateText(equipFull, 30);
+        const creatorName = usersMap.get(Number(i.createdById)) || ('User #' + i.createdById);
+        const isSelected = (selectedInterventionId === i.id);
+        return `
+            <tr data-id="${i.id}" class="${isSelected ? 'selected-row' : ''}">
+                <td class="text-center"><input type="radio" name="intervSelect" value="${i.id}" class="radio-select" ${isSelected ? 'checked' : ''}></td>
+                <td title="${codeIntervention}">${codeIntervention}</td>
+                <td title="${libelleFull}">${libelleTrunc}</td>
+                <td>${renderTypeBadge(i.type)}</td>
+                <td title="${equipFull}">${equipTrunc}</td>
+                <td>${renderStatusBadge(i.statut)}</td>
+                <td style="white-space: nowrap;">${formatDate(i.dateDebut)}</td>
+                <td style="white-space: nowrap;">${i.dateFin ? formatDate(i.dateFin) : '—'}</td>
+                <td>${escapeHtml(creatorName)}</td>
+            </tr>
+        `;
+    }).join('');
+    bindSelectionEvents();
+}
+
+function bindSelectionEvents() {
+    document.querySelectorAll('input[name="intervSelect"]').forEach(radio => {
+        radio.removeEventListener('change', handleRadioChange);
+        radio.addEventListener('change', handleRadioChange);
+    });
+    document.querySelectorAll('#interventionsTableBody tr').forEach(row => {
+        row.removeEventListener('click', handleRowClick);
+        row.addEventListener('click', handleRowClick);
+    });
+}
+
+function handleRadioChange(event) {
+    if (event.target.checked) {
+        selectedInterventionId = parseInt(event.target.value);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function handleRowClick(e) {
+    if (e.target.type === 'radio') return;
+    const row = e.currentTarget;
+    const radio = row.querySelector('input[type="radio"]');
+    if (radio && !radio.checked) {
+        radio.checked = true;
+        selectedInterventionId = parseInt(row.dataset.id);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function highlightSelectedRow() {
+    document.querySelectorAll('#interventionsTableBody tr').forEach(tr => {
+        const id = parseInt(tr.dataset.id);
+        if (selectedInterventionId === id) tr.classList.add('selected-row');
+        else tr.classList.remove('selected-row');
+    });
+}
+
+// ======================== BARRE D'ACTIONS CENTRALISÉE ========================
+function updateToolbarState() {
+    const hasSelection = selectedInterventionId !== null;
+    const btns = ['btnDetail', 'btnEdit', 'btnStatus', 'btnDelete'];
+    btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !hasSelection;
+    });
+}
+
+function actionDetail() {
+    if (selectedInterventionId) showDetailCanvas(selectedInterventionId);
+    else showWarning("Veuillez sélectionner une intervention.");
+}
+
+function actionEdit() {
+    if (selectedInterventionId) openEditCanvas(selectedInterventionId);
+    else showWarning("Veuillez sélectionner une intervention.");
+}
+
+function actionChangeStatus() {
+    if (selectedInterventionId) openStatusModal(selectedInterventionId);
+    else showWarning("Veuillez sélectionner une intervention.");
+}
+
+function actionDelete() {
+    if (selectedInterventionId) confirmDelete(selectedInterventionId);
+    else showWarning("Veuillez sélectionner une intervention.");
 }
 
 // ======================== GESTION DES LIGNES DE PR ========================
@@ -480,8 +536,6 @@ function removePrsLine(prsId) {
 async function showDetailCanvas(id) {
     try {
         const i = await fetchJson(`${API_URL}/${id}/detail`);
-        console.log("Détail reçu :", i);
-
         const creatorName = usersMap.get(Number(i.createdById)) || ('User #' + i.createdById);
         const equipCode = equipmentsMap.get(Number(i.equipementId)) || i.equipementDescription || (`Équipement #${i.equipementId}`);
 
@@ -499,26 +553,11 @@ async function showDetailCanvas(id) {
         let annulationHtml = '';
         if (normalizeInterventionStatus(i.statut) === 'ANNULEE') {
             if (motifAnnulation) {
-                annulationHtml = `
-                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div>
-                    <div class="detail-card bg-light border-start border-4 border-danger">
-                        <div class="detail-value">${escapeHtml(motifAnnulation)}</div>
-                    </div>
-                `;
+                annulationHtml = `<div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div><div class="detail-card bg-light border-start border-4 border-danger"><div class="detail-value">${escapeHtml(motifAnnulation)}</div></div>`;
             } else if (i.commentaire) {
-                annulationHtml = `
-                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation (dans commentaire)</div>
-                    <div class="detail-card bg-light border-start border-4 border-danger">
-                        <div class="detail-value">${escapeHtml(i.commentaire)}</div>
-                    </div>
-                `;
+                annulationHtml = `<div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation (dans commentaire)</div><div class="detail-card bg-light border-start border-4 border-danger"><div class="detail-value">${escapeHtml(i.commentaire)}</div></div>`;
             } else {
-                annulationHtml = `
-                    <div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div>
-                    <div class="detail-card bg-light border-start border-4 border-danger">
-                        <div class="detail-value text-muted">Aucun motif fourni</div>
-                    </div>
-                `;
+                annulationHtml = `<div class="section-title mt-3"><i class="fas fa-ban me-2 text-danger"></i> Motif d'annulation</div><div class="detail-card bg-light border-start border-4 border-danger"><div class="detail-value text-muted">Aucun motif fourni</div></div>`;
             }
         }
 
@@ -732,6 +771,7 @@ async function executeDelete(id) {
         const modal = bootstrap.Modal.getInstance(modalElement);
         if (modal) modal.hide();
         cleanupModalState();
+        if (selectedInterventionId === id) selectedInterventionId = null;
         pendingDeleteId = null;
         await refreshPage();
     } catch (err) {
@@ -849,6 +889,9 @@ async function changeStatus(id, newStatus, motif) {
         }
         
         await refreshPage();
+        if (selectedInterventionId === id) {
+            // rien à faire, on garde la sélection
+        }
     } catch (err) {
         showWarning(err.message);
     }
@@ -860,24 +903,6 @@ function filterByStatus(status) {
     if (statusFilter) {
         statusFilter.value = status;
         applyFilters();
-    }
-}
-
-function attachCardFilters() {
-    const cards = document.querySelectorAll('.stat-card');
-    if (cards.length >= 4) {
-        // Total (réinitialiser le filtre)
-        cards[0].style.cursor = 'pointer';
-        cards[0].onclick = () => filterByStatus('');
-        // Terminées
-        cards[1].style.cursor = 'pointer';
-        cards[1].onclick = () => filterByStatus('TERMINEE');
-        // En cours
-        cards[2].style.cursor = 'pointer';
-        cards[2].onclick = () => filterByStatus('EN_COURS');
-        // Planifiées
-        cards[3].style.cursor = 'pointer';
-        cards[3].onclick = () => filterByStatus('PLANIFIEE');
     }
 }
 
@@ -941,8 +966,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPrsLines();
     await refreshPage();
 
-    // Attacher les événements de clic sur les cartes statistiques
-    attachCardFilters();
+    // Attacher les événements de clic sur les cartes statistiques (déjà fait via onclick inline)
+    // Pas besoin de attachCardFilters ici car les cartes ont des onclick dans le HTML
 
     const urlParams = new URLSearchParams(window.location.search);
     const statusFromUrl = urlParams.get('status');

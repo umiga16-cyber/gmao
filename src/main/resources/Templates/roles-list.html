@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Vos styles (inchangés) */
         :root {
             --primary: #667eea;
             --secondary: #764ba2;
@@ -50,6 +51,16 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: none;
             height: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .stat-card.active-quick-filter {
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
         }
         .nav-link {
             color: rgba(255,255,255,0.9) !important;
@@ -97,19 +108,19 @@
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
         }
-        .role-badge {
-            display: inline-block;
-            min-width: 100px;
-            text-align: center;
-            padding: 5px 10px;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .table tbody tr {
+            cursor: pointer;
         }
-        .role-ADMIN { background: #667eea; color: white; }
-        .role-TECHNICIAN { background: #10b981; color: white; }
-        .role-SUPERVISOR { background: #f59e0b; color: white; }
-        .role-OPERATOR { background: #3b82f6; color: white; }
+        .table tbody tr.selected-row {
+            background-color: #eef2ff;
+        }
+        .radio-select {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            margin: 0;
+        }
         .btn-action {
             padding: 4px 8px;
             border-radius: 8px;
@@ -160,6 +171,23 @@
             color: #0f172a;
             word-break: break-word;
         }
+        .action-toolbar {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .action-toolbar .btn {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+        }
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; }
@@ -169,97 +197,80 @@
 <body>
 <div class="sidebar" id="sidebar">
     <div class="p-4 text-white">
-        <h4 class="mb-4">
-            <i class="fas fa-industry me-2"></i>
-            <span id="logo-text">GMAO</span>
-        </h4>
+        <h4 class="mb-4"><i class="fas fa-industry me-2"></i><span id="logo-text">GMAO</span></h4>
         <hr class="text-white opacity-25">
-		<ul class="nav flex-column">
-		            <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
-		            <li class="nav-item"><a class="nav-link  " href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
-		            <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
-		            <li class="nav-item"><a class="nav-link active" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
-		            <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
-		            <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
-		        </ul>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
+            <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
+        </ul>
     </div>
 </div>
 
 <div class="main-content" id="mainContent">
     <nav class="navbar navbar-top p-3 mb-4">
         <div class="container-fluid">
-            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()">
-                <i class="fas fa-bars fa-2x"></i>
-            </button>
+            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars fa-2x"></i></button>
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    <i class="fas fa-user-circle text-primary"></i>
-                         <span th:text="${username}">User</span>
-                </span>
-                <a href="/logout" class="btn btn-outline-danger">
-                    <i class="fas fa-sign-out-alt"></i> Déconnexion
-                </a>
+                <span class="navbar-text me-3"><i class="fas fa-user-circle text-primary"></i><span th:text="${username}">User</span></span>
+                <a href="/logout" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
             </div>
         </div>
     </nav>
 
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h1 class="fw-bold text-dark mb-1">
-                <i class="fas fa-user-shield text-primary me-2"></i> Gestion des Rôles
-            </h1>
+            <h1 class="fw-bold text-dark mb-1"><i class="fas fa-user-shield text-primary me-2"></i> Gestion des Rôles</h1>
             <p class="text-muted mb-0">Créez, modifiez ou supprimez les rôles disponibles pour les utilisateurs</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="/users" class="btn btn-outline-primary">
-                <i class="fas fa-users me-1"></i> Retour utilisateurs
-            </a>
-            <button class="btn btn-primary" onclick="openCreateOffcanvas()">
-                <i class="fas fa-plus me-1"></i> Nouveau rôle
-            </button>
-            <button class="btn btn-outline-secondary" onclick="loadRoles()">
-                <i class="fas fa-rotate me-1"></i> Refresh
-            </button>
+            <a href="/users" class="btn btn-outline-primary"><i class="fas fa-users me-1"></i> Retour utilisateurs</a>
+            <button class="btn btn-primary" onclick="openCreateOffcanvas()"><i class="fas fa-plus me-1"></i> Nouveau rôle</button>
+            <button class="btn btn-outline-secondary" onclick="loadRoles()"><i class="fas fa-rotate me-1"></i> Refresh</button>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Cartes statistiques toutes cliquables -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card quick-stat-card" id="quickCardTotal" onclick="applyQuickFilter('TOTAL')">
                 <div class="stat-icon bg-primary text-white"><i class="fas fa-shield-alt"></i></div>
                 <h3 class="text-primary mb-1" id="totalRoles">0</h3>
                 <p class="text-muted mb-0">Total rôles</p>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card quick-stat-card" id="quickCardUsed" onclick="applyQuickFilter('USED')">
                 <div class="stat-icon bg-success text-white"><i class="fas fa-user-check"></i></div>
                 <h3 class="text-success mb-1" id="utilisateursAvecRole">0</h3>
-                <p class="text-muted mb-0">Utilisateurs avec rôle</p>
+                <p class="text-muted mb-0">Rôles utilisés</p>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card quick-stat-card" id="quickCardUnused" onclick="applyQuickFilter('UNUSED')">
                 <div class="stat-icon bg-warning text-white"><i class="fas fa-clock"></i></div>
                 <h3 class="text-warning mb-1" id="rolesSansUtilisateur">0</h3>
                 <p class="text-muted mb-0">Rôles inutilisés</p>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <div class="stat-card quick-stat-card" id="quickCardActive" onclick="applyQuickFilter('ACTIVE')">
                 <div class="stat-icon bg-info text-white"><i class="fas fa-chart-simple"></i></div>
                 <h3 class="text-info mb-1" id="rolesActifsCount">0</h3>
-                <p class="text-muted mb-0">Rôles actifs (si applicable)</p>
+                <p class="text-muted mb-0">Rôles actifs</p>
             </div>
         </div>
     </div>
 
+    <!-- Filtre de recherche avec bouton explicite -->
     <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label">Recherche</label>
-                <input type="text" id="roleSearch" class="form-control" placeholder="Nom du rôle..." oninput="filterRoles()">
+                <input type="text" id="roleSearch" class="form-control" placeholder="Nom du rôle...">
             </div>
             <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
                 <button class="btn btn-primary w-auto" onclick="filterRoles()">Filtrer</button>
@@ -268,15 +279,26 @@
         </div>
     </div>
 
+    <!-- Barre d'actions -->
+    <div class="action-toolbar">
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary" id="btnDetail" disabled onclick="actionDetail()"><i class="fas fa-eye me-1"></i> Détail</button>
+            <button class="btn btn-outline-warning" id="btnEdit" disabled onclick="actionEdit()"><i class="fas fa-edit me-1"></i> Éditer</button>
+            <button class="btn btn-outline-danger" id="btnDelete" disabled onclick="actionDelete()"><i class="fas fa-trash me-1"></i> Supprimer</button>
+        </div>
+        <div class="text-muted small"><i class="fas fa-info-circle"></i> Sélection unique requise</div>
+    </div>
+
+    <!-- Tableau -->
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead>
                 <tr>
+                    <th style="width: 40px;">Sél.</th>
                     <th>ID</th>
                     <th>Nom du rôle</th>
                     <th>Nombre d'utilisateurs</th>
-                    <th class="text-center">Actions</th>
                 </tr>
                 </thead>
                 <tbody id="rolesTableBody"></tbody>
@@ -285,7 +307,7 @@
     </div>
 </div>
 
-<!-- Offcanvas Nouveau / Édition rôle -->
+<!-- Offcanvas Nouveau / Édition (inchangé) -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 520px;">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouveau rôle</h5>
@@ -307,243 +329,39 @@
     </div>
 </div>
 
-<!-- Modal de confirmation pour suppression -->
+<!-- Offcanvas Détail -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" style="width: 420px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="fas fa-info-circle text-primary me-2"></i> Détail du rôle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body" id="detailBodyCanvas"></div>
+</div>
+
+<!-- Modal suppression -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">
-                    <i class="fas fa-trash-alt me-2"></i>Confirmer la suppression
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer ce rôle ?</p>
-                <p class="text-muted small">Attention : cela affectera les utilisateurs qui possèdent ce rôle.</p>
-                <input type="hidden" id="deleteRoleId">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title text-danger"><i class="fas fa-trash-alt me-2"></i>Confirmer la suppression</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><p>Êtes-vous sûr de vouloir supprimer ce rôle ?</p><p class="text-muted small">Attention : cela affectera les utilisateurs qui possèdent ce rôle.</p></div>
+            <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button><button class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button></div>
         </div>
     </div>
 </div>
 
-<!-- Modal d'alerte générique -->
+<!-- Modal alerte -->
 <div class="modal fade" id="warningModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Attention
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header bg-warning"><h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Attention</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body" id="warningMessage"></div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">OK</button></div>
         </div>
     </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // Remplacer ces URL par celles de votre API
-    const API_ROLES_URL = '/api/roles';
-    const API_ROLES_STATS_URL = '/api/roles/stats';
-
-    const formOffcanvas = new bootstrap.Offcanvas(document.getElementById('formOffcanvas'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-
-    let rolesData = [];
-    let pendingDeleteId = null;
-
-    // Fonctions utilitaires
-    function showWarning(message) {
-        document.getElementById('warningMessage').textContent = message;
-        warningModal.show();
-    }
-
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options
-        });
-        const rawText = await response.text();
-        if (!response.ok) {
-            let message = rawText;
-            try { const err = JSON.parse(rawText); message = err.message || err.error || rawText; } catch(_) {}
-            throw new Error(message);
-        }
-        if (!rawText) return null;
-        try { return JSON.parse(rawText); } catch(_) { return rawText; }
-    }
-
-    async function loadStats() {
-        try {
-            const stats = await fetchJson(API_ROLES_STATS_URL);
-            if (stats) {
-                document.getElementById('totalRoles').textContent = stats.totalRoles || 0;
-                document.getElementById('utilisateursAvecRole').textContent = stats.utilisateursAvecRole || 0;
-                document.getElementById('rolesSansUtilisateur').textContent = stats.rolesSansUtilisateur || 0;
-                document.getElementById('rolesActifsCount').textContent = stats.rolesActifsCount || 0;
-            }
-        } catch(e) { console.error('Stats error', e); }
-    }
-
-    async function loadRoles() {
-        try {
-            const data = await fetchJson(API_ROLES_URL);
-            rolesData = Array.isArray(data) ? data : [];
-            await loadStats();       // les stats peuvent dépendre du contenu
-            renderTable(rolesData);
-        } catch (err) {
-            showWarning("Erreur lors du chargement des rôles : " + err.message);
-        }
-    }
-
-    function renderTable(roles) {
-        const tbody = document.getElementById('rolesTableBody');
-        if (!roles.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="empty-state"><i class="fas fa-shield-alt fa-3x mb-3 d-block"></i><h5>Aucun rôle</h5><p class="text-muted">Créez votre premier rôle avec le formulaire ci-dessus.</p></td></tr>`;
-            return;
-        }
-        tbody.innerHTML = roles.map(role => `
-            <tr>
-                <td>${role.id}</td>
-                <td><strong>${escapeHtml(role.nom)}</strong></td>
-                <td>${role.nbUtilisateurs || 0}</td>
-                <td class="text-center">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${role.id})" title="Modifier"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${role.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    function filterRoles() {
-        const search = document.getElementById('roleSearch').value.trim().toLowerCase();
-        if (!search) {
-            renderTable(rolesData);
-            return;
-        }
-        const filtered = rolesData.filter(role => role.nom.toLowerCase().includes(search));
-        renderTable(filtered);
-    }
-
-    function resetSearch() {
-        document.getElementById('roleSearch').value = '';
-        renderTable(rolesData);
-    }
-
-    function openCreateOffcanvas() {
-        document.getElementById('formOffcanvasLabel').innerText = 'Nouveau rôle';
-        document.getElementById('roleFormCanvas').reset();
-        document.getElementById('roleIdCanvas').value = '';
-        document.getElementById('formErrorCanvas').classList.add('d-none');
-        formOffcanvas.show();
-    }
-
-    async function openEditCanvas(id) {
-        try {
-            const role = rolesData.find(r => r.id == id);
-            if (!role) throw new Error('Rôle non trouvé');
-            document.getElementById('formOffcanvasLabel').innerText = 'Modifier le rôle';
-            document.getElementById('roleIdCanvas').value = role.id;
-            document.getElementById('roleNameCanvas').value = role.nom;
-            document.getElementById('formErrorCanvas').classList.add('d-none');
-            formOffcanvas.show();
-        } catch (err) {
-            showWarning(err.message);
-        }
-    }
-
-    async function saveRoleCanvas() {
-        const id = document.getElementById('roleIdCanvas').value;
-        const nom = document.getElementById('roleNameCanvas').value.trim();
-        if (!nom) {
-            showWarning("Le nom du rôle est obligatoire.");
-            return;
-        }
-        const isUpdate = !!id;
-        const payload = { nom };
-        try {
-            if (isUpdate) {
-                await fetchJson(`${API_ROLES_URL}/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-            } else {
-                await fetchJson(API_ROLES_URL, { method: 'POST', body: JSON.stringify(payload) });
-            }
-            formOffcanvas.hide();
-            await loadRoles();
-        } catch (err) {
-            const errBox = document.getElementById('formErrorCanvas');
-            errBox.textContent = err.message;
-            errBox.classList.remove('d-none');
-        }
-    }
-
-    function confirmDelete(id) {
-        pendingDeleteId = id;
-        deleteModal.show();
-    }
-
-    async function executeDelete(id) {
-        try {
-            // Vérification préalable s'il y a des utilisateurs liés
-            const can = await fetchJson(`${API_ROLES_URL}/${id}/can-delete`);
-            if (!can) {
-                showWarning("Ce rôle ne peut pas être supprimé car il est utilisé par des utilisateurs.");
-                return;
-            }
-            await fetchJson(`${API_ROLES_URL}/${id}`, { method: 'DELETE' });
-            await loadRoles();
-        } catch (err) {
-            showWarning(err.message);
-        }
-    }
-
-    // Attacher les événements après le chargement du DOM
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadRoles();
-        // Formulaire
-        document.getElementById('roleFormCanvas').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveRoleCanvas();
-        });
-        // Bouton de confirmation suppression
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (pendingDeleteId !== null) {
-                await executeDelete(pendingDeleteId);
-                deleteModal.hide();
-                pendingDeleteId = null;
-            }
-        });
-    });
-
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const main = document.getElementById('mainContent');
-        const logoText = document.getElementById('logo-text');
-        sidebar.classList.toggle('collapsed');
-        main.classList.toggle('expanded');
-        if (logoText) logoText.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline';
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
-    }
-
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        document.getElementById('mainContent').classList.add('expanded');
-        if (document.getElementById('logo-text')) document.getElementById('logo-text').style.display = 'none';
-    }
-</script>
+<script src="/JS/role.js"></script>
 </body>
 </html>

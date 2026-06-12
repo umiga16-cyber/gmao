@@ -10,6 +10,24 @@ const warningModal = new bootstrap.Modal(document.getElementById('warningModal')
 
 let stockData = [];
 let pendingDeleteId = null;
+let selectedStockId = null;          // ID de la PR sélectionnée (sélection unique)
+let currentQuickFilter = 'TOTAL';    // pour la surbrillance des cartes
+
+// ======================== FONCTIONS UTILITAIRES ========================
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function parseNumber(value) {
+    const n = Number(value);
+    return Number.isNaN(n) ? 0 : n;
+}
 
 function showWarning(message) {
     document.getElementById('warningMessage').textContent = message;
@@ -45,11 +63,7 @@ async function fetchJson(url, options = {}) {
     }
 }
 
-function parseNumber(value) {
-    const n = Number(value);
-    return Number.isNaN(n) ? 0 : n;
-}
-
+// ======================== STATISTIQUES & MISE À JOUR ========================
 function updateStats() {
     const total = stockData.length;
     let low = 0;
@@ -59,14 +73,9 @@ function updateStats() {
     stockData.forEach(item => {
         const qty = parseNumber(item.quantiteStock);
         const seuil = parseNumber(item.seuilMini);
-
         totalQty += qty;
-
-        if (qty === 0) {
-            out++;
-        } else if (qty <= seuil) {
-            low++;
-        }
+        if (qty === 0) out++;
+        else if (qty <= seuil) low++;
     });
 
     document.getElementById('totalItems').textContent = total;
@@ -75,13 +84,148 @@ function updateStats() {
     document.getElementById('totalQuantity').textContent = totalQty.toFixed(3);
 }
 
-function renderTable(filteredData) {
+// ======================== FILTRES PAR CARTES ========================
+function applyQuickFilter(filterType) {
+    currentQuickFilter = filterType;
+    updateQuickCardsStyle();
+
+    // Réinitialiser la recherche textuelle
+    document.getElementById('searchName').value = '';
+
+    let filtered = [...stockData];
+
+    switch(filterType) {
+        case 'LOW':
+            filtered = filtered.filter(item => {
+                const qty = parseNumber(item.quantiteStock);
+                const seuil = parseNumber(item.seuilMini);
+                return qty > 0 && qty <= seuil;
+            });
+            break;
+        case 'OUT':
+            filtered = filtered.filter(item => parseNumber(item.quantiteStock) === 0);
+            break;
+        case 'TOTAL':
+        default:
+            // aucun filtre
+            break;
+    }
+    renderTable(filtered);
+}
+
+function updateQuickCardsStyle() {
+    const cards = {
+        TOTAL: document.getElementById('quickCardTotal'),
+        LOW: document.getElementById('quickCardLow'),
+        OUT: document.getElementById('quickCardOut')
+    };
+    Object.values(cards).forEach(card => card?.classList.remove('active-quick-filter'));
+    const activeCard = cards[currentQuickFilter];
+    if (activeCard) activeCard.classList.add('active-quick-filter');
+}
+
+// ======================== RECHERCHE TEXTUELLE ========================
+function renderFilteredStock() {
+    // Si on utilise la recherche, on désactive le filtre rapide
+    currentQuickFilter = null;
+    updateQuickCardsStyle();
+
+    const search = document.getElementById('searchName').value.trim().toLowerCase();
+    let filtered = [...stockData];
+    if (search) {
+        filtered = filtered.filter(item =>
+            (item.libelle && item.libelle.toLowerCase().includes(search)) ||
+            (item.code && item.code.toLowerCase().includes(search)) ||
+            (item.reference && item.reference.toLowerCase().includes(search))
+        );
+    }
+    renderTable(filtered);
+}
+
+function resetFilters() {
+    document.getElementById('searchName').value = '';
+    currentQuickFilter = 'TOTAL';
+    updateQuickCardsStyle();
+    renderTable(stockData);
+}
+
+// ======================== SÉLECTION UNIQUE & BARRE D'ACTIONS ========================
+function bindSelectionEvents() {
+    document.querySelectorAll('input[name="stockSelect"]').forEach(radio => {
+        radio.removeEventListener('change', handleRadioChange);
+        radio.addEventListener('change', handleRadioChange);
+    });
+    document.querySelectorAll('#stockTableBody tr').forEach(row => {
+        row.removeEventListener('click', handleRowClick);
+        row.addEventListener('click', handleRowClick);
+    });
+}
+
+function handleRadioChange(event) {
+    if (event.target.checked) {
+        selectedStockId = parseInt(event.target.value);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function handleRowClick(e) {
+    if (e.target.type === 'radio') return;
+    const row = e.currentTarget;
+    const radio = row.querySelector('input[type="radio"]');
+    if (radio && !radio.checked) {
+        radio.checked = true;
+        selectedStockId = parseInt(row.dataset.id);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function highlightSelectedRow() {
+    document.querySelectorAll('#stockTableBody tr').forEach(tr => {
+        const id = parseInt(tr.dataset.id);
+        if (selectedStockId === id) tr.classList.add('selected-row');
+        else tr.classList.remove('selected-row');
+    });
+}
+
+function updateToolbarState() {
+    const hasSelection = selectedStockId !== null;
+    const btns = ['btnDetail', 'btnEdit', 'btnDelete'];
+    btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !hasSelection;
+    });
+}
+
+// Actions centralisées
+function actionDetail() {
+    if (selectedStockId) showDetail(selectedStockId);
+    else showWarning("Veuillez sélectionner une PR.");
+}
+
+function actionEdit() {
+    if (selectedStockId) openEditCanvas(selectedStockId);
+    else showWarning("Veuillez sélectionner une PR.");
+}
+
+function actionDelete() {
+    if (selectedStockId) confirmDelete(selectedStockId);
+    else showWarning("Veuillez sélectionner une PR.");
+}
+
+// ======================== RENDU TABLEAU ========================
+function renderTable(data) {
     const tbody = document.getElementById('stockTableBody');
 
-    if (!filteredData.length) {
+    if (!tbody) {
+        console.error("Élément 'stockTableBody' introuvable dans le DOM");
+        return;
+    }
+    if (!data.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="empty-state">
+                <td colspan="11" class="empty-state">
                     <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
                     <h5>Aucune PR en stock</h5>
                     <p class="text-muted mb-0">Ajoutez votre première pièce de rechange.</p>
@@ -91,11 +235,12 @@ function renderTable(filteredData) {
         return;
     }
 
-    tbody.innerHTML = filteredData.map(item => {
+    tbody.innerHTML = data.map(item => {
         const qty = parseNumber(item.quantiteStock);
         const seuil = parseNumber(item.seuilMini);
         const mouvementsCount = item.mouvementsCount ?? 0;
         const interventionsCount = item.interventionsCount ?? 0;
+        const isSelected = (selectedStockId === item.id);
 
         let stockClass = 'stock-normal';
         let stockLabel = 'Normal';
@@ -109,10 +254,9 @@ function renderTable(filteredData) {
         }
 
         return `
-            <tr>
-                <td class="text-truncate-cell" title="${escapeHtml(item.code)}">
-                    <strong>${escapeHtml(item.code)}</strong>
-                </td>
+            <tr data-id="${item.id}" class="${isSelected ? 'selected-row' : ''}">
+                <td class="text-center"><input type="radio" name="stockSelect" value="${item.id}" class="radio-select" ${isSelected ? 'checked' : ''}></td>
+                <td class="text-truncate-cell" title="${escapeHtml(item.code)}"><strong>${escapeHtml(item.code)}</strong></td>
                 <td class="text-truncate-cell" title="${escapeHtml(item.libelle)}">${escapeHtml(item.libelle)}</td>
                 <td>${escapeHtml(item.reference || '—')}</td>
                 <td>${parseNumber(item.pmp).toFixed(2)} DH</td>
@@ -121,54 +265,35 @@ function renderTable(filteredData) {
                 <td><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
                 <td>${mouvementsCount}</td>
                 <td>${interventionsCount}</td>
-                <td class="text-nowrap text-center">
-                    <button class="btn btn-outline-info btn-action" onclick="showDetail(${item.id})" title="Détail">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${item.id})" title="Éditer">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${item.id})" title="Supprimer">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
+            <tr>
         `;
     }).join('');
+    bindSelectionEvents();
+    updateToolbarState();
 }
 
-function filterStock() {
-    const search = document.getElementById('searchName').value.trim().toLowerCase();
-
-    let filtered = [...stockData];
-
-    if (search) {
-        filtered = filtered.filter(item =>
-            (item.libelle && item.libelle.toLowerCase().includes(search)) ||
-            (item.code && item.code.toLowerCase().includes(search)) ||
-            (item.reference && item.reference.toLowerCase().includes(search))
-        );
-    }
-
-    renderTable(filtered);
-}
-
-function resetFilters() {
-    document.getElementById('searchName').value = '';
-    filterStock();
-}
-
+// ======================== CHARGEMENT DONNÉES ========================
 async function loadStock() {
     try {
         const data = await fetchJson(API_STOCK_URL);
         stockData = Array.isArray(data) ? data : [];
         updateStats();
-        filterStock();
+        // Réappliquer le filtre actif
+        if (currentQuickFilter === 'TOTAL') renderTable(stockData);
+        else if (currentQuickFilter === 'LOW') applyQuickFilter('LOW');
+        else if (currentQuickFilter === 'OUT') applyQuickFilter('OUT');
+        else renderTable(stockData);
+        // Vérifier si l'élément sélectionné existe toujours
+        if (selectedStockId && !stockData.some(s => s.id === selectedStockId)) {
+            selectedStockId = null;
+            updateToolbarState();
+        }
     } catch (err) {
         showWarning("Erreur chargement stock : " + err.message);
     }
 }
 
+// ======================== DÉTAIL ========================
 async function showDetail(id) {
     try {
         const item = await fetchJson(`${API_STOCK_URL}/${id}`);
@@ -223,6 +348,7 @@ async function showDetail(id) {
     }
 }
 
+// ======================== CRÉATION / ÉDITION ========================
 function openCreateOffcanvas() {
     document.getElementById('formOffcanvasLabel').innerText = 'Nouvelle PR';
     document.getElementById('stockFormCanvas').reset();
@@ -279,16 +405,16 @@ async function saveStock() {
     }
 
     const quantite = parseNumber(document.getElementById('quantiteStockCanvas').value);
-const seuil = parseNumber(document.getElementById('seuilMiniCanvas').value);
+    const seuil = parseNumber(document.getElementById('seuilMiniCanvas').value);
 
-if (!Number.isInteger(quantite)) {
-    showWarning("La quantité en stock doit être un nombre entier.");
-    return;
-}
-if (!Number.isInteger(seuil)) {
-    showWarning("Le seuil minimum doit être un nombre entier.");
-    return;
-}
+    if (!Number.isInteger(quantite)) {
+        showWarning("La quantité en stock doit être un nombre entier.");
+        return;
+    }
+    if (!Number.isInteger(seuil)) {
+        showWarning("Le seuil minimum doit être un nombre entier.");
+        return;
+    }
 
     try {
         const url = isUpdate ? `${API_STOCK_URL}/${id}` : API_STOCK_URL;
@@ -308,6 +434,7 @@ if (!Number.isInteger(seuil)) {
     }
 }
 
+// ======================== SUPPRESSION ========================
 function confirmDelete(id) {
     const item = stockData.find(s => Number(s.id) === Number(id));
 
@@ -328,71 +455,14 @@ function confirmDelete(id) {
 async function executeDelete(id) {
     try {
         await fetchJson(`${API_STOCK_URL}/${id}`, { method: 'DELETE' });
+        if (selectedStockId === id) selectedStockId = null;
         await loadStock();
     } catch (err) {
         showWarning(err.message || "Suppression impossible.");
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadStock();
-
-    document.getElementById('stockFormCanvas').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveStock();
-    });
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-        if (pendingDeleteId !== null) {
-            const id = pendingDeleteId;
-            pendingDeleteId = null;
-            deleteModal.hide();
-            await executeDelete(id);
-        }
-    });
-    setupImportPrsFeatures();
-});
-
-function readExcelFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-            resolve(json);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-function readTextFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            resolve(e.target.result);
-        };
-        reader.onerror = reject;
-        reader.readAsText(file, 'UTF-8');
-    });
-}
-
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const main = document.getElementById('mainContent');
-    const logoText = document.getElementById('logo-text');
-
-    sidebar.classList.toggle('collapsed');
-    main.classList.toggle('expanded');
-
-    if (logoText) {
-        logoText.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline';
-    }
-}
-
-// ======================== IMPORTACIÓN MASIVA PRS ========================
+// ======================== IMPORTATION PRS ========================
 let isImportingPrs = false;
 
 function showImportPrsModal() {
@@ -480,7 +550,7 @@ async function processPrsFile(file) {
         
         progressBar.style.width = '60%';
         
-        const requiredColumns = ['libelle'];  // mínimo necesario (code puede generarse)
+        const requiredColumns = ['libelle'];  // minimum nécessaire
         const availableColumns = jsonData.length > 0 ? Object.keys(jsonData[0]).map(k => k.toLowerCase()) : [];
         const missingCols = requiredColumns.filter(col => !availableColumns.includes(col));
         if (missingCols.length > 0) {
@@ -491,7 +561,7 @@ async function processPrsFile(file) {
         if (prsList.length === 0) throw new Error('Aucune donnée valide (libelle requis).');
         
         progressBar.style.width = '80%';
-        const response = await fetch('/api/stock/import', {  // ajusta la URL según tu backend
+        const response = await fetch('/api/stock/import', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(prsList)
@@ -501,7 +571,7 @@ async function processPrsFile(file) {
         
         progressBar.style.width = '100%';
         resultDiv.innerHTML = `<div class="alert alert-success">✅ ${result.imported} PRs importées avec succès.</div>`;
-        await loadStock();  // recargar la tabla
+        await loadStock();
 
         setTimeout(() => {
             const modalElem = document.getElementById('importPrsModal');
@@ -547,7 +617,7 @@ function parsePrsFromData(jsonData) {
         const libelle = getValue('libelle');
         if (!libelle) continue;
 
-        const code = getValue('code') || '';  // si no viene, el backend lo generará
+        const code = getValue('code') || '';
         const reference = getValue('reference') || '';
         const pmp = parseFloat(getValue('pmp')) || 0;
         const quantiteStock = parseFloat(getValue('quantitestock')) || 0;
@@ -591,12 +661,63 @@ function downloadPrsTemplate() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+
+function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+            resolve(json);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function readTextFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file, 'UTF-8');
+    });
+}
+
+// ======================== INITIALISATION ========================
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadStock();
+
+    document.getElementById('stockFormCanvas').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveStock();
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (pendingDeleteId !== null) {
+            const id = pendingDeleteId;
+            pendingDeleteId = null;
+            deleteModal.hide();
+            await executeDelete(id);
+        }
+    });
+
+    setupImportPrsFeatures();
+});
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('mainContent');
+    const logoText = document.getElementById('logo-text');
+
+    sidebar.classList.toggle('collapsed');
+    main.classList.toggle('expanded');
+
+    if (logoText) {
+        logoText.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline';
+    }
 }

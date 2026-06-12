@@ -17,8 +17,10 @@ let allRoles = [];
 let pendingDeleteId = null;
 let pendingStatusId = null;
 let pendingNextStatus = null;
+let selectedUserId = null;
+let currentQuickFilter = 'TOTAL'; // pour la surbrillance des cartes
 
-// ======================== FUNCIONES AUXILIARES ========================
+// ======================== FONCTIONS AUXILIAIRES ========================
 function escapeHtml(value) {
     if (value === null || value === undefined) return '';
     return String(value)
@@ -61,7 +63,119 @@ async function fetchJson(url, options = {}) {
     }
 }
 
-// ======================== GESTIÓN DE USUARIOS ========================
+// ======================== FILTRES PAR CARTES ========================
+function applyQuickFilter(filterType) {
+    currentQuickFilter = filterType;
+    updateQuickCardsStyle();
+    
+    // Réinitialiser les selects de filtres
+    document.getElementById('roleFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('keywordFilter').value = '';
+    
+    let filtered = [...allUsers];
+    
+    switch(filterType) {
+        case 'ACTIF':
+            filtered = filtered.filter(u => u.statut === 'ACTIVE');
+            break;
+        case 'INACTIF':
+            filtered = filtered.filter(u => u.statut === 'INACTIVE');
+            break;
+        case 'ADMIN':
+            filtered = filtered.filter(u => u.roleNom === 'ADMIN');
+            break;
+        case 'TOTAL':
+        default:
+            // aucun filtre supplémentaire
+            break;
+    }
+    renderTable(filtered);
+}
+
+function updateQuickCardsStyle() {
+    const cards = {
+        TOTAL: document.getElementById('quickCardTotal'),
+        ACTIF: document.getElementById('quickCardActif'),
+        INACTIF: document.getElementById('quickCardInactif'),
+        ADMIN: document.getElementById('quickCardAdmin')
+    };
+    Object.values(cards).forEach(card => card?.classList.remove('active-quick-filter'));
+    const activeCard = cards[currentQuickFilter];
+    if (activeCard) activeCard.classList.add('active-quick-filter');
+}
+
+// ======================== GESTION DE LA SÉLECTION UNIQUE ========================
+function bindSelectionEvents() {
+    document.querySelectorAll('input[name="userSelect"]').forEach(radio => {
+        radio.removeEventListener('change', handleRadioChange);
+        radio.addEventListener('change', handleRadioChange);
+    });
+    document.querySelectorAll('#usersTableBody tr').forEach(row => {
+        row.removeEventListener('click', handleRowClick);
+        row.addEventListener('click', handleRowClick);
+    });
+}
+
+function handleRadioChange(event) {
+    if (event.target.checked) {
+        selectedUserId = parseInt(event.target.value);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function handleRowClick(e) {
+    if (e.target.type === 'radio') return;
+    const row = e.currentTarget;
+    const radio = row.querySelector('input[type="radio"]');
+    if (radio && !radio.checked) {
+        radio.checked = true;
+        selectedUserId = parseInt(row.dataset.id);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function highlightSelectedRow() {
+    document.querySelectorAll('#usersTableBody tr').forEach(tr => {
+        const id = parseInt(tr.dataset.id);
+        if (selectedUserId === id) tr.classList.add('selected-row');
+        else tr.classList.remove('selected-row');
+    });
+}
+
+function updateToolbarState() {
+    const hasSelection = selectedUserId !== null;
+    const btns = ['btnDetail', 'btnEdit', 'btnStatus', 'btnDelete'];
+    btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !hasSelection;
+    });
+}
+
+// Actions centralisées
+function actionDetail() {
+    if (selectedUserId) showDetailCanvas(selectedUserId);
+    else showWarning("Veuillez sélectionner un utilisateur.");
+}
+
+function actionEdit() {
+    if (selectedUserId) openEditCanvas(selectedUserId);
+    else showWarning("Veuillez sélectionner un utilisateur.");
+}
+
+function actionChangeStatus() {
+    if (selectedUserId) openStatusModal(selectedUserId);
+    else showWarning("Veuillez sélectionner un utilisateur.");
+}
+
+function actionDelete() {
+    if (selectedUserId) confirmDelete(selectedUserId);
+    else showWarning("Veuillez sélectionner un utilisateur.");
+}
+
+// ======================== GESTION DES UTILISATEURS (inchangée) ========================
 async function loadRoles() {
     allRoles = await fetchJson(ROLE_API);
     const roleFilter = document.getElementById('roleFilter');
@@ -77,7 +191,8 @@ async function loadRoles() {
 async function loadUsers() {
     allUsers = await fetchJson(API_URL);
     renderStats(allUsers);
-    renderTable(allUsers);
+    // Appliquer le filtre actif si nécessaire (sinon on affiche tout)
+    applyQuickFilter(currentQuickFilter);
 }
 
 function renderStats(users) {
@@ -88,40 +203,44 @@ function renderStats(users) {
 }
 
 function renderFilteredUsers() {
+    // Si on utilise les filtres manuels, on désactive le filtre rapide
     const keyword = document.getElementById('keywordFilter').value.trim().toLowerCase();
     const roleId = document.getElementById('roleFilter').value;
     const status = document.getElementById('statusFilter').value;
-    const filtered = allUsers.filter(u => {
+    let filtered = allUsers.filter(u => {
         const keywordOk = !keyword || (u.nom || '').toLowerCase().includes(keyword) || (u.email || '').toLowerCase().includes(keyword);
         const roleOk = !roleId || String(u.roleId) === String(roleId);
         const statusOk = !status || u.statut === status;
         return keywordOk && roleOk && statusOk;
     });
+    // On désactive la surbrillance des cartes car on utilise un filtre manuel
+    currentQuickFilter = null;
+    updateQuickCardsStyle();
     renderTable(filtered);
 }
 
 function renderTable(data) {
     const tbody = document.getElementById('usersTableBody');
     if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-users fa-3x mb-3 d-block"></i><h5>Aucun utilisateur</h5></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fas fa-users fa-3x mb-3 d-block"></i><h5>Aucun utilisateur</h5><p class="text-muted mb-0">Commencez par créer un nouveau utilisateur</p></td></tr>`;
         return;
     }
-    tbody.innerHTML = data.map(u => `
-        <tr>
-            <td><div class="avatar">${getInitials(u.nom)}</div></td>
-            <td>${escapeHtml(u.nom)}</td>
-            <td>${escapeHtml(u.email)}</td>
-            <td>${renderRoleBadge(u.roleNom)}</td>
-            <td>${renderStatusBadge(u.statut)}</td>
-            <td>${u.actif ? 'Oui' : 'Non'}</td>
-            <td class="text-center">
-                <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${u.id})"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${u.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-outline-info btn-action" onclick="openStatusModal(${u.id})"><i class="fas fa-repeat"></i></button>
-                <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${u.id})"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = data.map(u => {
+        const isSelected = (selectedUserId === u.id);
+        return `
+            <tr data-id="${u.id}" class="${isSelected ? 'selected-row' : ''}">
+                <td class="text-center"><input type="radio" name="userSelect" value="${u.id}" class="radio-select" ${isSelected ? 'checked' : ''}></td>
+                <td><div class="avatar">${getInitials(u.nom)}</div></td>
+                <td>${escapeHtml(u.nom)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>${renderRoleBadge(u.roleNom)}</td>
+                <td>${renderStatusBadge(u.statut)}</td>
+                <td>${u.actif ? 'Oui' : 'Non'}</td>
+             </tr>
+        `;
+    }).join('');
+    bindSelectionEvents();
+    updateToolbarState();
 }
 
 function renderRoleBadge(role) {
@@ -198,6 +317,8 @@ async function saveUserCanvas() {
         await fetchJson(url, { method, body: JSON.stringify(payload) });
         formOffcanvas.hide();
         await loadUsers();
+        if (selectedUserId && !allUsers.some(u => u.id === selectedUserId)) selectedUserId = null;
+        updateToolbarState();
     } catch (err) {
         const errBox = document.getElementById('formErrorCanvas');
         errBox.textContent = err.message;
@@ -213,6 +334,7 @@ function confirmDelete(id) {
 async function executeDelete(id) {
     try {
         await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (selectedUserId === id) selectedUserId = null;
         await loadUsers();
     } catch (err) {
         const msg = String(err.message || '');
@@ -249,7 +371,7 @@ function toggleSidebar() {
     if (logo) logo.style.display = document.getElementById('sidebar').classList.contains('collapsed') ? 'none' : 'inline';
 }
 
-// ======================== IMPORTACIÓN MASIVA ========================
+// ======================== IMPORTATION (inchangée) ========================
 let isImportingUsers = false;
 
 function showImportUsersModal() {
