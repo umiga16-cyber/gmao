@@ -11,19 +11,20 @@ let pendingStatusId = null;
 let currentEquipements = [];
 let allEquipements = [];
 let currentQuickFilter = 'TOTAL';
+let selectedEquipmentId = null;  // ID de l'équipement sélectionné (unique)
 
-// Variables para el modal de confirmación de eliminación de documentos
+// Variables pour le modal de confirmation de suppression de documents
 let pendingDocumentId = null;
 let pendingEquipementIdForDoc = null;
 const deleteDocModal = new bootstrap.Modal(document.getElementById('deleteDocConfirmModal'));
 
-// Variable global para evitar importaciones simultáneas
+// Variable globale pour éviter les imports simultanés
 let isImporting = false;
 
-// Archivos pendientes durante la creación de un nuevo equipo
+// Fichiers en attente lors de la création d'un nouvel équipement
 let pendingFilesForNewEquipment = [];
 
-// ======================== Funciones auxiliares ========================
+// ======================== Fonctions auxiliaires (inchangées) ========================
 function truncateText(text, maxLen) {
     if (!text) return '—';
     if (text.length <= maxLen) return text;
@@ -252,6 +253,11 @@ function applyCurrentFiltersAndQuickAccess() {
     currentEquipements = result;
     renderTable(currentEquipements);
     updateQuickCardsStyle();
+    // Si l'équipement sélectionné n'est plus dans la liste, on le désélectionne
+    if (selectedEquipmentId && !currentEquipements.some(e => e.id === selectedEquipmentId)) {
+        selectedEquipmentId = null;
+    }
+    updateToolbarState();
 }
 
 function updateStatsFromData(equipments) {
@@ -342,19 +348,26 @@ function resetFilters() {
     applyCurrentFiltersAndQuickAccess();
 }
 
+// ======================== RENDU DU TABLEAU AVEC SÉLECTION UNIQUE ========================
+function renderStatusBadge(status) {
+    const val = (status || '').toUpperCase();
+    let cls = 'status-actif';
+    if (val === 'MAINTENANCE') cls = 'status-maintenance';
+    if (val === 'HS' || val === 'ARCHIVED') cls = 'status-hs';
+    return `<span class="status-badge ${cls}">${escapeHtml(status || '')}</span>`;
+}
+
 function renderTable(data) {
     const tbody = document.getElementById('equipementsTableBody');
     if (!Array.isArray(data) || data.length === 0) {
-tbody.innerHTML = `
-<tr>
-    <td colspan="5" class="empty-state text-center">
-        <i class="fas fa-tools fa-3x mb-3"></i>
-        <h5>Aucun équipement</h5>
-        <p class="text-muted mb-0">
-            Commencez par créer un nouveau équipement
-        </p>
-    </td>
-</tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-state text-center">
+                    <i class="fas fa-tools fa-3x mb-3"></i>
+                    <h5>Aucun équipement</h5>
+                    <p class="text-muted mb-0">Commencez par créer un nouveau équipement</p>
+                </td>
+            </tr>`;
         return;
     }
     tbody.innerHTML = data.map(e => {
@@ -364,43 +377,130 @@ tbody.innerHTML = `
         const codeTrunc = truncateText(codeFull, 40);
         const descTrunc = truncateText(descFull, 80);
         const localisationTrunc = truncateText(localisationFull, 40);
-        const statut = escapeHtml(e.statut || '');
+        const isSelected = (selectedEquipmentId === e.id);
         return `
-            <tr>
+            <tr data-id="${e.id}" class="${isSelected ? 'selected-row' : ''}">
+                <td class="text-center"><input type="radio" name="equipSelect" value="${e.id}" class="radio-select" ${isSelected ? 'checked' : ''}></td>
                 <td title="${codeFull}">${codeTrunc}</td>
                 <td title="${descFull}">${descTrunc}</td>
                 <td title="${localisationFull}"><i class="fas fa-map-marker-alt me-1 text-primary"></i>${localisationTrunc}</td>
                 <td>${renderStatusBadge(e.statut)}</td>
-                <td class="text-center action-buttons">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary btn-action" onclick="showDetailCanvas(${e.id})" title="Détail"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-outline-success btn-action" onclick="createInterventionFromEquipment(${e.id})" title="Créer une intervention"><i class="fas fa-wrench"></i></button>
-                        <button class="btn btn-outline-warning btn-action" onclick="openEditCanvas(${e.id})" title="Éditer"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-info btn-action" onclick="openStatusModalWrapper(${e.id}, '${statut}')" title="Changer statut"><i class="fas fa-repeat"></i></button>
-                        <button class="btn btn-outline-secondary btn-action" onclick="toggleArchive(${e.id}, '${statut}')" title="${e.statut === 'ARCHIVED' ? 'Désarchiver' : 'Archiver'}"><i class="fas ${e.statut === 'ARCHIVED' ? 'fa-box-open' : 'fa-box-archive'}"></i></button>
-                        <button class="btn btn-outline-info btn-action" onclick="openEditCanvas(${e.id}, true)" title="Pièces jointes"><i class="fas fa-paperclip"></i></button>
-                        <button class="btn btn-outline-danger btn-action" onclick="confirmDelete(${e.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
             </tr>
         `;
     }).join('');
+    bindSelectionEvents();
 }
 
+function bindSelectionEvents() {
+    // Événements sur les radios
+    document.querySelectorAll('input[name="equipSelect"]').forEach(radio => {
+        radio.removeEventListener('change', handleRadioChange);
+        radio.addEventListener('change', handleRadioChange);
+    });
+    // Événements sur les lignes
+    document.querySelectorAll('#equipementsTableBody tr').forEach(row => {
+        row.removeEventListener('click', handleRowClick);
+        row.addEventListener('click', handleRowClick);
+    });
+}
+
+function handleRadioChange(event) {
+    if (event.target.checked) {
+        selectedEquipmentId = parseInt(event.target.value);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function handleRowClick(e) {
+    if (e.target.type === 'radio') return;
+    const row = e.currentTarget;
+    const radio = row.querySelector('input[type="radio"]');
+    if (radio && !radio.checked) {
+        radio.checked = true;
+        selectedEquipmentId = parseInt(row.dataset.id);
+        highlightSelectedRow();
+        updateToolbarState();
+    }
+}
+
+function highlightSelectedRow() {
+    document.querySelectorAll('#equipementsTableBody tr').forEach(tr => {
+        const id = parseInt(tr.dataset.id);
+        if (selectedEquipmentId === id) tr.classList.add('selected-row');
+        else tr.classList.remove('selected-row');
+    });
+}
+
+// ======================== BARRE D'ACTIONS CENTRALISÉE ========================
+function updateToolbarState() {
+    const hasSelection = selectedEquipmentId !== null;
+    const btns = ['btnDetail', 'btnIntervention', 'btnEdit', 'btnStatus', 'btnArchive', 'btnAttach', 'btnDelete'];
+    btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !hasSelection;
+    });
+    if (hasSelection) {
+        const eq = allEquipements.find(e => e.id === selectedEquipmentId);
+        const archiveBtn = document.getElementById('btnArchive');
+        if (eq && eq.statut === 'ARCHIVED') {
+            archiveBtn.innerHTML = '<i class="fas fa-box-open me-1"></i> Désarchiver';
+        } else {
+            archiveBtn.innerHTML = '<i class="fas fa-box-archive me-1"></i> Archiver';
+        }
+    } else {
+        const archiveBtn = document.getElementById('btnArchive');
+        if (archiveBtn) archiveBtn.innerHTML = '<i class="fas fa-box-archive me-1"></i> Archiver';
+    }
+}
+
+// Actions appelées par les boutons
+function actionDetail() {
+    if (selectedEquipmentId) showDetailCanvas(selectedEquipmentId);
+    else showWarning("Veuillez sélectionner un équipement.");
+}
+
+function actionCreateIntervention() {
+    if (selectedEquipmentId) createInterventionFromEquipment(selectedEquipmentId);
+    else showWarning("Veuillez sélectionner un équipement.");
+}
+
+function actionEdit() {
+    if (selectedEquipmentId) openEditCanvas(selectedEquipmentId, false);
+    else showWarning("Veuillez sélectionner un équipement.");
+}
+
+function actionChangeStatus() {
+    if (selectedEquipmentId) {
+        const eq = allEquipements.find(e => e.id === selectedEquipmentId);
+        if (eq) openStatusModalWrapper(selectedEquipmentId, eq.statut);
+    } else showWarning("Veuillez sélectionner un équipement.");
+}
+
+async function actionArchive() {
+    if (selectedEquipmentId) {
+        const eq = allEquipements.find(e => e.id === selectedEquipmentId);
+        if (eq) await toggleArchive(selectedEquipmentId, eq.statut);
+    } else showWarning("Veuillez sélectionner un équipement.");
+}
+
+function actionAttachments() {
+    if (selectedEquipmentId) openEditCanvas(selectedEquipmentId, true);
+    else showWarning("Veuillez sélectionner un équipement.");
+}
+
+function actionDelete() {
+    if (selectedEquipmentId) confirmDelete(selectedEquipmentId);
+    else showWarning("Veuillez sélectionner un équipement.");
+}
+
+// ======================== FONCTIONS MÉTIER (inchangées) ========================
 function createInterventionFromEquipment(equipementId) {
     if (!equipementId) {
         showWarning("Équipement introuvable pour créer une intervention.");
         return;
     }
     window.location.href = `/interventions?equipementId=${encodeURIComponent(equipementId)}`;
-}
-
-function renderStatusBadge(status) {
-    const val = (status || '').toUpperCase();
-    let cls = 'status-actif';
-    if (val === 'MAINTENANCE') cls = 'status-maintenance';
-    if (val === 'HS' || val === 'ARCHIVED') cls = 'status-hs';
-    return `<span class="status-badge ${cls}">${escapeHtml(status || '')}</span>`;
 }
 
 async function showDetailCanvas(id) {
@@ -482,7 +582,7 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
-// ======================== CREACIÓN Y EDICIÓN ========================
+// ======================== CRÉATION ET ÉDITION ========================
 async function openCreateOffcanvas() {
     document.getElementById('formOffcanvasLabel').innerText = 'Nouveau équipement';
     document.getElementById('equipementFormCanvas').reset();
@@ -491,19 +591,14 @@ async function openCreateOffcanvas() {
     document.getElementById('statutCanvas').value = 'ACTIF';
     const codeInput = document.getElementById('codeCanvas');
     if (codeInput) {
-    //    const newCode = generateNextEquipmentCode();
-    //    codeInput.value = newCode;
         codeInput.value = '';
         codeInput.readOnly = false;
         codeInput.style.backgroundColor = '';
-    //    codeInput.focus();
     }
     applyRequiredErrorOnEmpty();
     
-    // Limpiar archivos pendientes
     pendingFilesForNewEquipment = [];
     
-    // Añadir sección de adjuntos (con input file para subir antes de guardar)
     const container = document.getElementById('adjuntosEditContainer');
     if (container) {
         container.innerHTML = `
@@ -517,7 +612,6 @@ async function openCreateOffcanvas() {
             </div>
         `;
     }
-    
     formOffcanvas.show();
 }
 
@@ -529,11 +623,10 @@ function agregarArchivosPendientes() {
     }
     
     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
-    const maxSize = 32 * 1024 * 1024; // 32 MB
+    const maxSize = 32 * 1024 * 1024;
     let validFiles = [];
     let invalidFiles = [];
     
-    // Validar cada archivo seleccionado
     for (let file of fileInput.files) {
         const extension = file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(extension)) {
@@ -545,12 +638,10 @@ function agregarArchivosPendientes() {
         }
     }
     
-    // Mostrar advertencias si hay archivos inválidos
     if (invalidFiles.length > 0) {
         showWarning(`Fichiers ignorés :\n${invalidFiles.join('\n')}`);
     }
     
-    // Añadir los archivos válidos a la lista pendiente
     if (validFiles.length === 0) return;
     
     const lista = document.getElementById('listaArchivosPendientes');
@@ -563,7 +654,6 @@ function agregarArchivosPendientes() {
         lista.appendChild(item);
     }
     
-    // Limpiar el input para que se puedan seleccionar más archivos después
     fileInput.value = '';
 }
 
@@ -722,7 +812,6 @@ async function saveEquipementCanvas() {
         statut: 'ACTIF'
     };
     try {
-        // Verificar unicidad del código (solo para creación, en edición lo maneja el backend)
         if (!isUpdate && payload.code) {
             const exists = await fetchJson(`${API_URL}/exists?code=${encodeURIComponent(payload.code)}`);
             if (exists) throw new Error('Ce code équipement existe déjà. Veuillez en choisir un autre.');
@@ -743,7 +832,6 @@ async function saveEquipementCanvas() {
             nuevoId = newEquip.id || newEquip.equipementId;
             if (!nuevoId) throw new Error("ID du nouveau équipement non reçu");
             
-            // Subir documentos pendientes
             if (pendingFilesForNewEquipment.length > 0) {
                 for (const file of pendingFilesForNewEquipment) {
                     const formData = new FormData();
@@ -778,6 +866,7 @@ async function executeDelete(id) {
             return;
         }
         await fetchJson(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (selectedEquipmentId === id) selectedEquipmentId = null;
         await refreshPage();
     } catch (err) { showWarning(err.message); }
 }
@@ -823,7 +912,7 @@ async function changeStatus(id, newStatus) {
     } catch (err) { showWarning(err.message); }
 }
 
-// ======================== IMPORTACIÓN ========================
+// ======================== IMPORTATION ========================
 function showImportModal() {
     const modalElem = document.getElementById('importModal');
     if (modalElem?.classList.contains('show')) return;
@@ -1151,9 +1240,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusParam = urlParams.get('status');
     if (statusParam) {
         const statusSelect = document.getElementById('statusFilter');
-            if (statusSelect) {
-                statusSelect.value = statusParam.toUpperCase();
-                await applyFilters();  // Aplicar el filtro automáticamente
-            }
-}
+        if (statusSelect) {
+            statusSelect.value = statusParam.toUpperCase();
+            await applyFilters();
+        }
+    }
 });

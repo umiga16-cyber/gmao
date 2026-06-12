@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Vos styles existants (inchangés) */
         :root {
             --primary: #667eea;
             --secondary: #764ba2;
@@ -51,6 +52,7 @@
             transition: all 0.3s ease;
             border: none;
             height: 100%;
+            cursor: pointer;
         }
         .stat-card:hover {
             transform: translateY(-5px);
@@ -102,12 +104,11 @@
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
         }
-        /* Anchos de columna para la tabla de equipos */
-        .table th:nth-child(1), .table td:nth-child(1) { min-width: 160px; white-space: normal; word-break: break-word; }
-        .table th:nth-child(2), .table td:nth-child(2) { min-width: 200px; white-space: normal; word-break: break-word; }
-        .table th:nth-child(3), .table td:nth-child(3) { min-width: 150px; white-space: normal; }
-        .table th:nth-child(4), .table td:nth-child(4) { width: 110px; white-space: nowrap; }
-        .table th:nth-child(5), .table td:nth-child(5) { width: 280px; white-space: nowrap; }
+        .table th:nth-child(1), .table td:nth-child(1) { width: 40px; text-align: center; white-space: nowrap; }
+        .table th:nth-child(2), .table td:nth-child(2) { min-width: 160px; white-space: normal; word-break: break-word; }
+        .table th:nth-child(3), .table td:nth-child(3) { min-width: 200px; white-space: normal; word-break: break-word; }
+        .table th:nth-child(4), .table td:nth-child(4) { min-width: 150px; white-space: normal; }
+        .table th:nth-child(5), .table td:nth-child(5) { width: 110px; white-space: nowrap; }
 
         @media (max-width: 992px) {
             .table th:nth-child(5), .table td:nth-child(5) { width: auto; }
@@ -132,12 +133,6 @@
         .status-maintenance { background: #fef3c7; color: #92400e; }
         .status-hs { background: #fee2e2; color: #991b1b; }
 
-        .btn-action {
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            margin: 0 2px;
-        }
         .empty-state {
             padding: 40px 20px;
             text-align: center;
@@ -212,17 +207,6 @@
             padding-left: 12px;
             margin-bottom: 1rem;
         }
-        .action-buttons {
-            display: flex;
-            gap: 2px;
-            justify-content: center;
-            align-items: center;
-        }
-        .action-buttons .btn-group {
-            display: flex;
-            flex-wrap: nowrap;
-            justify-content: center;
-        }
         .quick-stat-card {
             cursor: pointer;
             position: relative;
@@ -235,7 +219,6 @@
             border: 2px solid var(--primary);
             box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
         }
-        /* Ajustes para el formulario dentro del offcanvas */
         #formOffcanvas .row.g-3 {
             margin-right: 0;
             margin-left: 0;
@@ -245,9 +228,40 @@
             padding-right: 6px;
         }
         .drop-zone.drag-over {
-    border-color: var(--primary);
-    background-color: rgba(102,126,234,0.1);
-}
+            border-color: var(--primary);
+            background-color: rgba(102,126,234,0.1);
+        }
+        /* Nouveau style pour la barre d'actions */
+        .action-toolbar {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .action-toolbar .btn {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+        }
+        .radio-select {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            margin: 0;
+        }
+        .table tbody tr {
+            cursor: pointer;
+        }
+        .table tbody tr.selected-row {
+            background-color: #eef2ff;
+        }
     </style>
 </head>
 <body>
@@ -313,7 +327,7 @@
         </div>
     </div>
 
-    <!-- Tarjetas de estadísticas -->
+    <!-- Cartes statistiques -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="stat-card quick-stat-card" onclick="applyQuickAccessFilter('TOTAL')" id="quickCardTotal">
@@ -345,7 +359,7 @@
         </div>
     </div>
 
-    <!-- Filtros - Card corregida y bien cerrada -->
+    <!-- Filtres -->
     <div class="card bg-white rounded-4 shadow-sm p-3 mb-4">
         <div class="row g-3">
             <div class="col-md-3">
@@ -377,17 +391,31 @@
         </div>
     </div>
 
-    <!-- Tabla -->
+    <!-- BARRE D'ACTIONS CENTRALISÉE (NOUVEAU) -->
+    <div class="action-toolbar">
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary" id="btnDetail" disabled onclick="actionDetail()"><i class="fas fa-eye me-1"></i> Détail</button>
+            <button class="btn btn-outline-success" id="btnIntervention" disabled onclick="actionCreateIntervention()"><i class="fas fa-wrench me-1"></i> Intervention</button>
+            <button class="btn btn-outline-warning" id="btnEdit" disabled onclick="actionEdit()"><i class="fas fa-edit me-1"></i> Éditer</button>
+            <button class="btn btn-outline-info" id="btnStatus" disabled onclick="actionChangeStatus()"><i class="fas fa-repeat me-1"></i> Changer statut</button>
+            <button class="btn btn-outline-secondary" id="btnArchive" disabled onclick="actionArchive()"><i class="fas fa-box-archive me-1"></i> Archiver</button>
+            <button class="btn btn-outline-info" id="btnAttach" disabled onclick="actionAttachments()"><i class="fas fa-paperclip me-1"></i> Pièces jointes</button>
+            <button class="btn btn-outline-danger" id="btnDelete" disabled onclick="actionDelete()"><i class="fas fa-trash me-1"></i> Supprimer</button>
+        </div>
+        <div class="text-muted small"><i class="fas fa-info-circle"></i> Sélection unique requise</div>
+    </div>
+
+    <!-- Tableau avec colonne de sélection -->
     <div class="table-container">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>Sélection</th>
                         <th>Code</th>
                         <th>Description</th>
                         <th>Localisation</th>
                         <th>Statut</th>
-                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="equipementsTableBody">
@@ -407,7 +435,7 @@
     <div class="offcanvas-body pt-0" id="detailBodyCanvas"></div>
 </div>
 
-<!-- Offcanvas Formulaire (mismo ancho que intervenciones: 620px) -->
+<!-- Offcanvas Formulaire -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="formOffcanvas" style="width: 620px;">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="formOffcanvasLabel">Nouveau équipement</h5>
@@ -479,14 +507,12 @@
             </div>
         </form>
         <hr class="my-4">
-<div class="section-title"><i class="fas fa-paperclip me-2 text-primary"></i> Documents techniques</div>
-<div id="adjuntosEditContainer" class="mt-2">
-    <!-- Aquí se cargará la lista y el botón de subida -->
-</div>
+        <div class="section-title"><i class="fas fa-paperclip me-2 text-primary"></i> Documents techniques</div>
+        <div id="adjuntosEditContainer" class="mt-2"></div>
     </div>
 </div>
 
-<!-- Modales -->
+<!-- Modales (inchangées) -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -555,7 +581,7 @@
         </div>
     </div>
 </div>
-<!-- Modal Import -->
+
 <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -584,7 +610,7 @@
         </div>
     </div>
 </div>
-<!-- Modal de confirmación para eliminar documento -->
+
 <div class="modal fade" id="deleteDocConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -593,8 +619,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <p>¿Eliminar este documento permanentemente?</p>
-                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+                <p>Supprimer ce document définitivement ?</p>
+                <p class="text-muted small">Cette action est irréversible.</p>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -603,9 +629,9 @@
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../JS/equipement.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-
 </body>
 </html>
