@@ -8,7 +8,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Vos styles (inchangés) */
         :root {
             --primary: #667eea;
             --secondary: #764ba2;
@@ -22,28 +21,41 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
-            height: 100vh;
-            position: fixed;
-            width: 260px;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        .sidebar.collapsed { width: 70px; }
+        /* Eliminamos el sidebar fijo: el contenido ocupa todo el ancho */
         .main-content {
-            margin-left: 260px;
+            margin-left: 0 !important;
             transition: all 0.3s ease;
             padding: 20px;
         }
-        .main-content.expanded { margin-left: 70px; }
         .navbar-top {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 0 0 20px 20px;
         }
+        /* Estilos del menú deslizante (offcanvas) - igual que dashboard */
+        .offcanvas-menu {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            width: 280px;
+        }
+#mainMenuOffcanvas .offcanvas-header {
+    background: transparent;
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+        .offcanvas-menu .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+        .offcanvas-menu .nav-link:hover,
+        .offcanvas-menu .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white !important;
+            transform: translateX(5px);
+        }
+        /* Resto de estilos específicos de roles (sin cambios) */
         .stat-card {
             background: white;
             border-radius: 20px;
@@ -61,18 +73,6 @@
         .stat-card.active-quick-filter {
             border: 2px solid var(--primary);
             box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
-        }
-        .nav-link {
-            color: rgba(255,255,255,0.9) !important;
-            padding: 12px 20px;
-            border-radius: 10px;
-            margin: 5px 10px;
-            transition: all 0.3s ease;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255,255,255,0.2);
-            color: white !important;
-            transform: translateX(5px);
         }
         .stat-icon {
             width: 60px;
@@ -132,11 +132,17 @@
             text-align: center;
             color: #6b7280;
         }
-        .offcanvas, .modal-content {
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
-        }
+.modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+}
+#detailOffcanvas,
+#formOffcanvas {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+}
         .offcanvas-header, .modal-header {
             background: white;
             border-bottom: 1px solid #e2e8f0;
@@ -189,23 +195,29 @@
             border-radius: 10px;
         }
         @media (max-width: 768px) {
-            .sidebar { width: 70px; }
-            .main-content { margin-left: 70px; }
+            .main-content {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
 <body>
-<div class="sidebar" id="sidebar">
-    <div class="p-4 text-white">
-        <h4 class="mb-4"><i class="fas fa-industry me-2"></i><span id="logo-text">GMAO</span></h4>
-        <hr class="text-white opacity-25">
+
+<!-- MENÚ PRINCIPAL DESLIZANTE (OFFCANVAS) - IGUAL QUE DASHBOARD -->
+<div class="offcanvas offcanvas-start offcanvas-menu" tabindex="-1" id="mainMenuOffcanvas">
+    <div class="offcanvas-header text-white">
+        <h5 class="offcanvas-title"><i class="fas fa-industry me-2"></i>GMAO</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
         <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link active" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
             <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
             <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
             <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
-              <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/roles-list"><i class="fas fa-user-shield me-2"></i>Roles</a></li>
         </ul>
     </div>
 </div>
@@ -213,17 +225,23 @@
 <div class="main-content" id="mainContent">
     <nav class="navbar navbar-top p-3 mb-4">
         <div class="container-fluid">
-            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars fa-2x"></i></button>
+            <!-- Botón MENÚ PRINCIPAL (reemplaza el antiguo botón de colapsar) -->
+            <button class="btn btn-link text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
+                <i class="fas fa-bars fa-2x"></i> 
+            </button>
             <div class="navbar-nav ms-auto">
-                                <span class="navbar-text me-3">
+                <span class="navbar-text me-3">
                     <i class="fas fa-user-circle text-primary"></i>
                     <span th:text="${username}">User</span>
                 </span>
-                <a href="/logout" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                <a href="/logout" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
             </div>
         </div>
     </nav>
 
+    <!-- TODO EL CONTENIDO ORIGINAL DE ROLES (SIN NINGÚN CAMBIO) -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h1 class="fw-bold text-dark mb-1"><i class="fas fa-user-shield text-primary me-2"></i> Gestion des Rôles</h1>
@@ -362,7 +380,6 @@
         </div>
     </div>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/JS/role.js"></script>

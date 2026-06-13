@@ -22,28 +22,39 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
-            height: 100vh;
-            position: fixed;
-            width: 260px;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        .sidebar.collapsed { width: 70px; }
+        /* Ya no hay sidebar fijo, el contenido ocupa todo el ancho */
         .main-content {
-            margin-left: 260px;
+            margin-left: 0 !important;
             transition: all 0.3s ease;
             padding: 20px;
         }
-        .main-content.expanded { margin-left: 70px; }
         .navbar-top {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 0 0 20px 20px;
         }
+        /* Estilos para el menú deslizante (offcanvas) */
+        .offcanvas-menu {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            width: 280px;
+        }
+        .offcanvas-menu .offcanvas-header {
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .offcanvas-menu .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+        .offcanvas-menu .nav-link:hover,
+        .offcanvas-menu .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white !important;
+            transform: translateX(5px);
+        }
+        /* Resto de estilos existentes (sin cambios) */
         .stat-card, .panel-card {
             background: white;
             border-radius: 24px;
@@ -128,51 +139,39 @@
             line-height: 1.4;
         }
         /* Forzar altura uniforme en todas las tarjetas de la misma fila */
-/* Asegura que todas las columnas de la misma fila tengan la misma altura */
-.row.g-4 > [class*="col-"] {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Tarjetas dentro de columnas: se estiran para llenar la columna */
-.panel-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%; /* Fuerza altura completa */
-}
-
-/* Contenedores internos flexibles */
-.panel-card .chart-wrap,
-.panel-card #recentActivity,
-.panel-card #upcomingPreventifs {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0; /* Para que respeten el flex */
-}
-
-/* Alturas máximas para listas (evitan que crezcan demasiado) */
-#recentActivity {
-    max-height: 280px;
-}
-
-#upcomingPreventifs {
-    max-height: 220px;  /* Menor altura para que sea más compacto */
-}
-
-/* Para la columna derecha, quitamos márgenes extra y usamos gap */
-.col-lg-6 {
-    gap: 1.5rem;
-}
-.col-lg-6 .panel-card {
-    margin-bottom: 0 !important;
-}
-
-/* Ajuste específico para el mensaje vacío de preventivos */
-#upcomingPreventifs .empty-state {
-    padding: 20px 10px;
-    font-size: 0.85rem;
-}
+        .row.g-4 > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .panel-card .chart-wrap,
+        .panel-card #recentActivity,
+        .panel-card #upcomingPreventifs {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        #recentActivity {
+            max-height: 280px;
+        }
+        #upcomingPreventifs {
+            max-height: 220px;
+        }
+        .col-lg-6 {
+            gap: 1.5rem;
+        }
+        .col-lg-6 .panel-card {
+            margin-bottom: 0 !important;
+        }
+        #upcomingPreventifs .empty-state {
+            padding: 20px 10px;
+            font-size: 0.85rem;
+        }
         .mini-badge {
             border-radius: 999px;
             padding: 4px 10px;
@@ -190,8 +189,7 @@
             padding: 30px 10px;
         }
         @media (max-width: 768px) {
-            .sidebar { width: 70px; }
-            .main-content { margin-left: 70px; }
+            .main-content { margin-left: 0; }
             .chart-wrap { height: 220px; }
             .list-item .fw-semibold { flex-direction: column; align-items: flex-start; }
             .mini-badge { white-space: normal; }
@@ -201,17 +199,21 @@
     </style>
 </head>
 <body>
-<div class="sidebar" id="sidebar">
-    <div class="p-4 text-white">
-        <h4 class="mb-4"><i class="fas fa-industry me-2"></i><span id="logo-text">GMAO</span></h4>
-        <hr class="text-white opacity-25">
+
+<!-- MENÚ PRINCIPAL DESLIZANTE (OFFCANVAS) -->
+<div class="offcanvas offcanvas-start offcanvas-menu" tabindex="-1" id="mainMenuOffcanvas">
+    <div class="offcanvas-header text-white">
+        <h5 class="offcanvas-title"><i class="fas fa-industry me-2"></i>GMAO</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
         <ul class="nav flex-column">
             <li class="nav-item"><a class="nav-link active" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link" href="/equipements-list"><i class="fas fa-tools me-2"></i>Équipements</a></li>
             <li class="nav-item"><a class="nav-link" href="/interventions"><i class="fas fa-wrench me-2"></i>Interventions</a></li>
             <li class="nav-item"><a class="nav-link" href="/stock"><i class="fas fa-boxes me-2"></i>Stock PRs</a></li>
             <li class="nav-item"><a class="nav-link" href="/preventif"><i class="fas fa-calendar-check me-2"></i>Préventif</a></li>
-              <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="/users"><i class="fas fa-users me-2"></i>Utilisateurs</a></li>
         </ul>
     </div>
 </div>
@@ -219,7 +221,10 @@
 <div class="main-content" id="mainContent">
     <nav class="navbar navbar-top p-3 mb-4">
         <div class="container-fluid">
-            <button class="btn btn-link text-dark d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars fa-2x"></i></button>
+            <!-- Botón MENÚ PRINCIPAL -->
+            <button class="btn btn-link text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
+                <i class="fas fa-bars fa-2x"></i> 
+            </button>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3"><i class="fas fa-user-circle text-primary"></i> <span th:text="${username}">User</span></span>
                 <a href="/logout" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
@@ -227,6 +232,7 @@
         </div>
     </nav>
 
+    <!-- CONTENIDO DEL DASHBOARD (SIN CAMBIOS) -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h1 class="fw-bold text-dark mb-1"><i class="fas fa-chart-pie text-primary me-2"></i>Tableau de bord</h1>
@@ -316,6 +322,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/dashboard.js"></script>
+<!-- Tu archivo dashboard.js debe existir en la ruta /js/dashboard.js -->
+<script src="/JS/dashboard.js"></script>
 </body>
 </html>
