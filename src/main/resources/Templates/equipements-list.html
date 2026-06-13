@@ -267,6 +267,7 @@
             background-color: #eef2ff;
         }
         
+        
     </style>
 </head>
 <body>
@@ -462,7 +463,26 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Type *</label>
-                    <input type="text" id="typeCanvas" class="form-control" required maxlength="50">
+                    <!-- Champ Type transformé en liste déroulante obligatoire -->
+                    <select id="typeCanvas" class="form-select" required>
+                        <option value="">Sélectionner un type</option>
+                        <option value="Batiment">Bâtiment</option>
+                        <option value="Site">Site</option>
+                        <option value="Materiel_roulant">Matériel roulant</option>
+                        <option value="Ville">Ville</option>
+                        <option value="Dispositif_medical">Dispositif médical</option>
+                        <option value="Equipement">Equipement</option>
+                        <option value="Moyens_d_extinction">Moyens d'extinction</option>
+                        <option value="Installation_fixe">Installation fixe</option>
+                        <option value="Etage">Etage</option>
+                        <option value="Informatique">Informatique</option>
+                        <option value="Terrain">Terrain</option>
+                        <option value="Outillage">Outillage</option>
+                        <option value="Local">Local</option>
+                        <option value="Espace">Espace</option>
+                        <option value="Lot_technique">Lot technique</option>
+                        <option value="Zone">Zone</option>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Marque</label>

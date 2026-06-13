@@ -141,7 +141,6 @@ function validateFieldLengths() {
     const fields = [
         { id: 'codeCanvas', max: 50, name: 'Code' },
         { id: 'descriptionCanvas', max: 200, name: 'Description' },
-        { id: 'typeCanvas', max: 50, name: 'Type' },
         { id: 'marqueCanvas', max: 50, name: 'Marque' },
         { id: 'numeroSerieCanvas', max: 50, name: 'Numéro de série' },
         { id: 'localisationCanvas', max: 100, name: 'Localisation' },
@@ -588,6 +587,9 @@ async function openCreateOffcanvas() {
         codeInput.readOnly = false;
         codeInput.style.backgroundColor = '';
     }
+    // Réinitialiser le select Type à l'option vide
+    const typeSelect = document.getElementById('typeCanvas');
+    if (typeSelect) typeSelect.value = '';
     applyRequiredErrorOnEmpty();
     
     pendingFilesForNewEquipment = [];
@@ -788,7 +790,7 @@ async function saveEquipementCanvas() {
     const isUpdate = !!id;
     const basePayload = {
         description: getVal('descriptionCanvas'),
-        type: getVal('typeCanvas'),
+        type: getVal('typeCanvas'),          // <-- ici le select, getVal() fonctionne
         marque: getVal('marqueCanvas'),
         numeroSerie: getVal('numeroSerieCanvas'),
         localisation: getVal('localisationCanvas'),
@@ -1168,7 +1170,12 @@ function downloadTemplate() {
 }
 
 // ======================== UTILITAIRES ========================
-function getVal(id) { return document.getElementById(id).value.trim(); }
+function getVal(id) { 
+    const el = document.getElementById(id);
+    if (!el) return '';
+    if (el.tagName === 'SELECT') return el.value;
+    return el.value.trim();
+}
 function getNumberVal(id) { const v = document.getElementById(id).value.trim(); return v ? Number(v) : null; }
 function formatDate(v) { 
     if (!v) return 'N/A';
